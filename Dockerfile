@@ -2,15 +2,22 @@
 # WebVOWL #
 ###########
 
-# Use tomcat java 8 alpine as base image
-FROM tomcat:9-jre8-alpine
+# Stage 1: Build
+# Node 12 is the safe ceiling for webpack 1.x / grunt 1.x compatibility
+FROM node:12.22.12-alpine3.15 AS builder
+WORKDIR /app
 
-# Build time arguments (WebVOWL version)
-ARG version=1.1.7
+# Install dependencies first for better layer caching.
+# --ignore-scripts skips the postinstall grunt release so we can copy
+# source files before building.
+COPY package.json ./
+RUN npm install --ignore-scripts
 
-# Download WebVOWL to tomcat webapps directory as root app
-RUN rm -rf /usr/local/tomcat/webapps/* && \
-    wget -O /usr/local/tomcat/webapps/ROOT.war http://vowl.visualdataweb.org/downloads/webvowl_1.1.7.war
+# Copy source and build into deploy/
+COPY . .
+RUN ./node_modules/.bin/grunt release
 
-# Run default server
-CMD ["catalina.sh", "run"]
+# Stage 2: Serve static output
+FROM nginx:1.29.5-alpine
+COPY --from=builder /app/deploy /usr/share/nginx/html
+EXPOSE 80

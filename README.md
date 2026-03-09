@@ -1,4 +1,4 @@
-WebVOWL [![Build Status](https://travis-ci.org/VisualDataWeb/WebVOWL.svg?branch=master)](https://travis-ci.org/VisualDataWeb/WebVOWL)
+WebVOWL [![Build Status](https://travis-ci.org/manuel-j-diaz/WebVOWL.svg?branch=master)](https://travis-ci.org/manuel-j-diaz/WebVOWL)
 =======
 
 > [!CAUTION]
@@ -9,13 +9,13 @@ This repository was ported from an internal SVN repository to Github after the r
 
 Run Using Docker
 ------------
-Make sure you are inside `WebVOWL` directory and you have docker installed. Run the following command to build the docker image:
+Make sure you have Docker installed and run the following commands from the project root.
 
-`docker build . -t webvowl:v1`
+The image is built from source using a multi-stage Docker build (Node 12 + Grunt) and served as static files via Nginx. No pre-built binaries are downloaded.
 
-Run the following command to run WebVOWL at port 8080. 
+Run the following command to build and start WebVOWL at port 8080:
 
-`docker-compose up -d` 
+`docker compose up --build -d`
 
 Visit [http://localhost:8080](http://localhost:8080) to use WebVOWL.
 
