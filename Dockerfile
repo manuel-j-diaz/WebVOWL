@@ -19,5 +19,6 @@ RUN ./node_modules/.bin/grunt release
 
 # Stage 2: Serve static output
 FROM nginx:1.29.5-alpine
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=builder /app/deploy /usr/share/nginx/html
 EXPOSE 80

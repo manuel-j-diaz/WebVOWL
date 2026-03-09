@@ -2,7 +2,28 @@ version: '3'
 
 services:
 
+    owl2vowl:
+        build: ./owl2vowl
+        networks:
+            - default
+            - semantic-web
+
     server:
         build: .
         ports:
             - "${PORT:-8080}:80"
+        depends_on:
+            - owl2vowl
+        environment:
+            - FUSEKI_URL=${FUSEKI_URL:-http://fuseki:3030}
+            - FUSEKI_AUTH_HEADER=${FUSEKI_AUTH_HEADER}
+            - NGINX_ENVSUBST_TEMPLATE_VARS=FUSEKI_URL FUSEKI_AUTH_HEADER
+        networks:
+            - default
+            - semantic-web
+
+networks:
+    semantic-web:
+        external: true
+        name: ${DOCKER_NETWORK:-semantic-web}
+        internal: true

@@ -1,0 +1,3 @@
+[submodule "owl2vowl/OWL2VOWL"]
+	path = owl2vowl/OWL2VOWL
+	url = https://github.com/manuel-j-diaz/OWL2VOWL.git
