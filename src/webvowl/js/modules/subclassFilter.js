@@ -5,7 +5,7 @@ module.exports = function (){
   var filter = {},
     nodes,
     properties,
-    enabled = false,
+    enabled = true,
     filteredNodes,
     filteredProperties;
   
@@ -19,7 +19,7 @@ module.exports = function (){
     nodes = untouchedNodes;
     properties = untouchedProperties;
     
-    if ( this.enabled() ) {
+    if ( !this.enabled() ) {
       hideSubclassesWithoutOwnProperties();
     }
     

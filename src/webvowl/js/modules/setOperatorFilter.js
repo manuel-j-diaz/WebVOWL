@@ -5,7 +5,7 @@ module.exports = function (){
   var filter = {},
     nodes,
     properties,
-    enabled = false,
+    enabled = true,
     filteredNodes,
     filteredProperties,
     filterTools = require("../util/filterTools")();
@@ -20,7 +20,7 @@ module.exports = function (){
     nodes = untouchedNodes;
     properties = untouchedProperties;
     
-    if ( this.enabled() ) {
+    if ( !this.enabled() ) {
       removeSetOperators();
     }
     

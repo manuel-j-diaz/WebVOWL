@@ -5,8 +5,8 @@ module.exports = function (){
   var filter = {},
     nodes,
     properties,
-    // According to the specification enabled by default
-    enabled = true,
+    // Hidden by default (unchecked); check to show
+    enabled = false,
     filteredNodes,
     filteredProperties;
   
@@ -20,7 +20,7 @@ module.exports = function (){
     nodes = untouchedNodes;
     properties = untouchedProperties;
     
-    if ( this.enabled() ) {
+    if ( !this.enabled() ) {
       removeDisjointWithProperties();
     }
     

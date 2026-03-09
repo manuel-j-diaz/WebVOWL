@@ -3054,14 +3054,14 @@ module.exports = function ( graphContainerSelector ){
     // check for duplicate triple in the element;
     
     
-    if ( typeString === "owl:objectProperty" && graph.options().objectPropertyFilter().enabled() === true ) {
+    if ( typeString === "owl:objectProperty" && graph.options().objectPropertyFilter().enabled() === false ) {
       graph.options().warningModule().showWarning("Warning",
         "Object properties are filtered out in the visualization!",
         "Element not created!", 1, false);
       return false;
     }
     
-    if ( typeString === "owl:disjointWith" && graph.options().disjointPropertyFilter().enabled() === true ) {
+    if ( typeString === "owl:disjointWith" && graph.options().disjointPropertyFilter().enabled() === false ) {
       graph.options().warningModule().showWarning("Warning",
         "owl:disjointWith properties are filtered out in the visualization!",
         "Element not created!", 1, false);
@@ -3201,7 +3201,7 @@ module.exports = function ( graphContainerSelector ){
     // random postion issues;
     clearTimeout(nodeFreezer);
     // tells user when element is filtered out
-    if ( graph.options().datatypeFilter().enabled() === true ) {
+    if ( graph.options().datatypeFilter().enabled() === false ) {
       graph.options().warningModule().showWarning("Warning",
         "Datatype properties are filtered out in the visualization!",
         "Element not created!", 1, false);
