@@ -46,21 +46,21 @@ module.exports = function (){
   
   function setColorsForExternals( elements ){
     var iriMap = mapExternalsToBaseUri(elements);
-    var entries = iriMap.entries();
-    
-    var colorScale = d3.scale.linear()
+    var entries = Array.from(iriMap.entries());
+
+    var colorScale = d3.scaleLinear()
       .domain([0, entries.length - 1])
       .range(_.find(COLOR_MODES, { type: colorModeType }).range)
       .interpolate(d3.interpolateHsl);
-    
+
     for ( var i = 0; i < entries.length; i++ ) {
-      var groupedElements = entries[i].value;
+      var groupedElements = entries[i][1];
       setBackgroundColorForElements(groupedElements, colorScale(i));
     }
   }
   
   function mapExternalsToBaseUri( elements ){
-    var map = d3.map();
+    var map = new Map();
     
     elements.forEach(function ( element ){
       var baseIri = element.baseIri();

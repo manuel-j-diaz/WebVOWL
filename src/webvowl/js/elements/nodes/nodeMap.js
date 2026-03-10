@@ -15,8 +15,9 @@ nodes.push(require("./implementations/RdfsLiteral"));
 nodes.push(require("./implementations/RdfsResource"));
 nodes.push(require("./implementations/OwlNamedIndividual"));
 
-var map = d3.map(nodes, function ( Prototype ){
-  return new Prototype().type();
+var map = new Map();
+nodes.forEach(function ( Prototype ){
+  map.set(new Prototype().type(), Prototype);
 });
 
 module.exports = function (){

@@ -1,5 +1,17 @@
 var unescape = require("lodash/unescape");
 
+function xhrRequest(url, mimeType, callback) {
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", url, true);
+  if (mimeType) xhr.setRequestHeader("Accept", mimeType);
+  xhr.onload = function() {
+    if (xhr.status >= 200 && xhr.status < 300) callback(null, xhr);
+    else callback(xhr, null);
+  };
+  xhr.onerror = function() { callback(xhr, null); };
+  xhr.send();
+}
+
 module.exports = function ( graph ){
   
   var ontologyMenu = {},
@@ -307,7 +319,7 @@ module.exports = function ( graph ){
   };
   
   function getLoadingStatusOnceCallBacked( callback, parameter ){
-    d3.xhr("loadingStatus?sessionId=" + conversion_sessionId, "application/text", function ( error, request ){
+    xhrRequest("loadingStatus?sessionId=" + conversion_sessionId, "application/text", function ( error, request ){
       if ( error ) {
         console.log("ontologyMenu getLoadingStatusOnceCallBacked throws error");
         console.log("---------Error -----------");
@@ -321,7 +333,7 @@ module.exports = function ( graph ){
   }
   
   function getLoadingStatusTimeLooped(){
-    d3.xhr("loadingStatus?sessionId=" + conversion_sessionId, "application/text", function ( error, request ){
+    xhrRequest("loadingStatus?sessionId=" + conversion_sessionId, "application/text", function ( error, request ){
       if ( error ) {
         console.log("ontologyMenu getLoadingStatusTimeLooped throws error");
         console.log("---------Error -----------");
@@ -346,7 +358,7 @@ module.exports = function ( graph ){
   }
   
   function callbackUpdateLoadingMessage( msg ){
-    d3.xhr("loadingStatus", "application/text", function ( error, request ){
+    xhrRequest("loadingStatus", "application/text", function ( error, request ){
       if ( request !== undefined ) {
         setLoadingStatusInfo(request.responseText + "<br>" + msg);
       } else {
@@ -365,7 +377,7 @@ module.exports = function ( graph ){
     var localThreadId = parameter[2];
     stopTimer = false;
     timedLoadingStatusLogger();
-    d3.xhr(relativePath, "application/json", function ( error, request ){
+    xhrRequest(relativePath, "application/json", function ( error, request ){
       var loadingSuccessful = !error;
       // check if error occurred or responseText is empty
       if ( (error !== null && error.status === 500) || (request && request.responseText.length === 0) ) {
@@ -439,7 +451,7 @@ module.exports = function ( graph ){
     var local_conversionId = parameter[2];
     stopTimer = false;
     timedLoadingStatusLogger();
-    d3.xhr(relativePath, "application/json", function ( error, request ){
+    xhrRequest(relativePath, "application/json", function ( error, request ){
       var loadingSuccessful = !error;
       // check if error occurred or responseText is empty
       if ( (error !== null && error.status === 500) || (request && request.responseText.length === 0) ) {
@@ -595,7 +607,7 @@ module.exports = function ( graph ){
     if ( id ) {
       local_id = id;
     }
-    d3.xhr("conversionDone?sessionId=" + local_id, "application/text", function ( error, request ){
+    xhrRequest("conversionDone?sessionId=" + local_id, "application/text", function ( error, request ){
       if ( error ) {
         console.log("ontologyMenu conversionFinished throws error");
         console.log("---------Error -----------");

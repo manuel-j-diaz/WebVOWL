@@ -76,9 +76,7 @@ module.exports = function ( graph ){
     var cY = 0.49 * (dY + rY);
     // put position there;
     Range_dragger.parent.labelElement().x = cX;
-    Range_dragger.parent.labelElement().px = cX;
     Range_dragger.parent.labelElement().y = cY;
-    Range_dragger.parent.labelElement().py = cY;
     
   };
   
@@ -165,14 +163,14 @@ module.exports = function ( graph ){
     ];
     
     
-    var lineFunction = d3.svg.line()
+    var lineFunction = d3.line()
       .x(function ( d ){
         return d.x;
       })
       .y(function ( d ){
         return d.y;
       })
-      .interpolate("basis-closed");
+      .curve(d3.curveBasisClosed);
     var pathData = "M 61,40 C 41,15 41,-15 61,-40 L 1,0 Z";
     
     Range_dragger.nodeElement = Range_dragger.rootNodeLayer.append('path').attr("d", pathData);

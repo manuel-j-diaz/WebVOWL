@@ -8,7 +8,7 @@
  */
 module.exports = function ( graph ){
   var layout = {},
-    hierarchyEnabled = false,
+    hierarchyEnabled = true,
     pinnedNodes = [];
 
   // Defaults — kept here so hierarchyLayout.js stays self-contained if options are unavailable.
@@ -82,12 +82,13 @@ module.exports = function ( graph ){
     };
 
     // --- First pass: determine the widest level so we can size the canvas ---
-    var tempTree = d3.layout.tree().size([1, 1]);
-    var tempNodes = tempTree.nodes(treeData);
+    var tempTree = d3.tree().size([1, 1]);
+    var tempRoot = tempTree(d3.hierarchy(treeData, function ( d ){ return d.children; }));
+    var tempNodes = tempRoot.descendants();
 
     var depthCounts = {};
     tempNodes.forEach(function ( n ){
-      if ( n.iri === VIRTUAL_ROOT ) return;
+      if ( n.data.iri === VIRTUAL_ROOT ) return;
       depthCounts[n.depth] = (depthCounts[n.depth] || 0) + 1;
     });
 
@@ -106,8 +107,9 @@ module.exports = function ( graph ){
       "treeWidth:", treeWidth, "treeHeight:", treeHeight);
 
     // --- Second pass: actual layout at computed size ---
-    var tree = d3.layout.tree().size([treeWidth, treeHeight]);
-    var treeNodes = tree.nodes(treeData);
+    var tree = d3.tree().size([treeWidth, treeHeight]);
+    var treeRoot = tree(d3.hierarchy(treeData, function ( d ){ return d.children; }));
+    var treeNodes = treeRoot.descendants();
 
     // Center the tree around the SVG origin (0, 0)
     var halfWidth  = treeWidth  / 2;
@@ -116,8 +118,8 @@ module.exports = function ( graph ){
     var noPinnedFn = 0, noClassNode = 0, skippedThing = 0;
 
     treeNodes.forEach(function ( tNode ){
-      if ( tNode.iri === VIRTUAL_ROOT ) return;
-      var classNode = nodeIndex[tNode.iri];
+      if ( tNode.data.iri === VIRTUAL_ROOT ) return;
+      var classNode = nodeIndex[tNode.data.iri];
       if ( !classNode ) { noClassNode++; return; }
       // owl:Thing floats as a force node — not pinned
       if ( classNode.type && classNode.type() === "owl:Thing" ) { skippedThing++; return; }
@@ -125,26 +127,23 @@ module.exports = function ( graph ){
       // Verify pinned() exists before calling
       if ( typeof classNode.pinned !== "function" ) {
         noPinnedFn++;
-        console.warn("[hierarchy] node has no pinned() fn:", tNode.iri, classNode);
+        console.warn("[hierarchy] node has no pinned() fn:", tNode.data.iri, classNode);
         // Fallback: set fixed directly
         classNode.x  = tNode.x - halfWidth;
         classNode.y  = tNode.y - halfHeight;
-        classNode.px = classNode.x;
-        classNode.py = classNode.y;
-        classNode.fixed = true;
+        classNode.fx = classNode.x;
+        classNode.fy = classNode.y;
         pinnedNodes.push(classNode);
         return;
       }
 
       classNode.x  = tNode.x - halfWidth;   // center horizontally
       classNode.y  = tNode.y - halfHeight;  // center vertically
-      classNode.px = classNode.x;
-      classNode.py = classNode.y;
       classNode.pinned(true);
 
-      // Verify fixed was actually set
-      if ( !classNode.fixed ) {
-        console.warn("[hierarchy] pinned(true) did NOT set fixed=true for:", tNode.iri, classNode);
+      // Verify fx was actually set
+      if ( classNode.fx == null ) {
+        console.warn("[hierarchy] pinned(true) did NOT set fx for:", tNode.data.iri, classNode);
       }
 
       pinnedNodes.push(classNode);
@@ -155,7 +154,7 @@ module.exports = function ( graph ){
       "| noPinnedFn:", noPinnedFn, "| noClassNode:", noClassNode, "| skippedThing:", skippedThing);
     pinnedNodes.slice(0, 3).forEach(function ( n ){
       console.log("[hierarchy] sample pinned node:", n.iri ? n.iri() : "?",
-        "x:", n.x, "y:", n.y, "fixed:", n.fixed,
+        "x:", n.x, "y:", n.y, "fx:", n.fx,
         "pinned():", typeof n.pinned === "function" ? n.pinned() : "N/A",
         "frozen():", typeof n.frozen === "function" ? n.frozen() : "N/A");
     });

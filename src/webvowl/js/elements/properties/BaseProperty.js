@@ -650,10 +650,10 @@ module.exports = (function (){
         myWidth = Math.min(that.getMyWidth(), graph.options().maxLabelWidth());
         shapeElement.transition().tween("attr", function (){
         })
-          .ease('linear')
+          .ease(d3.easeLinear)
           .duration(100)
-          .attr({ x: -myWidth / 2, y: -h / 2, width: myWidth, height: h })
-          .each("end", function (){
+          .attr("x", -myWidth / 2).attr("y", -h / 2).attr("width", myWidth).attr("height", h)
+          .on("end", function (){
             that.updateTextElement();
           });
       } else {
@@ -662,9 +662,9 @@ module.exports = (function (){
         that.updateTextElement();
         shapeElement.transition().tween("attr", function (){
         })
-          .ease('linear')
+          .ease(d3.easeLinear)
           .duration(100)
-          .attr({ x: -myWidth / 2, y: -h / 2, width: myWidth, height: h });
+          .attr("x", -myWidth / 2).attr("y", -h / 2).attr("width", myWidth).attr("height", h);
       }
       if ( that.pinned() === true && pinGroupElement ) {
         var dx = -0.5 * myWidth + 10,
@@ -673,7 +673,7 @@ module.exports = (function (){
           .tween("attr.translate", function (){
           })
           .attr("transform", "translate(" + dx + "," + dy + ")")
-          .ease('linear')
+          .ease(d3.easeLinear)
           .duration(100);
       }
     };

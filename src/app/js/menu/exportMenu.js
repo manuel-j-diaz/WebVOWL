@@ -782,23 +782,22 @@ module.exports = function ( graph ){
       .attr("download", jsonExportFileName);
   }
   
-  var curveFunction = d3.svg.line()
+  var curveFunction = d3.line()
     .x(function ( d ){
       return d.x;
     })
     .y(function ( d ){
       return d.y;
     })
-    .interpolate("cardinal");
-  var loopFunction = d3.svg.line()
+    .curve(d3.curveCardinal);
+  var loopFunction = d3.line()
     .x(function ( d ){
       return d.x;
     })
     .y(function ( d ){
       return d.y;
     })
-    .interpolate("cardinal")
-    .tension(-1);
+    .curve(d3.curveCardinal.tension(-1));
   
   function exportTex(){
     var zoom = graph.scaleFactor();

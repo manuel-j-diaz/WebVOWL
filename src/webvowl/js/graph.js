@@ -11,14 +11,14 @@ module.exports = function ( graphContainerSelector ){
   var graph = {},
     CARDINALITY_HDISTANCE = 20,
     CARDINALITY_VDISTANCE = 10,
-    curveFunction = d3.svg.line()
+    curveFunction = d3.line()
       .x(function ( d ){
         return d.x;
       })
       .y(function ( d ){
         return d.y;
       })
-      .interpolate("cardinal"),
+      .curve(d3.curveCardinal),
     options = require("./options")(),
     parser = require("./parser")(graph),
     language = "default",
@@ -47,6 +47,7 @@ module.exports = function ( graphContainerSelector ){
     force,
     dragBehaviour,
     zoomFactor = 1.0,
+    programmaticZoom = false,
     centerGraphViewOnLoad = false,
     transformAnimation = false,
     graphTranslation = [0, 0],
@@ -57,7 +58,7 @@ module.exports = function ( graphContainerSelector ){
     locationId = 0,
     defaultZoom = 1.0,
     defaultTargetZoom = 0.8,
-    global_dof = -1,
+    global_dof = 0,
     touchDevice = false,
     last_touch_time,
     originalD3_dblClickFunction = null,
@@ -174,21 +175,31 @@ module.exports = function ( graphContainerSelector ){
           return transform(pos_intp(t), cx, cy);
         };
       })
-      .each("end", function (){
+      .on("end", function (){
         graphContainer.attr("transform", "translate(" + graphTranslation + ")scale(" + zoomFactor + ")");
-        zoom.translate(graphTranslation);
-        zoom.scale(zoomFactor);
+        programmaticZoom = true;
+        d3.select(".vowlGraph").call(zoom.transform,
+          d3.zoomIdentity.translate(graphTranslation[0], graphTranslation[1]).scale(zoomFactor));
+        programmaticZoom = false;
         graph.options().zoomSlider().updateZoomSliderValue(zoomFactor);
       });
   };
-  
-  
+
+
   graph.setZoom = function ( value ){
-    zoom.scale(value);
+    zoomFactor = value;
+    programmaticZoom = true;
+    d3.select(".vowlGraph").call(zoom.transform,
+      d3.zoomIdentity.translate(graphTranslation[0], graphTranslation[1]).scale(value));
+    programmaticZoom = false;
   };
-  
+
   graph.setTranslation = function ( translation ){
-    zoom.translate([translation[0], translation[1]]);
+    graphTranslation = [translation[0], translation[1]];
+    programmaticZoom = true;
+    d3.select(".vowlGraph").call(zoom.transform,
+      d3.zoomIdentity.translate(translation[0], translation[1]).scale(zoomFactor));
+    programmaticZoom = false;
   };
   
   graph.options = function (){
@@ -223,14 +234,16 @@ module.exports = function ( graphContainerSelector ){
     
     options.graphContainerSelector(graphContainerSelector);
     var moved = false;
-    force = d3.layout.force()
-      .on("tick", hiddenRecalculatePositions);
+    force = d3.forceSimulation()
+      .force("link", d3.forceLink())
+      .on("tick", hiddenRecalculatePositions)
+      .stop();
     
-    dragBehaviour = d3.behavior.drag()
-      .origin(function ( d ){
+    dragBehaviour = d3.drag()
+      .subject(function ( d ){
         return d;
       })
-      .on("dragstart", function ( d ){
+      .on("start", function ( d ){
         d3.event.sourceEvent.stopPropagation(); // Prevent panning
         graph.ignoreOtherHoverEvents(true);
         if ( d.type && d.type() === "Class_dragger" ) {
@@ -306,9 +319,9 @@ module.exports = function ( graphContainerSelector ){
         }
         
         else {
-          d.px = d3.event.x;
-          d.py = d3.event.y;
-          force.resume();
+          d.fx = d3.event.x;
+          d.fy = d3.event.y;
+          force.alpha(0.3).restart();
           updateHaloRadius();
           moved = true;
           if ( d.renderType && d.renderType() === "round" ) {
@@ -317,7 +330,7 @@ module.exports = function ( graphContainerSelector ){
           
         }
       })
-      .on("dragend", function ( d ){
+      .on("end", function ( d ){
         graph.ignoreOtherHoverEvents(false);
         if ( d.type && d.type() === "Class_dragger" ) {
           var nX = classDragger.x;
@@ -412,8 +425,7 @@ module.exports = function ( graphContainerSelector ){
       });
     
     // Apply the zooming factor.
-    zoom = d3.behavior.zoom()
-      .duration(150)
+    zoom = d3.zoom()
       .scaleExtent([options.minMagnification(), options.maxMagnification()])
       .on("zoom", zoomed);
     
@@ -451,7 +463,7 @@ module.exports = function ( graphContainerSelector ){
       return;
     }
     if ( updateRenderingDuringSimulation === false ) {
-      var value = 1.0 - 10 * force.alpha();
+      var value = 1.0 - force.alpha();
       var percent = parseInt(200 * value) + "%";
       graph.options().loadingModule().setPercentValue(percent);
       d3.select("#progressBarValue").style("width", percent);
@@ -475,7 +487,7 @@ module.exports = function ( graphContainerSelector ){
         
         if ( initialLoad ) {
           if ( graph.paused() === false )
-            force.resume(); // resume force
+            force.alpha(0.3).restart(); // resume force
           initialLoad = false;
           
         }
@@ -541,7 +553,7 @@ module.exports = function ( graphContainerSelector ){
     var diff = now - then;
     var fps = (1000 / (diff)).toFixed(2);
     
-    debugContainer.node().innerHTML = "FPS: " + fps + "<br>" + "Nodes: " + force.nodes().length + "<br>" + "Links: " + force.links().length;
+    debugContainer.node().innerHTML = "FPS: " + fps + "<br>" + "Nodes: " + force.nodes().length + "<br>" + "Links: " + (force.force("link") ? force.force("link").links().length : 0);
     then = Date.now();
     
   }
@@ -813,12 +825,14 @@ module.exports = function ( graphContainerSelector ){
   /** Adjusts the containers current scale and position. */
   function zoomed(){
     if ( forceNotZooming === true ) {
-      zoom.translate(graphTranslation);
-      zoom.scale(zoomFactor);
+      programmaticZoom = true;
+      d3.select(".vowlGraph").call(zoom.transform,
+        d3.zoomIdentity.translate(graphTranslation[0], graphTranslation[1]).scale(zoomFactor));
+      programmaticZoom = false;
       return;
     }
-    
-    
+
+    if ( programmaticZoom ) return;
     var zoomEventByMWheel = false;
     if ( d3.event.sourceEvent ) {
       if ( d3.event.sourceEvent.deltaY ) zoomEventByMWheel = true;
@@ -827,33 +841,29 @@ module.exports = function ( graphContainerSelector ){
       if ( transformAnimation === true ) {
         return;
       }
-      zoomFactor = d3.event.scale;
-      graphTranslation = d3.event.translate;
+      zoomFactor = d3.event.transform.k;
+      graphTranslation = [d3.event.transform.x, d3.event.transform.y];
       graphContainer.attr("transform", "translate(" + graphTranslation + ")scale(" + zoomFactor + ")");
       updateHaloRadius();
       graph.options().zoomSlider().updateZoomSliderValue(zoomFactor);
       return;
     }
     /** animate the transition **/
-    zoomFactor = d3.event.scale;
-    graphTranslation = d3.event.translate;
+    zoomFactor = d3.event.transform.k;
+    graphTranslation = [d3.event.transform.x, d3.event.transform.y];
     graphContainer.transition()
       .tween("attr.translate", function (){
         return function ( t ){
           transformAnimation = true;
-          var tr = d3.transform(graphContainer.attr("transform"));
-          graphTranslation[0] = tr.translate[0];
-          graphTranslation[1] = tr.translate[1];
-          zoomFactor = tr.scale[0];
           updateHaloRadius();
           graph.options().zoomSlider().updateZoomSliderValue(zoomFactor);
         };
       })
-      .each("end", function (){
+      .on("end", function (){
         transformAnimation = false;
       })
       .attr("transform", "translate(" + graphTranslation + ")scale(" + zoomFactor + ")")
-      .ease('linear')
+      .ease(d3.easeLinear)
       .duration(250);
   }// end of zoomed function
   
@@ -1205,7 +1215,7 @@ module.exports = function ( graphContainerSelector ){
     if ( graph.options().loadingModule().successfullyLoadedOntology() === false ) {
       force.stop();
     } else {
-      force.start();
+      force.alpha(1).restart();
     }
   };
   
@@ -1224,9 +1234,6 @@ module.exports = function ( graphContainerSelector ){
       if ( label.property().x && label.property().y ) {
         label.x = label.property().x;
         label.y = label.property().y;
-        // also set the prev position of the label
-        label.px = label.x;
-        label.py = label.y;
       }
     }
     graph.update();
@@ -1237,7 +1244,7 @@ module.exports = function ( graphContainerSelector ){
     // -- experimental ;
     quick_refreshGraphData();
     updateNodeMap();
-    force.start();
+    force.alpha(1).restart();
     redrawContent();
     graph.updatePulseIds(nodeArrayForPulse);
     refreshGraphStyle();
@@ -1324,21 +1331,21 @@ module.exports = function ( graphContainerSelector ){
       }
     }
 
-    // DEBUG: snapshot fixed counts after hierarchy apply, before force.start()
+    // DEBUG: snapshot fixed counts after hierarchy apply, before force.alpha(1).restart()
     if ( hierarchyLayout && hierarchyLayout.enabled() ) {
-      var afterApply = force.nodes().filter(function(n){ return n.fixed; }).length;
+      var afterApply = force.nodes().filter(function(n){ return n.fx != null; }).length;
       console.log("[graph.update] after hierarchy.apply: fixed nodes =", afterApply, "/ total =", force.nodes().length);
     }
 
     // update node map
     updateNodeMap();
 
-    force.start();
+    force.alpha(1).restart();
 
-    // DEBUG: snapshot fixed counts after force.start()
+    // DEBUG: snapshot fixed counts after force.alpha(1).restart()
     if ( hierarchyLayout && hierarchyLayout.enabled() ) {
-      var afterStart = force.nodes().filter(function(n){ return n.fixed; }).length;
-      console.log("[graph.update] after force.start(): fixed nodes =", afterStart, "/ total =", force.nodes().length);
+      var afterStart = force.nodes().filter(function(n){ return n.fx != null; }).length;
+      console.log("[graph.update] after force.alpha(1).restart(): fixed nodes =", afterStart, "/ total =", force.nodes().length);
     }
 
     redrawContent();
@@ -1347,14 +1354,14 @@ module.exports = function ( graphContainerSelector ){
 
     // DEBUG: snapshot fixed counts after refreshGraphStyle()
     if ( hierarchyLayout && hierarchyLayout.enabled() ) {
-      var afterStyle = force.nodes().filter(function(n){ return n.fixed; }).length;
+      var afterStyle = force.nodes().filter(function(n){ return n.fx != null; }).length;
       var pinnedCount = force.nodes().filter(function(n){ return typeof n.pinned === "function" && n.pinned(); }).length;
       console.log("[graph.update] after refreshGraphStyle(): fixed nodes =", afterStyle,
         "| pinned()=true nodes =", pinnedCount, "| paused =", paused);
       // Sample first 3 fixed nodes
-      force.nodes().filter(function(n){ return n.fixed; }).slice(0,3).forEach(function(n){
+      force.nodes().filter(function(n){ return n.fx != null; }).slice(0,3).forEach(function(n){
         console.log("[graph.update] fixed node:", n.iri ? n.iri() : n.id,
-          "fixed:", n.fixed, "pinned():", typeof n.pinned==="function"?n.pinned():"N/A",
+          "fx:", n.fx, "pinned():", typeof n.pinned==="function"?n.pinned():"N/A",
           "frozen():", typeof n.frozen==="function"?n.frozen():"N/A");
       });
     }
@@ -1376,8 +1383,12 @@ module.exports = function ( graphContainerSelector ){
     // computing initial translation for the graph due tue the dynamic default zoom level
     var tx = w - defaultZoom * w;
     var ty = h - defaultZoom * h;
-    zoom.translate([tx, ty])
-      .scale(defaultZoom);
+    graphTranslation = [tx, ty];
+    zoomFactor = defaultZoom;
+    programmaticZoom = true;
+    d3.select(".vowlGraph").call(zoom.transform,
+      d3.zoomIdentity.translate(tx, ty).scale(defaultZoom));
+    programmaticZoom = false;
   };
   
   
@@ -1404,16 +1415,18 @@ module.exports = function ( graphContainerSelector ){
           return transform(pos_intp(t), cx, cy);
         };
       })
-      .each("end", function (){
+      .on("end", function (){
         graphContainer.attr("transform", "translate(" + graphTranslation + ")scale(" + zoomFactor + ")");
-        zoom.translate(graphTranslation);
-        zoom.scale(zoomFactor);
+        programmaticZoom = true;
+        d3.select(".vowlGraph").call(zoom.transform,
+          d3.zoomIdentity.translate(graphTranslation[0], graphTranslation[1]).scale(zoomFactor));
+        programmaticZoom = false;
         updateHaloRadius();
         options.zoomSlider().updateZoomSliderValue(zoomFactor);
       });
-    
+
   };
-  
+
   graph.zoomIn = function (){
     var minMag = options.minMagnification(),
       maxMag = options.maxMagnification();
@@ -1435,17 +1448,19 @@ module.exports = function ( graphContainerSelector ){
           return transform(pos_intp(t), cx, cy);
         };
       })
-      .each("end", function (){
+      .on("end", function (){
         graphContainer.attr("transform", "translate(" + graphTranslation + ")scale(" + zoomFactor + ")");
-        zoom.translate(graphTranslation);
-        zoom.scale(zoomFactor);
+        programmaticZoom = true;
+        d3.select(".vowlGraph").call(zoom.transform,
+          d3.zoomIdentity.translate(graphTranslation[0], graphTranslation[1]).scale(zoomFactor));
+        programmaticZoom = false;
         updateHaloRadius();
         options.zoomSlider().updateZoomSliderValue(zoomFactor);
       });
-    
-    
+
+
   };
-  
+
   /** --------------------------------------------------------- **/
   /** -- data related handling                               -- **/
   /** --------------------------------------------------------- **/
@@ -1552,7 +1567,9 @@ module.exports = function ( graphContainerSelector ){
     force.stop();
     
     force.nodes([]);
-    force.links([]);
+    if ( force.force("link") ) {
+      force.force("link").links([]);
+    }
     nodeArrayForPulse = [];
     pulseNodeIds = [];
     locationId = 0;
@@ -1629,8 +1646,8 @@ module.exports = function ( graphContainerSelector ){
           force.on("tick", recalculatePositions);
         }
       }
-      
-      force.start();
+
+      force.alpha(1).restart();
     } else {
       force.stop();
       graph.options().ontologyMenu().append_bulletPoint("Failed to load ontology");
@@ -1796,8 +1813,8 @@ module.exports = function ( graphContainerSelector ){
     var d3Nodes = [].concat(classNodes).concat(labelNodes);
     setPositionOfOldLabelsOnNewLabels(force.nodes(), labelNodes);
     
-    force.nodes(d3Nodes)
-      .links(d3Links);
+    force.nodes(d3Nodes);
+    force.force("link").links(d3Links);
   }
   
   // The label nodes are positioned randomly, because they are created from scratch if the data changes and lose
@@ -1809,8 +1826,6 @@ module.exports = function ( graphContainerSelector ){
         if ( oldNode.equals(labelNode) ) {
           labelNode.x = oldNode.x;
           labelNode.y = oldNode.y;
-          labelNode.px = oldNode.px;
-          labelNode.py = oldNode.py;
           break;
         }
       }
@@ -1821,20 +1836,29 @@ module.exports = function ( graphContainerSelector ){
   function refreshGraphStyle(){
     zoom = zoom.scaleExtent([options.minMagnification(), options.maxMagnification()]);
     if ( graphContainer ) {
-      zoom.event(graphContainer);
+      programmaticZoom = true;
+      d3.select(".vowlGraph").call(zoom.transform,
+        d3.zoomIdentity.translate(graphTranslation[0], graphTranslation[1]).scale(zoomFactor));
+      programmaticZoom = false;
     }
-    
-    force.charge(function ( element ){
+
+    var w = options.width(), h = options.height(), grav = options.gravity();
+    var chargeFn = function ( element ){
       var charge = options.charge();
       if ( elementTools.isLabel(element) ) {
         charge *= 0.8;
       }
       return charge;
-    })
-      .size([options.width(), options.height()])
-      .linkDistance(calculateLinkPartDistance)
-      .gravity(options.gravity())
-      .linkStrength(options.linkStrength()); // Flexibility of links
+    };
+
+    force.force("charge", d3.forceManyBody().strength(chargeFn))
+      .force("x", d3.forceX(w / 2).strength(grav))
+      .force("y", d3.forceY(h / 2).strength(grav));
+
+    var linkForce = force.force("link");
+    if ( linkForce ) {
+      linkForce.distance(calculateLinkPartDistance).strength(options.linkStrength());
+    }
     
     force.nodes().forEach(function ( n ){
       n.frozen(paused);
@@ -2142,8 +2166,10 @@ module.exports = function ( graphContainerSelector ){
     graphTranslation = [(cx - p[0] * zoomFactor), (cy - p[1] * zoomFactor)];
     updateHaloRadius();
     // update the values in case the user wants to break the animation
-    zoom.translate(graphTranslation);
-    zoom.scale(zoomFactor);
+    programmaticZoom = true;
+    d3.select(".vowlGraph").call(zoom.transform,
+      d3.zoomIdentity.translate(graphTranslation[0], graphTranslation[1]).scale(zoomFactor));
+    programmaticZoom = false;
     graph.options().zoomSlider().updateZoomSliderValue(zoomFactor);
     return "translate(" + graphTranslation[0] + "," + graphTranslation[1] + ")scale(" + zoomFactor + ")";
   }
@@ -2179,10 +2205,12 @@ module.exports = function ( graphContainerSelector ){
           return transform(pos_intp(t), cx, cy);
         };
       })
-      .each("end", function (){
+      .on("end", function (){
         graphContainer.attr("transform", "translate(" + graphTranslation + ")scale(" + zoomFactor + ")");
-        zoom.translate(graphTranslation);
-        zoom.scale(zoomFactor);
+        programmaticZoom = true;
+        d3.select(".vowlGraph").call(zoom.transform,
+          d3.zoomIdentity.translate(graphTranslation[0], graphTranslation[1]).scale(zoomFactor));
+        programmaticZoom = false;
         updateHaloRadius();
       });
   }
@@ -2553,17 +2581,19 @@ module.exports = function ( graphContainerSelector ){
           return transform(pos_intp(t), cx, cy);
         };
       })
-      .each("end", function (){
+      .on("end", function (){
         if ( dynamic ) {
           return;
         }
-        
+
         graphContainer.attr("transform", "translate(" + graphTranslation + ")scale(" + zoomFactor + ")");
-        zoom.translate(graphTranslation);
-        zoom.scale(zoomFactor);
+        programmaticZoom = true;
+        d3.select(".vowlGraph").call(zoom.transform,
+          d3.zoomIdentity.translate(graphTranslation[0], graphTranslation[1]).scale(zoomFactor));
+        programmaticZoom = false;
         graph.options().zoomSlider().updateZoomSliderValue(zoomFactor);
-        
-        
+
+
       });
   };
   
@@ -2870,9 +2900,11 @@ module.exports = function ( graphContainerSelector ){
   };
   
   function createLowerCasePrototypeMap( prototypeMap ){
-    return d3.map(prototypeMap.values(), function ( Prototype ){
-      return new Prototype().type().toLowerCase();
+    var newMap = new Map();
+    prototypeMap.forEach(function ( Prototype ){
+      newMap.set(new Prototype().type().toLowerCase(), Prototype);
     });
+    return newMap;
   }
   
   function createNewNodeAtPosition( pos ){
@@ -2893,8 +2925,6 @@ module.exports = function ( graphContainerSelector ){
     }
     aNode.x = pos.x;
     aNode.y = pos.y;
-    aNode.px = aNode.x;
-    aNode.py = aNode.y;
     aNode.id("Class" + eN++);
     // aNode.paused(true);
     
@@ -3566,8 +3596,10 @@ module.exports = function ( graphContainerSelector ){
         //graph.modified_dblClickFunction();
         d3.event.preventDefault();
         d3.event.stopPropagation();
-        zoom.translate(graphTranslation);
-        zoom.scale(zoomFactor);
+        programmaticZoom = true;
+        d3.select(".vowlGraph").call(zoom.transform,
+          d3.zoomIdentity.translate(graphTranslation[0], graphTranslation[1]).scale(zoomFactor));
+        programmaticZoom = false;
         graph.modified_dblTouchFunction();
       }
       else {
