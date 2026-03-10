@@ -15,3 +15,7 @@
   ```
   docker compose build --no-cache && docker compose up -d
   ```
+
+## Code Intelligence
+
+- Prefer LSP tools (goToDefinition, findReferences, documentSymbol, workspaceSymbol, hover) over grep/search for navigating and understanding code

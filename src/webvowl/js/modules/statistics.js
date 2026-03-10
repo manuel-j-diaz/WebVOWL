@@ -50,16 +50,16 @@ module.exports = function (){
   function storeTotalCounts( classesAndDatatypes, properties ){
     nodeCount = classesAndDatatypes.length;
     
-    var seenProperties = require("../util/set")(), i, l, property;
+    var seenPropertyIds = new Set(), i, l, property;
     for ( i = 0, l = properties.length; i < l; i++ ) {
       property = properties[i];
-      if ( !seenProperties.has(property) ) {
+      if ( !seenPropertyIds.has(property.id()) ) {
         edgeCount += 1;
       }
-      
-      seenProperties.add(property);
+
+      seenPropertyIds.add(property.id());
       if ( property.inverse() ) {
-        seenProperties.add(property.inverse());
+        seenPropertyIds.add(property.inverse().id());
       }
     }
   }

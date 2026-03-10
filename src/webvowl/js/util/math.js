@@ -2,17 +2,11 @@
  * Contains a collection of mathematical functions with some additional data
  * used for WebVOWL.
  */
+var loopFunction = require("./lineGenerators").loopFunction;
+
 module.exports = (function (){
-  
-  var math = {},
-    loopFunction = d3.line()
-      .x(function ( d ){
-        return d.x;
-      })
-      .y(function ( d ){
-        return d.y;
-      })
-      .curve(d3.curveCardinal.tension(-1));
+
+  var math = {};
   
   
   /**

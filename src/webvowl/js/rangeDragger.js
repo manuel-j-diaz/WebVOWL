@@ -163,14 +163,6 @@ module.exports = function ( graph ){
     ];
     
     
-    var lineFunction = d3.line()
-      .x(function ( d ){
-        return d.x;
-      })
-      .y(function ( d ){
-        return d.y;
-      })
-      .curve(d3.curveBasisClosed);
     var pathData = "M 61,40 C 41,15 41,-15 61,-40 L 1,0 Z";
     
     Range_dragger.nodeElement = Range_dragger.rootNodeLayer.append('path').attr("d", pathData);

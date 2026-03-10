@@ -4,20 +4,13 @@ var elementTools = require("./util/elementTools")();
 // add some maps for nodes and properties -- used for object generation
 var nodePrototypeMap = require("./elements/nodes/nodeMap")();
 var propertyPrototypeMap = require("./elements/properties/propertyMap")();
+var curveFunction = require("./util/lineGenerators").curveFunction;
 
 
 module.exports = function ( graphContainerSelector ){
   var graph = {},
     CARDINALITY_HDISTANCE = 20,
     CARDINALITY_VDISTANCE = 10,
-    curveFunction = d3.line()
-      .x(function ( d ){
-        return d.x;
-      })
-      .y(function ( d ){
-        return d.y;
-      })
-      .curve(d3.curveCardinal),
     options = require("./options")(),
     parser = require("./parser")(graph),
     language = "default",
@@ -96,7 +89,6 @@ module.exports = function ( graphContainerSelector ){
     adjustingGraphSize = false,
     showReloadButtonAfterLayoutOptimization = false,
     zoom;
-  //var prefixModule=require("./prefixRepresentationModule")(graph);
   var hierarchyLayout = null;
   var NodePrototypeMap = createLowerCasePrototypeMap(nodePrototypeMap);
   var PropertyPrototypeMap = createLowerCasePrototypeMap(propertyPrototypeMap);
@@ -636,8 +628,6 @@ module.exports = function ( graphContainerSelector ){
         if ( link.property().focused() === true || hoveredPropertyElement !== undefined ) {
           rangeDragger.updateElement();
           domainDragger.updateElement();
-          // shadowClone.setPosition(link.property().range().x,link.property().range().y);
-          // shadowClone.setPositionDomain(link.property().domain().x,link.property().domain().y);
         }
       } else {
         label.linkDomainIntersection = math.calculateIntersection(link.label(), link.domain(), 0);
@@ -645,8 +635,6 @@ module.exports = function ( graphContainerSelector ){
         if ( link.property().focused() === true || hoveredPropertyElement !== undefined ) {
           rangeDragger.updateElement();
           domainDragger.updateElement();
-          // shadowClone.setPosition(link.property().range().x,link.property().range().y);
-          // shadowClone.setPositionDomain(link.property().domain().x,link.property().domain().y);
         }
         
       }
@@ -674,8 +662,6 @@ module.exports = function ( graphContainerSelector ){
       if ( l.property().focused() === true || hoveredPropertyElement !== undefined ) {
         domainDragger.updateElement();
         rangeDragger.updateElement();
-        // shadowClone.setPosition(l.property().range().x,l.property().range().y);
-        // shadowClone.setPositionDomain(l.property().domain().x,l.property().domain().y);
       }
       return curveFunction([pathStart, curvePoint, pathEnd]);
     });

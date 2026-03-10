@@ -782,22 +782,9 @@ module.exports = function ( graph ){
       .attr("download", jsonExportFileName);
   }
   
-  var curveFunction = d3.line()
-    .x(function ( d ){
-      return d.x;
-    })
-    .y(function ( d ){
-      return d.y;
-    })
-    .curve(d3.curveCardinal);
-  var loopFunction = d3.line()
-    .x(function ( d ){
-      return d.x;
-    })
-    .y(function ( d ){
-      return d.y;
-    })
-    .curve(d3.curveCardinal.tension(-1));
+  var lineGenerators = require("../../../webvowl/js/util/lineGenerators");
+  var curveFunction = lineGenerators.curveFunction;
+  var loopFunction = lineGenerators.loopFunction;
   
   function exportTex( event ){
     var zoom = graph.scaleFactor();

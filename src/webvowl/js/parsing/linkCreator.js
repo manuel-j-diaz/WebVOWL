@@ -36,24 +36,24 @@ module.exports = (function (){
   function groupPropertiesToLinks( properties ){
     var links = [],
       property,
-      addedProperties = require("../util/set")();
-    
+      addedProperties = new Set();
+
     for ( var i = 0, l = properties.length; i < l; i++ ) {
       property = properties[i];
-      
-      if ( !addedProperties.has(property) ) {
+
+      if ( !addedProperties.has(property.id()) ) {
         var link = createLink(property);
-        
+
         property.link(link);
         if ( property.inverse() ) {
           property.inverse().link(link);
         }
-        
+
         links.push(link);
-        
-        addedProperties.add(property);
+
+        addedProperties.add(property.id());
         if ( property.inverse() ) {
-          addedProperties.add(property.inverse());
+          addedProperties.add(property.inverse().id());
         }
       }
     }

@@ -93,11 +93,11 @@ module.exports = function (){
         // Look only for subclass properties, because these are the relevant properties
         if ( elementTools.isRdfsSubClassOf(property) ) {
           var domain = property.domain();
-          visitedNodes = visitedNodes || require("../util/set")();
-          
+          visitedNodes = visitedNodes || new Set();
+
           // If we have the range, there might be a nested property on the domain
-          if ( node === property.range() && !visitedNodes.has(domain) ) {
-            visitedNodes.add(domain);
+          if ( node === property.range() && !visitedNodes.has(domain.id()) ) {
+            visitedNodes.add(domain.id());
             var nestedConnectedProperties = findRelevantConnectedProperties(domain, allProperties, visitedNodes);
             connectedProperties = connectedProperties.concat(nestedConnectedProperties);
           }
