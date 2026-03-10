@@ -217,7 +217,13 @@ module.exports = function ( graph ){
       graphSvgCode,
       escapedGraphSvgCode,
       dataURI;
-    
+
+    // Temporarily remove canvas-mode so SVG elements are visible for export
+    var wasCanvasMode = graph.options().useCanvasRenderer();
+    if ( wasCanvasMode ) {
+      d3.select(graph.options().graphContainerSelector()).classed("canvas-mode", false);
+    }
+
     // inline the styles, so that the exported svg code contains the css rules
     inlineVowlStyles();
     hideNonExportableElements();
@@ -241,6 +247,10 @@ module.exports = function ( graph ){
     // remove graphic styles for interaction to go back to normal
     removeVowlInlineStyles();
     showNonExportableElements();
+    // Restore canvas-mode class if it was active
+    if ( wasCanvasMode ) {
+      d3.select(graph.options().graphContainerSelector()).classed("canvas-mode", true);
+    }
     graph.lazyRefresh();
   }
   

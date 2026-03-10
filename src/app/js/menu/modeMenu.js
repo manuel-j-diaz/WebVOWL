@@ -51,6 +51,7 @@ module.exports = function ( graph ){
     var container = addModeItem(colorExternals, "colorexternals", "Color externals", "#colorExternalsOption", true);
     colorModeSwitch = addExternalModeSelection(container, colorExternals);
     addNamespaceColorsItem(namespaceColorModule);
+    addCanvasRenderItem();
   };
   function addNamespaceColorsItem( namespaceColorModule ){
     var container = d3.select("#namespaceColorsOption")
@@ -176,6 +177,28 @@ module.exports = function ( graph ){
     return moduleOptionContainer;
   }
   
+  function addCanvasRenderItem(){
+    var container = d3.select("#canvasRenderOption")
+      .append("div")
+      .classed("checkboxContainer", true);
+
+    var checkbox = container.append("input")
+      .classed("moduleCheckbox", true)
+      .attr("id", "canvasRenderModuleCheckbox")
+      .attr("type", "checkbox")
+      .property("checked", graph.options().useCanvasRenderer());
+
+    checkbox.on("click", function (){
+      var isEnabled = checkbox.property("checked");
+      graph.options().useCanvasRenderer(isEnabled);
+      graph.start();
+    });
+
+    container.append("label")
+      .attr("for", "canvasRenderModuleCheckbox")
+      .text("Canvas rendering");
+  }
+
   function addExternalModeSelection( container, colorExternalsMode ){
     var button = container.append("button").datum({ active: false }).classed("color-mode-switch", true);
     applyColorModeSwitchState(button, colorExternalsMode);

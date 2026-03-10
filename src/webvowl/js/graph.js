@@ -5,6 +5,7 @@ var elementTools = require("./util/elementTools")();
 var nodePrototypeMap = require("./elements/nodes/nodeMap")();
 var propertyPrototypeMap = require("./elements/properties/propertyMap")();
 var curveFunction = require("./util/lineGenerators").curveFunction;
+var CanvasRenderer = require("./rendering/canvasRenderer");
 
 
 module.exports = function ( graphContainerSelector ){
@@ -96,6 +97,8 @@ module.exports = function ( graphContainerSelector ){
   var rangeDragger = require("./rangeDragger")(graph);
   var domainDragger = require("./domainDragger")(graph);
   var shadowClone = require("./shadowClone")(graph);
+  var canvasRenderer = CanvasRenderer();
+  var canvasRenderPending = false;
   
   graph.math = function (){
     return math;
@@ -601,9 +604,12 @@ module.exports = function ( graphContainerSelector ){
 
 
       updateHaloRadius();
+      if ( options.useCanvasRenderer() ) {
+        graph.requestCanvasRender();
+      }
       return;
     }
-    
+
     // TODO: this is Editor redraw function // we need to make this faster!!
     
     
@@ -686,10 +692,13 @@ module.exports = function ( graphContainerSelector ){
     if ( hoveredPropertyElement ) {
       setDeleteHoverElementPositionProperty(hoveredPropertyElement);
     }
-    
+
     updateHaloRadius();
+    if ( options.useCanvasRenderer() ) {
+      graph.requestCanvasRender();
+    }
   }
-  
+
   graph.updatePropertyDraggerElements = function ( property ){
     if ( property.type() !== "owl:DatatypeProperty" ) {
       
@@ -831,21 +840,36 @@ module.exports = function ( graphContainerSelector ){
       graphContainer.attr("transform", "translate(" + graphTranslation + ")scale(" + zoomFactor + ")");
       updateHaloRadius();
       graph.options().zoomSlider().updateZoomSliderValue(zoomFactor);
+      if ( options.useCanvasRenderer() ) {
+        canvasRenderer.render(classNodes, labelNodes, links, properties, zoomFactor, graphTranslation, math);
+      }
       return;
     }
     /** animate the transition **/
+    var prevZoomFactor = zoomFactor;
+    var prevTranslation = graphTranslation.slice();
     zoomFactor = event.transform.k;
     graphTranslation = [event.transform.x, event.transform.y];
     graphContainer.transition()
       .tween("attr.translate", function (){
+        var interpZoom = d3.interpolateNumber(prevZoomFactor, zoomFactor);
+        var interpTx = d3.interpolateNumber(prevTranslation[0], graphTranslation[0]);
+        var interpTy = d3.interpolateNumber(prevTranslation[1], graphTranslation[1]);
         return function ( t ){
           transformAnimation = true;
           updateHaloRadius();
           graph.options().zoomSlider().updateZoomSliderValue(zoomFactor);
+          if ( options.useCanvasRenderer() ) {
+            canvasRenderer.render(classNodes, labelNodes, links, properties,
+              interpZoom(t), [interpTx(t), interpTy(t)], math);
+          }
         };
       })
       .on("end", function (){
         transformAnimation = false;
+        if ( options.useCanvasRenderer() ) {
+          canvasRenderer.render(classNodes, labelNodes, links, properties, zoomFactor, graphTranslation, math);
+        }
       })
       .attr("transform", "translate(" + graphTranslation + ")scale(" + zoomFactor + ")")
       .ease(d3.easeLinear)
@@ -854,7 +878,7 @@ module.exports = function ( graphContainerSelector ){
   
   function redrawGraph(){
     remove();
-    
+
     graphContainer = d3.selectAll(options.graphContainerSelector())
       .append("svg")
       .classed("vowlGraph", true)
@@ -862,6 +886,10 @@ module.exports = function ( graphContainerSelector ){
       .attr("height", options.height())
       .call(zoom)
       .append("g");
+
+    if ( options.useCanvasRenderer() ) {
+      canvasRenderer.setup(options.graphContainerSelector(), options.width(), options.height());
+    }
     // add touch and double click functions
     
     var svgGraph = d3.selectAll(".vowlGraph");
@@ -1161,13 +1189,18 @@ module.exports = function ( graphContainerSelector ){
     linkPathElements = linkGroups.selectAll("path");
     // Select the path for direct access to receive a better performance
     addClickEvents();
+
+    // Apply canvas-mode class so SVG elements become invisible when canvas is active
+    d3.select(options.graphContainerSelector())
+      .classed("canvas-mode", options.useCanvasRenderer());
   }
-  
+
   function remove(){
     if ( graphContainer ) {
       // Select the parent element because the graph container is a group (e.g. for zooming)
       d3.select(graphContainer.node().parentNode).remove();
     }
+    canvasRenderer.destroy();
   }
   
   initializeGraph(); // << call the initialization function
@@ -1179,6 +1212,20 @@ module.exports = function ( graphContainerSelector ){
       svgElement.attr("height", options.height());
       graphContainer.attr("transform", "translate(" + graphTranslation + ")scale(" + zoomFactor + ")");
     }
+    if ( options.useCanvasRenderer() ) {
+      canvasRenderer.resize(options.width(), options.height());
+    }
+  };
+
+  graph.requestCanvasRender = function (){
+    if ( !options.useCanvasRenderer() || canvasRenderPending ) return;
+    canvasRenderPending = true;
+    requestAnimationFrame(function (){
+      canvasRenderPending = false;
+      if ( options.useCanvasRenderer() ) {
+        canvasRenderer.render(classNodes, labelNodes, links, properties, zoomFactor, graphTranslation, math);
+      }
+    });
   };
   
   // Loads all settings, removes the old graph (if it exists) and draws a new one.

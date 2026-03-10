@@ -583,6 +583,13 @@ module.exports = function (){
     scaleNodesByIndividuals = p;
     return options;
   };
+
+  var useCanvasRenderer = false;
+  options.useCanvasRenderer = function ( p ){
+    if ( !arguments.length ) return useCanvasRenderer;
+    useCanvasRenderer = p;
+    return options;
+  };
   
   options.selectionModules = function ( p ){
     if ( !arguments.length ) return selectionModules;
