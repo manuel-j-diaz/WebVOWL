@@ -66,10 +66,10 @@ module.exports = function ( graph ){
 
     checkboxes.push(checkbox);
 
-    checkbox.on("click", function ( d, silent ){
+    checkbox.on("click", function ( eventOrDatum, datumOrSilent ){
       var isEnabled = checkbox.property("checked");
-      d.module.enabled(isEnabled);
-      if ( silent !== true ) {
+      namespaceColorModule.enabled(isEnabled);
+      if ( datumOrSilent !== true ) {
         graph.update();
       }
     });
@@ -159,10 +159,10 @@ module.exports = function ( graph ){
     // Store for easier resetting all modes
     checkboxes.push(moduleCheckbox);
     
-    moduleCheckbox.on("click", function ( d, silent ){
+    moduleCheckbox.on("click", function ( eventOrDatum, datumOrSilent ){
       var isEnabled = moduleCheckbox.property("checked");
-      d.module.enabled(isEnabled);
-      if ( updateGraphOnClick && silent !== true ) {
+      module.enabled(isEnabled);
+      if ( updateGraphOnClick && datumOrSilent !== true ) {
         graph.executeColorExternalsModule();
         graph.executeCompactNotationModule();
         graph.lazyRefresh();
