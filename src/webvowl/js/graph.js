@@ -97,6 +97,7 @@ module.exports = function ( graphContainerSelector ){
     showReloadButtonAfterLayoutOptimization = false,
     zoom;
   //var prefixModule=require("./prefixRepresentationModule")(graph);
+  var hierarchyLayout = null;
   var NodePrototypeMap = createLowerCasePrototypeMap(nodePrototypeMap);
   var PropertyPrototypeMap = createLowerCasePrototypeMap(propertyPrototypeMap);
   var classDragger = require("./classDragger")(graph);
@@ -584,15 +585,18 @@ module.exports = function ( graphContainerSelector ){
       
       // Set cardinality positions
       cardinalityElements.attr("transform", function ( property ){
-        
+        if ( !property.link() ) {
+          console.warn("[cardinality] property.link() undefined for", property.type && property.type(), property.id && property.id());
+          return null;
+        }
         var label = property.link().label(),
           pos = math.calculateIntersection(label, property.range(), CARDINALITY_HDISTANCE),
           normalV = math.calculateNormalVector(label, property.range(), CARDINALITY_VDISTANCE);
-        
+
         return "translate(" + (pos.x + normalV.x) + "," + (pos.y + normalV.y) + ")";
       });
-      
-      
+
+
       updateHaloRadius();
       return;
     }
@@ -667,14 +671,14 @@ module.exports = function ( graphContainerSelector ){
     
     // Set cardinality positions
     cardinalityElements.attr("transform", function ( property ){
-      
+      if ( !property.link() ) { return null; }
       var label = property.link().label(),
         pos = math.calculateIntersection(label, property.range(), CARDINALITY_HDISTANCE),
         normalV = math.calculateNormalVector(label, property.range(), CARDINALITY_VDISTANCE);
-      
+
       return "translate(" + (pos.x + normalV.x) + "," + (pos.y + normalV.y) + ")";
     });
-    
+
     if ( hoveredNodeElement ) {
       setDeleteHoverElementPosition(hoveredNodeElement);
       setAddDataPropertyHoverElementPosition(hoveredNodeElement);
@@ -1309,13 +1313,52 @@ module.exports = function ( graphContainerSelector ){
     
     keepDetailsCollapsedOnLoading = false;
     refreshGraphData();
+
+    // Apply/unapply hierarchy layout after filter pipeline, before force.start()
+    if ( hierarchyLayout ) {
+      if ( hierarchyLayout.enabled() ) {
+        hierarchyLayout.unapply();
+        hierarchyLayout.apply(classNodes, properties);
+      } else {
+        hierarchyLayout.unapply();
+      }
+    }
+
+    // DEBUG: snapshot fixed counts after hierarchy apply, before force.start()
+    if ( hierarchyLayout && hierarchyLayout.enabled() ) {
+      var afterApply = force.nodes().filter(function(n){ return n.fixed; }).length;
+      console.log("[graph.update] after hierarchy.apply: fixed nodes =", afterApply, "/ total =", force.nodes().length);
+    }
+
     // update node map
     updateNodeMap();
-    
+
     force.start();
+
+    // DEBUG: snapshot fixed counts after force.start()
+    if ( hierarchyLayout && hierarchyLayout.enabled() ) {
+      var afterStart = force.nodes().filter(function(n){ return n.fixed; }).length;
+      console.log("[graph.update] after force.start(): fixed nodes =", afterStart, "/ total =", force.nodes().length);
+    }
+
     redrawContent();
     graph.updatePulseIds(nodeArrayForPulse);
     refreshGraphStyle();
+
+    // DEBUG: snapshot fixed counts after refreshGraphStyle()
+    if ( hierarchyLayout && hierarchyLayout.enabled() ) {
+      var afterStyle = force.nodes().filter(function(n){ return n.fixed; }).length;
+      var pinnedCount = force.nodes().filter(function(n){ return typeof n.pinned === "function" && n.pinned(); }).length;
+      console.log("[graph.update] after refreshGraphStyle(): fixed nodes =", afterStyle,
+        "| pinned()=true nodes =", pinnedCount, "| paused =", paused);
+      // Sample first 3 fixed nodes
+      force.nodes().filter(function(n){ return n.fixed; }).slice(0,3).forEach(function(n){
+        console.log("[graph.update] fixed node:", n.iri ? n.iri() : n.id,
+          "fixed:", n.fixed, "pinned():", typeof n.pinned==="function"?n.pinned():"N/A",
+          "frozen():", typeof n.frozen==="function"?n.frozen():"N/A");
+      });
+    }
+
     updateHaloStyles();
   };
   
@@ -3425,6 +3468,10 @@ module.exports = function ( graphContainerSelector ){
     property = null;
   };
   
+  graph.setHierarchyLayout = function ( layout ){
+    hierarchyLayout = layout;
+  };
+
   graph.executeColorExternalsModule = function (){
     options.colorExternalsModule().filter(unfilteredData.nodes, unfilteredData.properties);
   };

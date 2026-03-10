@@ -34,7 +34,16 @@ tools.isProperty = function ( element ){
 };
 
 tools.isObjectProperty = function ( element ){
-  return element instanceof ObjectProperty;
+  // OwlObjectProperty is the base case. The OWL property characteristics
+  // (Functional, InverseFunctional, Symmetric, Transitive) are also object
+  // properties semantically, but their JS classes inherit from BaseProperty
+  // directly rather than from OwlObjectProperty, so instanceof alone misses them.
+  if ( element instanceof ObjectProperty ) return true;
+  var t = element.type ? element.type() : null;
+  return t === "owl:FunctionalProperty" ||
+    t === "owl:InverseFunctionalProperty" ||
+    t === "owl:SymmetricProperty" ||
+    t === "owl:TransitiveProperty";
 };
 
 tools.isDatatypeProperty = function ( element ){

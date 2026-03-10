@@ -34,6 +34,8 @@ module.exports = function ( graph ){
     options.charge(untouchedOptions.charge());
     options.gravity(untouchedOptions.gravity());
     options.linkStrength(untouchedOptions.linkStrength());
+    options.nodeSeparation(untouchedOptions.nodeSeparation());
+    options.levelSeparation(untouchedOptions.levelSeparation());
     graph.reset();
     
     resettableModules.forEach(function ( module ){

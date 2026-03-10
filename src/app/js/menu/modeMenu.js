@@ -37,7 +37,7 @@ module.exports = function ( graph ){
   /**
    * Connects the website with the available graph modes.
    */
-  modeMenu.setup = function ( pickAndPin, nodeScaling, compactNotation, colorExternals ){
+  modeMenu.setup = function ( pickAndPin, nodeScaling, compactNotation, colorExternals, namespaceColorModule ){
     var menuEntry = d3.select("#m_modes");
     menuEntry.on("mouseover", function (){
       var searchMenu = graph.options().searchMenu();
@@ -50,7 +50,35 @@ module.exports = function ( graph ){
     addModeItem(compactNotation, "compactnotation", "Compact notation", "#compactNotationOption", true);
     var container = addModeItem(colorExternals, "colorexternals", "Color externals", "#colorExternalsOption", true);
     colorModeSwitch = addExternalModeSelection(container, colorExternals);
+    addNamespaceColorsItem(namespaceColorModule);
   };
+  function addNamespaceColorsItem( namespaceColorModule ){
+    var container = d3.select("#namespaceColorsOption")
+      .append("div")
+      .classed("checkboxContainer", true)
+      .datum({ module: namespaceColorModule, defaultState: namespaceColorModule.enabled() });
+
+    var checkbox = container.append("input")
+      .classed("moduleCheckbox", true)
+      .attr("id", "namespaceColorsModuleCheckbox")
+      .attr("type", "checkbox")
+      .property("checked", namespaceColorModule.enabled());
+
+    checkboxes.push(checkbox);
+
+    checkbox.on("click", function ( d, silent ){
+      var isEnabled = checkbox.property("checked");
+      d.module.enabled(isEnabled);
+      if ( silent !== true ) {
+        graph.update();
+      }
+    });
+
+    container.append("label")
+      .attr("for", "namespaceColorsModuleCheckbox")
+      .text("Namespace colors");
+  }
+
   function addCheckBoxD( identifier, modeName, selector, onChangeFunc, updateLvl ){
     var moduleOptionContainer = d3.select(selector)
       .append("div")

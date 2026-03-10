@@ -42,7 +42,7 @@ module.exports = function ( graph ){
    * @param setOperatorFilter filter for all set operators with properties
    * @param nodeDegreeFilter filters nodes by their degree
    */
-  filterMenu.setup = function ( datatypeFilter, objectPropertyFilter, subclassFilter, disjointFilter, setOperatorFilter, nodeDegreeFilter ){
+  filterMenu.setup = function ( datatypeFilter, objectPropertyFilter, subclassFilter, disjointFilter, setOperatorFilter, nodeDegreeFilter, individualsFilter ){
     // TODO: is this here really necessarry? << new menu visualization style?
     menuControl.on("mouseover", function (){
       var searchMenu = graph.options().searchMenu();
@@ -57,8 +57,10 @@ module.exports = function ( graph ){
     addFilterItem(subclassFilter, "subclass", "Solitary subclasses", "#subclassFilteringOption");
     addFilterItem(disjointFilter, "disjoint", "Class disjointness", "#disjointFilteringOption");
     addFilterItem(setOperatorFilter, "setoperator", "Set operators", "#setOperatorFilteringOption");
-    
+
     addNodeDegreeFilter(nodeDegreeFilter, nodeDegreeContainer);
+    addFilterItem(individualsFilter, "individuals", "Individuals (ABox)", "#individualsFilteringOption");
+    addCollapseThresholdSlider(individualsFilter, d3.select("#individualsCollapseOption"));
     addAnimationFinishedListener();
   };
   
@@ -156,6 +158,52 @@ module.exports = function ( graph ){
     });
   }
   
+  function addCollapseThresholdSlider( individualsFilter, container ){
+    var sliderContainer = container.append("div")
+      .classed("distanceSliderContainer", true);
+
+    var collapseSlider = sliderContainer.append("input")
+      .attr("id", "individualsCollapseSlider")
+      .attr("type", "range")
+      .attr("min", 0)
+      .attr("max", 50)
+      .attr("step", 1)
+      .property("value", 0);
+
+    sliderContainer.append("label")
+      .classed("description", true)
+      .attr("for", "individualsCollapseSlider")
+      .text("Collapse threshold");
+
+    var sliderValueLabel = sliderContainer.append("label")
+      .classed("value", true)
+      .attr("for", "individualsCollapseSlider")
+      .text(0);
+
+    collapseSlider.on("input", function (){
+      sliderValueLabel.text(collapseSlider.property("value"));
+    });
+
+    collapseSlider.on("change", function (){
+      individualsFilter.collapseThreshold(+collapseSlider.property("value"));
+      graph.update();
+    });
+
+    collapseSlider.on("wheel", function (){
+      var wheelEvent = d3.event;
+      var offset = wheelEvent.deltaY < 0 ? 1 : -1;
+      var oldVal = +collapseSlider.property("value");
+      var newVal = Math.max(0, Math.min(50, oldVal + offset));
+      if ( oldVal !== newVal ) {
+        collapseSlider.property("value", newVal);
+        collapseSlider.on("input")();
+        individualsFilter.collapseThreshold(newVal);
+        graph.update();
+      }
+      d3.event.preventDefault();
+    });
+  }
+
   function handleWheelEvent(){
     var wheelEvent = d3.event;
     
