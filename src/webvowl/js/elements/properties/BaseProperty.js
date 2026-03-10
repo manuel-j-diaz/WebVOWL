@@ -760,27 +760,25 @@ module.exports = (function (){
       txtNode.value = that.labelForCurrentLanguage();
       txtNode.focus();
       txtNode.select();
-      if ( d3.event.stopPropagation ) d3.event.stopPropagation();
-      if ( d3.event.sourceEvent && d3.event.sourceEvent.stopPropagation ) d3.event.sourceEvent.stopPropagation();
-      
+
       // add some events that relate to this object
-      editText.on("click", function (){
-        if ( d3.event.stopPropagation ) d3.event.stopPropagation();
-        if ( d3.event.sourceEvent && d3.event.sourceEvent.stopPropagation ) d3.event.sourceEvent.stopPropagation();
-        
+      editText.on("click", function ( event ){
+        if ( event.stopPropagation ) event.stopPropagation();
+        if ( event.sourceEvent && event.sourceEvent.stopPropagation ) event.sourceEvent.stopPropagation();
+
       });
       // // remove hover Events for now;
-      editText.on("mouseout", function (){
-        if ( d3.event.stopPropagation ) d3.event.stopPropagation();
-        if ( d3.event.sourceEvent && d3.event.sourceEvent.stopPropagation ) d3.event.sourceEvent.stopPropagation();
+      editText.on("mouseout", function ( event ){
+        if ( event.stopPropagation ) event.stopPropagation();
+        if ( event.sourceEvent && event.sourceEvent.stopPropagation ) event.sourceEvent.stopPropagation();
       });
-      editText.on("mousedown", function (){
-        if ( d3.event.stopPropagation ) d3.event.stopPropagation();
-        if ( d3.event.sourceEvent && d3.event.sourceEvent.stopPropagation ) d3.event.sourceEvent.stopPropagation();
+      editText.on("mousedown", function ( event ){
+        if ( event.stopPropagation ) event.stopPropagation();
+        if ( event.sourceEvent && event.sourceEvent.stopPropagation ) event.sourceEvent.stopPropagation();
       })
-        .on("keydown", function (){
-          
-          if ( d3.event.keyCode === 13 ) {
+        .on("keydown", function ( event ){
+
+          if ( event.keyCode === 13 ) {
             this.blur();
             that.frozen(false); // << releases the not after selection
             that.locked(false);

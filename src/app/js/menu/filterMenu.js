@@ -189,8 +189,8 @@ module.exports = function ( graph ){
       graph.update();
     });
 
-    collapseSlider.on("wheel", function (){
-      var wheelEvent = d3.event;
+    collapseSlider.on("wheel", function ( event ){
+      var wheelEvent = event;
       var offset = wheelEvent.deltaY < 0 ? 1 : -1;
       var oldVal = +collapseSlider.property("value");
       var newVal = Math.max(0, Math.min(50, oldVal + offset));
@@ -200,12 +200,12 @@ module.exports = function ( graph ){
         individualsFilter.collapseThreshold(newVal);
         graph.update();
       }
-      d3.event.preventDefault();
+      event.preventDefault();
     });
   }
 
-  function handleWheelEvent(){
-    var wheelEvent = d3.event;
+  function handleWheelEvent( event ){
+    var wheelEvent = event;
     
     var offset;
     if ( wheelEvent.deltaY < 0 ) offset = 1;
@@ -220,9 +220,9 @@ module.exports = function ( graph ){
       degreeSlider.on("input")();// <<-- sets the text value
       graph.update();
     }
-    d3.event.preventDefault();
+    event.preventDefault();
   }
-  
+
   function setSliderValue( slider, value ){
     slider.property("value", value).on("input")();
   }

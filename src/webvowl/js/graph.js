@@ -1,4 +1,3 @@
-var _ = require("lodash/core");
 var math = require("./util/math")();
 var linkCreator = require("./parsing/linkCreator")();
 var elementTools = require("./util/elementTools")();
@@ -240,11 +239,11 @@ module.exports = function ( graphContainerSelector ){
       .stop();
     
     dragBehaviour = d3.drag()
-      .subject(function ( d ){
+      .subject(function ( event, d ){
         return d;
       })
-      .on("start", function ( d ){
-        d3.event.sourceEvent.stopPropagation(); // Prevent panning
+      .on("start", function ( event, d ){
+        event.sourceEvent.stopPropagation(); // Prevent panning
         graph.ignoreOtherHoverEvents(true);
         if ( d.type && d.type() === "Class_dragger" ) {
           classDragger.mouseButtonPressed = true;
@@ -300,27 +299,27 @@ module.exports = function ( graphContainerSelector ){
           moved = false;
         }
       })
-      .on("drag", function ( d ){
-        
+      .on("drag", function ( event, d ){
+
         if ( d.type && d.type() === "Class_dragger" ) {
           clearTimeout(delayedHider);
-          classDragger.setPosition(d3.event.x, d3.event.y);
+          classDragger.setPosition(event.x, event.y);
         } else if ( d.type && d.type() === "Range_dragger" ) {
           clearTimeout(delayedHider);
-          rangeDragger.setPosition(d3.event.x, d3.event.y);
-          shadowClone.setPosition(d3.event.x, d3.event.y);
-          domainDragger.updateElementViaRangeDragger(d3.event.x, d3.event.y);
+          rangeDragger.setPosition(event.x, event.y);
+          shadowClone.setPosition(event.x, event.y);
+          domainDragger.updateElementViaRangeDragger(event.x, event.y);
         }
         else if ( d.type && d.type() === "Domain_dragger" ) {
           clearTimeout(delayedHider);
-          domainDragger.setPosition(d3.event.x, d3.event.y);
-          shadowClone.setPositionDomain(d3.event.x, d3.event.y);
-          rangeDragger.updateElementViaDomainDragger(d3.event.x, d3.event.y);
+          domainDragger.setPosition(event.x, event.y);
+          shadowClone.setPositionDomain(event.x, event.y);
+          rangeDragger.updateElementViaDomainDragger(event.x, event.y);
         }
         
         else {
-          d.fx = d3.event.x;
-          d.fy = d3.event.y;
+          d.fx = event.x;
+          d.fy = event.y;
           force.alpha(0.3).restart();
           updateHaloRadius();
           moved = true;
@@ -330,7 +329,7 @@ module.exports = function ( graphContainerSelector ){
           
         }
       })
-      .on("end", function ( d ){
+      .on("end", function ( event, d ){
         graph.ignoreOtherHoverEvents(false);
         if ( d.type && d.type() === "Class_dragger" ) {
           var nX = classDragger.x;
@@ -725,40 +724,40 @@ module.exports = function ( graphContainerSelector ){
   };
   
   function addClickEvents(){
-    function executeModules( selectedElement ){
+    function executeModules( selectedElement, currentEvent ){
       options.selectionModules().forEach(function ( module ){
-        module.handle(selectedElement);
+        module.handle(selectedElement, undefined, currentEvent);
       });
     }
-    
-    nodeElements.on("click", function ( clickedNode ){
-      
+
+    nodeElements.on("click", function ( event, clickedNode ){
+
       // manaual double clicker // helper for iphone 6 etc...
-      if ( touchDevice === true && doubletap() === true ) {
-        d3.event.stopPropagation();
+      if ( touchDevice === true && doubletap(event) === true ) {
+        event.stopPropagation();
         if ( editMode === true ) {
           clickedNode.raiseDoubleClickEdit(defaultIriValue(clickedNode));
         }
       }
       else {
-        executeModules(clickedNode);
+        executeModules(clickedNode, event);
       }
     });
-    
-    nodeElements.on("dblclick", function ( clickedNode ){
-      
-      d3.event.stopPropagation();
+
+    nodeElements.on("dblclick", function ( event, clickedNode ){
+
+      event.stopPropagation();
       if ( editMode === true ) {
         clickedNode.raiseDoubleClickEdit(defaultIriValue(clickedNode));
       }
     });
     
-    labelGroupElements.selectAll(".label").on("click", function ( clickedProperty ){
-      executeModules(clickedProperty);
-      
+    labelGroupElements.selectAll(".label").on("click", function ( event, clickedProperty ){
+      executeModules(clickedProperty, event);
+
       // this is for enviroments that do not define dblClick function;
-      if ( touchDevice === true && doubletap() === true ) {
-        d3.event.stopPropagation();
+      if ( touchDevice === true && doubletap(event) === true ) {
+        event.stopPropagation();
         if ( editMode === true ) {
           clickedProperty.raiseDoubleClickEdit(defaultIriValue(clickedProperty));
         }
@@ -804,8 +803,8 @@ module.exports = function ( graphContainerSelector ){
       //      }
       //  }
     });
-    labelGroupElements.selectAll(".label").on("dblclick", function ( clickedProperty ){
-      d3.event.stopPropagation();
+    labelGroupElements.selectAll(".label").on("dblclick", function ( event, clickedProperty ){
+      event.stopPropagation();
       if ( editMode === true ) {
         clickedProperty.raiseDoubleClickEdit(defaultIriValue(clickedProperty));
       }
@@ -823,7 +822,7 @@ module.exports = function ( graphContainerSelector ){
   }
   
   /** Adjusts the containers current scale and position. */
-  function zoomed(){
+  function zoomed( event ){
     if ( forceNotZooming === true ) {
       programmaticZoom = true;
       d3.select(".vowlGraph").call(zoom.transform,
@@ -834,23 +833,23 @@ module.exports = function ( graphContainerSelector ){
 
     if ( programmaticZoom ) return;
     var zoomEventByMWheel = false;
-    if ( d3.event.sourceEvent ) {
-      if ( d3.event.sourceEvent.deltaY ) zoomEventByMWheel = true;
+    if ( event.sourceEvent ) {
+      if ( event.sourceEvent.deltaY ) zoomEventByMWheel = true;
     }
     if ( zoomEventByMWheel === false ) {
       if ( transformAnimation === true ) {
         return;
       }
-      zoomFactor = d3.event.transform.k;
-      graphTranslation = [d3.event.transform.x, d3.event.transform.y];
+      zoomFactor = event.transform.k;
+      graphTranslation = [event.transform.x, event.transform.y];
       graphContainer.attr("transform", "translate(" + graphTranslation + ")scale(" + zoomFactor + ")");
       updateHaloRadius();
       graph.options().zoomSlider().updateZoomSliderValue(zoomFactor);
       return;
     }
     /** animate the transition **/
-    zoomFactor = d3.event.transform.k;
-    graphTranslation = [d3.event.transform.x, d3.event.transform.y];
+    zoomFactor = event.transform.k;
+    graphTranslation = [event.transform.x, event.transform.y];
     graphContainer.transition()
       .tween("attr.translate", function (){
         return function ( t ){
@@ -1701,7 +1700,7 @@ module.exports = function ( graphContainerSelector ){
     }
     // update more meta OBJECT
     // Initialize filters with data to replicate consecutive filtering
-    var initializationData = _.clone(unfilteredData);
+    var initializationData = Object.assign({}, unfilteredData);
     options.filterModules().forEach(function ( module ){
       initializationData = filterFunction(module, initializationData, true);
     });
@@ -1746,7 +1745,7 @@ module.exports = function ( graphContainerSelector ){
     graph.executeEmptyLiteralFilter();
     options.literalFilter().enabled(shouldExecuteEmptyFilter);
     
-    var preprocessedData = _.clone(unfilteredData);
+    var preprocessedData = Object.assign({}, unfilteredData);
     
     // Filter the data
     options.filterModules().forEach(function ( module ){
@@ -3554,27 +3553,27 @@ module.exports = function ( graphContainerSelector ){
     return touchDevice;
   };
   
-  graph.modified_dblClickFunction = function (){
-    
-    d3.event.stopPropagation();
-    d3.event.preventDefault();
+  graph.modified_dblClickFunction = function ( event ){
+
+    event.stopPropagation();
+    event.preventDefault();
     // get position where we want to add the node;
-    var grPos = getClickedScreenCoords(d3.event.clientX, d3.event.clientY, graph.translation(), graph.scaleFactor());
+    var grPos = getClickedScreenCoords(event.clientX, event.clientY, graph.translation(), graph.scaleFactor());
     createNewNodeAtPosition(grPos);
   };
   
-  function doubletap(){
-    var touch_time = d3.event.timeStamp;
+  function doubletap( event ){
+    var touch_time = event.timeStamp;
     var numTouchers = 1;
-    if ( d3.event && d3.event.touches && d3.event.touches.length )
-      numTouchers = d3.event.touches.length;
-    
+    if ( event && event.touches && event.touches.length )
+      numTouchers = event.touches.length;
+
     if ( touch_time - last_touch_time < 300 && numTouchers === 1 ) {
-      d3.event.stopPropagation();
+      event.stopPropagation();
       if ( editMode === true ) {
         //graph.modified_dblClickFunction();
-        d3.event.preventDefault();
-        d3.event.stopPropagation();
+        event.preventDefault();
+        event.stopPropagation();
         last_touch_time = touch_time;
         return true;
       }
@@ -3584,23 +3583,23 @@ module.exports = function ( graphContainerSelector ){
   }
   
   
-  function touchzoomed(){
+  function touchzoomed( event ){
     forceNotZooming = true;
-    
-    
-    var touch_time = d3.event.timeStamp;
-    if ( touch_time - last_touch_time < 300 && d3.event.touches.length === 1 ) {
-      d3.event.stopPropagation();
-      
+
+
+    var touch_time = event.timeStamp;
+    if ( touch_time - last_touch_time < 300 && event.touches.length === 1 ) {
+      event.stopPropagation();
+
       if ( editMode === true ) {
         //graph.modified_dblClickFunction();
-        d3.event.preventDefault();
-        d3.event.stopPropagation();
+        event.preventDefault();
+        event.stopPropagation();
         programmaticZoom = true;
         d3.select(".vowlGraph").call(zoom.transform,
           d3.zoomIdentity.translate(graphTranslation[0], graphTranslation[1]).scale(zoomFactor));
         programmaticZoom = false;
-        graph.modified_dblTouchFunction();
+        graph.modified_dblTouchFunction(event);
       }
       else {
         forceNotZooming = false;
@@ -3616,12 +3615,12 @@ module.exports = function ( graphContainerSelector ){
       originalD3_touchZoomFunction();
   }
   
-  graph.modified_dblTouchFunction = function ( d ){
-    d3.event.stopPropagation();
-    d3.event.preventDefault();
+  graph.modified_dblTouchFunction = function ( event ){
+    event.stopPropagation();
+    event.preventDefault();
     var xy;
     if ( editMode === true ) {
-      xy = d3.touches(d3.selectAll(".vowlGraph").node());
+      xy = d3.pointers(event, d3.selectAll(".vowlGraph").node());
     }
     var grPos = getClickedScreenCoords(xy[0][0], xy[0][1], graph.translation(), graph.scaleFactor());
     createNewNodeAtPosition(grPos);
@@ -3806,13 +3805,13 @@ module.exports = function ( graphContainerSelector ){
       hoveredNodeElement = undefined;
       deleteGroupElement.classed("hidden", false);
       setDeleteHoverElementPositionProperty(property, inversed);
-      deleteGroupElement.selectAll("*").on("click", function (){
+      deleteGroupElement.selectAll("*").on("click", function ( event ){
         if ( touchBehaviour && property.focused() === false ) {
           graph.options().focuserModule().handle(property);
           return;
         }
         graph.removePropertyViaEditor(property);
-        d3.event.stopPropagation();
+        event.stopPropagation();
       });
       classDragger.hideDragger(true);
       addDataPropertyGroupElement.classed("hidden", true);
@@ -3920,13 +3919,13 @@ module.exports = function ( graphContainerSelector ){
       setDeleteHoverElementPosition(node);
       
       
-      deleteGroupElement.selectAll("*").on("click", function (){
+      deleteGroupElement.selectAll("*").on("click", function ( event ){
         if ( touchBehaviour && node.focused() === false ) {
           graph.options().focuserModule().handle(node);
           return;
         }
         graph.removeNodeViaEditor(node);
-        d3.event.stopPropagation();
+        event.stopPropagation();
       })
         .on("mouseover", function (){
           editElementHoverOn(node, touchBehaviour);
@@ -3948,13 +3947,13 @@ module.exports = function ( graphContainerSelector ){
         classDragger.hideDragger(false);
         addDataPropertyGroupElement.classed("hidden", false);
         setAddDataPropertyHoverElementPosition(node);
-        addDataPropertyGroupElement.selectAll("*").on("click", function (){
+        addDataPropertyGroupElement.selectAll("*").on("click", function ( event ){
           if ( touchBehaviour && node.focused() === false ) {
             graph.options().focuserModule().handle(node);
             return;
           }
           graph.createDataTypeProperty(node);
-          d3.event.stopPropagation();
+          event.stopPropagation();
         })
           .on("mouseover", function (){
             editElementHoverOn(node, touchBehaviour);

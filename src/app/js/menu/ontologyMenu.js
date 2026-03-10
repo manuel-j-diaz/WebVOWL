@@ -1,4 +1,3 @@
-var unescape = require("lodash/unescape");
 
 function xhrRequest(url, mimeType, callback) {
   var xhr = new XMLHttpRequest();
@@ -28,10 +27,6 @@ module.exports = function ( graph ){
     loadingModule,
     loadOntologyFromText;
   var currentLoadedOntologyName = "";
-  
-  String.prototype.beginsWith = function ( string ){
-    return (this.indexOf(string) === 0);
-  };
   
   ontologyMenu.getLoadingFunction = function (){
     return loadOntologyFromText;
@@ -119,8 +114,8 @@ module.exports = function ( graph ){
   
   function setupUriListener(){
     // reload ontology when hash parameter gets changed manually
-    d3.select(window).on("hashchange", function (){
-      var oldURL = d3.event.oldURL, newURL = d3.event.newURL;
+    d3.select(window).on("hashchange", function ( event ){
+      var oldURL = event.oldURL, newURL = event.newURL;
       if ( oldURL !== newURL ) {
         // don't reload when just the hash parameter gets appended
         if ( newURL === oldURL + "#" ) {
@@ -214,12 +209,12 @@ module.exports = function ( graph ){
       keepOntologySelectionOpenShortly();
     });
     
-    d3.select("#iri-converter-form").on("submit", function (){
+    d3.select("#iri-converter-form").on("submit", function ( event ){
       var inputName = iriConverterInput.property("value");
       
       // remove first spaces
       var clearedName = inputName.replace(/%20/g, " ");
-      while ( clearedName.beginsWith(" ") ) {
+      while ( clearedName.startsWith(" ") ) {
         clearedName = clearedName.substr(1, clearedName.length);
       }
       // remove ending spaces
@@ -239,11 +234,11 @@ module.exports = function ( graph ){
         iriConverterInput.property("value", "");
         iriConverterInput.on("input")();
       }
-      d3.event.preventDefault();
+      event.preventDefault();
       return false;
     });
   }
-  
+
   function setupUploadButton(){
     var input = d3.select("#file-converter-input"),
       inputLabel = d3.select("#file-converter-label"),
@@ -621,10 +616,10 @@ module.exports = function ( graph ){
   function keepOntologySelectionOpenShortly(){
     // Events in the menu should not be considered
     var ontologySelection = d3.select("#select .toolTipMenu");
-    ontologySelection.on("click", function (){
-      d3.event.stopPropagation();
-    }).on("keydown", function (){
-      d3.event.stopPropagation();
+    ontologySelection.on("click", function ( event ){
+      event.stopPropagation();
+    }).on("keydown", function ( event ){
+      event.stopPropagation();
     });
     
     ontologySelection.style("display", "block");

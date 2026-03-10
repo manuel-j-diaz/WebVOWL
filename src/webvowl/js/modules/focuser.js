@@ -2,9 +2,9 @@ module.exports = function ( graph ){
   var focuser = {},
     focusedElement;
   var elementTools = webvowl.util.elementTools();
-  focuser.handle = function ( selectedElement, forced ){
+  focuser.handle = function ( selectedElement, forced, currentEvent ){
     // Don't display details on a drag event, which will be prevented
-    if ( d3.event && d3.event.defaultPrevented && forced === undefined ) {
+    if ( currentEvent && currentEvent.defaultPrevented && forced === undefined ) {
       return;
     }
     

@@ -50,9 +50,9 @@ module.exports = function ( graph ){
     });
     
     // add wheel event to the slider
-    slider.on("wheel", function (){
+    slider.on("wheel", function ( event ){
       if ( slider.node().disabled === true ) return;
-      var wheelEvent = d3.event;
+      var wheelEvent = event;
       var offset;
       if ( wheelEvent.deltaY < 0 ) offset = 10;
       if ( wheelEvent.deltaY > 0 ) offset = -10;
@@ -63,7 +63,7 @@ module.exports = function ( graph ){
         onChangeFunction(newSliderValue);
         slider.on("input")(); // << set text and update the graphStyles
       }
-      d3.event.preventDefault();
+      event.preventDefault();
     });
   }
   

@@ -1,5 +1,3 @@
-var _ = require("lodash/core");
-
 module.exports = function (){
   
   var DEFAULT_STATE = true;
@@ -50,7 +48,7 @@ module.exports = function (){
 
     var colorScale = d3.scaleLinear()
       .domain([0, entries.length - 1])
-      .range(_.find(COLOR_MODES, { type: colorModeType }).range)
+      .range(COLOR_MODES.find(function( m ) { return m.type === colorModeType; }).range)
       .interpolate(d3.interpolateHsl);
 
     for ( var i = 0; i < entries.length; i++ ) {

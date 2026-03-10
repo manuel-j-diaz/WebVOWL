@@ -1,4 +1,3 @@
-var _ = require("lodash/array");
 var elementTools = require("../util/elementTools")();
 
 module.exports = function (){
@@ -14,13 +13,13 @@ module.exports = function (){
     }
   };
   
-  pap.handle = function ( selection, forced ){
+  pap.handle = function ( selection, forced, currentEvent ){
     if ( !enabled ) {
       return;
     }
     
     if ( !forced ) {
-      if ( wasNotDragged() ) {
+      if ( wasNotDragged(currentEvent) ) {
         return;
       }
     }
@@ -38,12 +37,12 @@ module.exports = function (){
     }
   };
   
-  function wasNotDragged(){
-    return !d3.event.defaultPrevented;
+  function wasNotDragged( currentEvent ){
+    return !(currentEvent && currentEvent.defaultPrevented);
   }
-  
+
   function hasNoParallelProperties( property ){
-    return _.intersection(property.domain().links(), property.range().links()).length === 1;
+    return property.domain().links().filter(function( x ) { return property.range().links().indexOf(x) !== -1; }).length === 1;
   }
   
   pap.enabled = function ( p ){

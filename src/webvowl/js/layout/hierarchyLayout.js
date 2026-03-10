@@ -32,7 +32,6 @@ module.exports = function ( graph ){
     var subclassEdges = allProperties.filter(function ( p ){
       return p.type && p.type() === "rdfs:subClassOf";
     });
-    console.log("[hierarchy] classNodes:", classNodes.length, "subclassEdges:", subclassEdges.length);
 
     // Build parent → children index (IRI strings)
     var childrenOf = {};
@@ -58,11 +57,7 @@ module.exports = function ( graph ){
     var roots = classNodes.filter(function ( node ){
       return !hasParent[node.iri()];
     });
-    console.log("[hierarchy] roots:", roots.length);
     if ( roots.length === 0 || classNodes.length === 0 ) return;
-
-    var graphWidth  = Math.max(400, (graph.options().width()  || 800) - 80);
-    var graphHeight = Math.max(300, (graph.options().height() || 600) - 120);
 
     // Build tree data with cycle guard (shared visited across all roots)
     var visited = {};
@@ -99,12 +94,10 @@ module.exports = function ( graph ){
 
     var maxDepth = d3.max(tempNodes, function ( n ){ return n.depth; }) || 1;
 
-    // Scale canvas: at least NODE_SEPARATION px per node at the widest level
-    var treeWidth  = Math.max(graphWidth,  maxLevelWidth * NODE_SEPARATION);
-    var treeHeight = Math.max(graphHeight, maxDepth * LEVEL_SEPARATION);
+    // Scale canvas using slider values directly so both sliders have full effect
+    var treeWidth  = maxLevelWidth * NODE_SEPARATION;
+    var treeHeight = maxDepth * LEVEL_SEPARATION;
 
-    console.log("[hierarchy] maxLevelWidth:", maxLevelWidth, "maxDepth:", maxDepth,
-      "treeWidth:", treeWidth, "treeHeight:", treeHeight);
 
     // --- Second pass: actual layout at computed size ---
     var tree = d3.tree().size([treeWidth, treeHeight]);
@@ -127,7 +120,6 @@ module.exports = function ( graph ){
       // Verify pinned() exists before calling
       if ( typeof classNode.pinned !== "function" ) {
         noPinnedFn++;
-        console.warn("[hierarchy] node has no pinned() fn:", tNode.data.iri, classNode);
         // Fallback: set fixed directly
         classNode.x  = tNode.x - halfWidth;
         classNode.y  = tNode.y - halfHeight;
@@ -141,23 +133,10 @@ module.exports = function ( graph ){
       classNode.y  = tNode.y - halfHeight;  // center vertically
       classNode.pinned(true);
 
-      // Verify fx was actually set
-      if ( classNode.fx == null ) {
-        console.warn("[hierarchy] pinned(true) did NOT set fx for:", tNode.data.iri, classNode);
-      }
 
       pinnedNodes.push(classNode);
     });
 
-    // Sample first 3 pinned nodes for position/state verification
-    console.log("[hierarchy] pinned", pinnedNodes.length, "nodes",
-      "| noPinnedFn:", noPinnedFn, "| noClassNode:", noClassNode, "| skippedThing:", skippedThing);
-    pinnedNodes.slice(0, 3).forEach(function ( n ){
-      console.log("[hierarchy] sample pinned node:", n.iri ? n.iri() : "?",
-        "x:", n.x, "y:", n.y, "fx:", n.fx,
-        "pinned():", typeof n.pinned === "function" ? n.pinned() : "N/A",
-        "frozen():", typeof n.frozen === "function" ? n.frozen() : "N/A");
-    });
   };
 
   layout.unapply = function (){

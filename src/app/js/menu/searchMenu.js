@@ -24,10 +24,6 @@ module.exports = function ( graph ){
   var m_search = d3.select("#m_search"); // << dropdown container;
   
   
-  String.prototype.beginsWith = function ( string ){
-    return (this.indexOf(string) === 0);
-  };
-  
   searchMenu.requestDictionaryUpdate = function (){
     dictionaryUpdateRequired = true;
     // clear possible pre searched entries
@@ -166,15 +162,15 @@ module.exports = function ( graph ){
     handleAutoCompletion();
   }
   
-  function userNavigation(){
+  function userNavigation( event ){
     if ( dictionaryUpdateRequired ) {
       updateSearchDictionary();
     }
-    
+
     var htmlCollection = m_search.node().children;
     var numEntries = htmlCollection.length;
-    
-    
+
+
     var move = 0;
     var i;
     var selectedEntry = -1;
@@ -184,7 +180,7 @@ module.exports = function ( graph ){
         selectedEntry = i;
       }
     }
-    if ( d3.event.keyCode === 13 ) {
+    if ( event.keyCode === 13 ) {
       if ( selectedEntry >= 0 && selectedEntry < numEntries ) {
         // simulate onClick event
         htmlCollection[selectedEntry].onclick();
@@ -195,7 +191,7 @@ module.exports = function ( graph ){
         // check if input text ends or begins with with space
         // remove first spaces
         var clearedText = inputText.replace(/%20/g, " ");
-        while ( clearedText.beginsWith(" ") ) {
+        while ( clearedText.startsWith(" ") ) {
           clearedText = clearedText.substr(1, clearedText.length);
         }
         // remove ending spaces
@@ -216,11 +212,11 @@ module.exports = function ( graph ){
         }
       }
     }
-    if ( d3.event.keyCode === 38 ) {
+    if ( event.keyCode === 38 ) {
       move = -1;
       searchMenu.showSearchEntries();
     }
-    if ( d3.event.keyCode === 40 ) {
+    if ( event.keyCode === 40 ) {
       move = +1;
       searchMenu.showSearchEntries();
     }
