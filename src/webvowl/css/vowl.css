@@ -53,6 +53,18 @@
     /*fill: #36c;*/
 }
 
+/* ABox individual nodes */
+.individual {
+    fill: #fca;
+    stroke: #b74;
+}
+
+/* rdf:type edges (dashed is already handled by .dashed) */
+path.rdftype {
+    stroke: #b74;
+    opacity: 0.6;
+}
+
 path, .nofill {
     fill: none;
 }

@@ -8,6 +8,8 @@ module.exports = function (){
     charge = -500,
     gravity = 0.025,
     linkStrength = 1,
+    nodeSeparation = 150,
+    levelSeparation = 180,
     height = 600,
     width = 800,
     selectionModules = [],
@@ -549,6 +551,18 @@ module.exports = function (){
   options.loopDistance = function ( p ){
     if ( !arguments.length ) return loopDistance;
     loopDistance = p;
+    return options;
+  };
+
+  options.nodeSeparation = function ( p ){
+    if ( !arguments.length ) return nodeSeparation;
+    nodeSeparation = +p;
+    return options;
+  };
+
+  options.levelSeparation = function ( p ){
+    if ( !arguments.length ) return levelSeparation;
+    levelSeparation = +p;
     return options;
   };
   

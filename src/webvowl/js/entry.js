@@ -29,6 +29,8 @@ webvowl.modules.selectionDetailsDisplayer = require("./modules/selectionDetailsD
 webvowl.modules.setOperatorFilter = require("./modules/setOperatorFilter");
 webvowl.modules.statistics = require("./modules/statistics");
 webvowl.modules.subclassFilter = require("./modules/subclassFilter");
+webvowl.modules.individualsFilter = require("./modules/individualsFilter");
+webvowl.modules.namespaceColorModule = require("./modules/namespaceColorModule");
 
 
 webvowl.nodes = {};

@@ -11,6 +11,7 @@ properties.push(require("./implementations/OwlSomeValuesFromProperty"));
 properties.push(require("./implementations/OwlSymmetricProperty"));
 properties.push(require("./implementations/OwlTransitiveProperty"));
 properties.push(require("./implementations/RdfProperty"));
+properties.push(require("./implementations/RdfTypeProperty"));
 properties.push(require("./implementations/RdfsSubClassOf"));
 properties.push(require("./implementations/SetOperatorProperty"));
 

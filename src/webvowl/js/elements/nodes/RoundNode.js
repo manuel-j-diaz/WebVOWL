@@ -259,7 +259,7 @@ module.exports = (function (){
       if ( !graph.options().compactNotation() ) {
         textBlock.addSubText(that.indicationString());
       }
-      textBlock.addInstanceCount(that.individuals().length);
+      textBlock.addInstanceCount(that._individualsExpanded ? 0 : that.individuals().length);
       
       return textBlock;
     }

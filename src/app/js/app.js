@@ -44,7 +44,10 @@ module.exports = function (){
     selectionDetailDisplayer = webvowl.modules.selectionDetailsDisplayer(sidebar.updateSelectionInformation),
     statistics = webvowl.modules.statistics(),
     subclassFilter = webvowl.modules.subclassFilter(),
-    setOperatorFilter = webvowl.modules.setOperatorFilter();
+    setOperatorFilter = webvowl.modules.setOperatorFilter(),
+    individualsFilter = webvowl.modules.individualsFilter(graph),
+    namespaceColorModule = webvowl.modules.namespaceColorModule(),
+    hierarchyLayout = require("../../webvowl/js/layout/hierarchyLayout")(graph);
   
   
   app.getOptions = function (){
@@ -193,7 +196,8 @@ module.exports = function (){
     
     options.filterModules().push(emptyLiteralFilter);
     options.filterModules().push(statistics);
-    
+    options.filterModules().push(individualsFilter);
+
     options.filterModules().push(nodeDegreeFilter);
     options.filterModules().push(datatypeFilter);
     options.filterModules().push(objectPropertyFilter);
@@ -203,13 +207,15 @@ module.exports = function (){
     options.filterModules().push(nodeScalingSwitch);
     options.filterModules().push(compactNotationSwitch);
     options.filterModules().push(colorExternalsSwitch);
+    options.filterModules().push(namespaceColorModule);
     
     d3.select(window).on("resize", adjustSize);
     
     exportMenu.setup();
-    gravityMenu.setup();
-    filterMenu.setup(datatypeFilter, objectPropertyFilter, subclassFilter, disjointFilter, setOperatorFilter, nodeDegreeFilter);
-    modeMenu.setup(pickAndPin, nodeScalingSwitch, compactNotationSwitch, colorExternalsSwitch);
+    gravityMenu.setup(hierarchyLayout);
+    graph.setHierarchyLayout(hierarchyLayout);
+    filterMenu.setup(datatypeFilter, objectPropertyFilter, subclassFilter, disjointFilter, setOperatorFilter, nodeDegreeFilter, individualsFilter);
+    modeMenu.setup(pickAndPin, nodeScalingSwitch, compactNotationSwitch, colorExternalsSwitch, namespaceColorModule);
     pauseMenu.setup();
     sidebar.setup();
     loadingModule.setup();
