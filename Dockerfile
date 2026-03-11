@@ -3,14 +3,12 @@
 ###########
 
 # Stage 1: Build
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Install dependencies first for better layer caching.
-# --ignore-scripts skips the postinstall grunt release so we can copy
-# source files before building.
 COPY package.json ./
-RUN npm install --ignore-scripts --legacy-peer-deps
+RUN npm install --ignore-scripts
 
 # Copy source and build into deploy/
 COPY . .
