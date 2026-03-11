@@ -4,6 +4,7 @@ var elementTools = require("./util/elementTools")();
 // add some maps for nodes and properties -- used for object generation
 var nodePrototypeMap = require("./elements/nodes/nodeMap")();
 var propertyPrototypeMap = require("./elements/properties/propertyMap")();
+var RdfsSubClassOf = require("./elements/properties/implementations/RdfsSubClassOf");
 var curveFunction = require("./util/lineGenerators").curveFunction;
 var CanvasRenderer = require("./rendering/canvasRenderer");
 
@@ -1793,6 +1794,77 @@ module.exports = function ( graphContainerSelector ){
     setForceLayoutData(classNodes, labelNodes, links);
   }
   
+  // After the filter pipeline, synthesize transitive subclass edges to reconnect
+  // nodes whose intermediate ancestors were removed by degree/subclass filters.
+  function addTransitiveSubclassEdges(unfilteredData, filteredData) {
+    // Build parent map: childId → [parentNode, ...]
+    var parentMap = {};
+    unfilteredData.properties.forEach(function(p) {
+      if (p.type && p.type() === "rdfs:subClassOf" && p.domain() && p.range()) {
+        var childId = p.domain().id();
+        if (!parentMap[childId]) parentMap[childId] = [];
+        parentMap[childId].push(p.range());
+      }
+    });
+
+    // Build set of visible node IDs
+    var visibleIds = {};
+    filteredData.nodes.forEach(function(n) { visibleIds[n.id()] = n; });
+
+    // Build existing edge set to avoid duplicates (including originals)
+    var existingEdges = {};
+    filteredData.properties.forEach(function(p) {
+      if (p.type && p.type() === "rdfs:subClassOf" && p.domain() && p.range()) {
+        existingEdges[p.domain().id() + "→" + p.range().id()] = true;
+      }
+    });
+
+    // Walk up the unfiltered subclass chain to find nearest visible ancestor(s)
+    function findVisibleAncestors(nodeId, visited) {
+      if (visited[nodeId]) return [];
+      visited[nodeId] = true;
+      var parents = parentMap[nodeId] || [];
+      var result = [];
+      parents.forEach(function(parent) {
+        if (visibleIds[parent.id()]) {
+          result.push(parent);
+        } else {
+          var ancestors = findVisibleAncestors(parent.id(), visited);
+          result = result.concat(ancestors);
+        }
+      });
+      return result;
+    }
+
+    var transitiveProps = [];
+    var counter = 0;
+
+    filteredData.nodes.forEach(function(childNode) {
+      var parents = parentMap[childNode.id()] || [];
+      // Only act when at least one direct parent is hidden
+      var hasHiddenParent = parents.some(function(p) { return !visibleIds[p.id()]; });
+      if (!hasHiddenParent) return;
+
+      var ancestors = findVisibleAncestors(childNode.id(), {});
+      ancestors.forEach(function(ancestorNode) {
+        var key = childNode.id() + "→" + ancestorNode.id();
+        if (existingEdges[key]) return;
+        existingEdges[key] = true;
+
+        var prop = new RdfsSubClassOf(graph);
+        prop.id("transitive_subclass_" + counter++);
+        prop.domain(childNode);
+        prop.range(ancestorNode);
+        transitiveProps.push(prop);
+      });
+    });
+
+    if (transitiveProps.length > 0) {
+      filteredData.properties = filteredData.properties.concat(transitiveProps);
+    }
+    return filteredData;
+  }
+
   //Applies the data of the graph options object and parses it. The graph is not redrawn.
   function refreshGraphData(){
     var shouldExecuteEmptyFilter = options.literalFilter().enabled();
@@ -1805,6 +1877,8 @@ module.exports = function ( graphContainerSelector ){
     options.filterModules().forEach(function ( module ){
       preprocessedData = filterFunction(module, preprocessedData);
     });
+    // Reconnect nodes whose intermediate subclass ancestors were filtered out
+    preprocessedData = addTransitiveSubclassEdges(unfilteredData, preprocessedData);
     options.focuserModule().handle(undefined, true);
     classNodes = preprocessedData.nodes;
     properties = preprocessedData.properties;
