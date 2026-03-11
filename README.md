@@ -1,112 +1,129 @@
-# WebVOWL 
+# WebVOWL
 
-This repository forks and rehabilitates https://github.com/VisualDataWeb/WebVOWL to have modern dependencies and build systems, use Canvas, show ABox, include different layouts, come with OWL2VOWL, and read data from a SPARQL endpoint (optional).
+Fork of [WebVOWL](https://github.com/VisualDataWeb/WebVOWL), an OWL ontology visualizer, with a modernized stack and additional capabilities. This fork adds Canvas rendering, ABox visualization, multiple graph layouts, and optional SPARQL endpoint support. OWL2VOWL (the OWL→VOWL converter) ships as a bundled submodule — no separate install required. Runs fully locally or via Docker.
 
+## Quick Start
 
-## Run Using Docker
+### Path A — Docker (recommended)
 
-Make sure you have Docker installed and run the following commands from the project root.
+Docker gives you the full stack (nginx + OWL2VOWL sidecar) with no local Java or Node required at runtime. Fuseki integration is optional — you can load ontologies from URLs or files without it.
 
-The WebVOWL image is built from source using a multi-stage Docker build (Node 22 + Webpack) and served as static files via Nginx. OWL2VOWL is also built from source via a git submodule (user's fork). No pre-built binaries are downloaded.
-
-### Prerequisites
-
-1. **Initialize the submodule** (required on fresh clones):
+1. Initialize the submodule:
    ```
    git submodule update --init
    ```
-
-2. **Create the external Docker network** shared with other stacks (e.g. Fuseki).
-   The `--internal` flag blocks internet access — containers communicate only within the network:
-   ```
-   docker network create --internal semantic-web
-   ```
-   Ensure your Fuseki stack also joins this network.
-
-3. **Copy and configure environment variables**:
+2. Copy the env file (edit only if you're using Fuseki):
    ```
    cp .env.example .env
    ```
-   Edit `.env` — at minimum set `FUSEKI_AUTH_HEADER` for your Fuseki credentials.
+3. Build and start:
+   ```
+   docker compose up --build -d
+   ```
+4. Open [http://localhost:8080](http://localhost:8080)
 
-### Environment Variables
+### Path B — Local development
 
-| Variable              | Default                  | Description                                             |
-|-----------------------|--------------------------|---------------------------------------------------------|
-| `PORT`                | `8080`                   | Host port that WebVOWL is accessible on                 |
-| `DOCKER_NETWORK`      | `semantic-web`           | External Docker network shared with other stacks        |
-| `FUSEKI_URL`          | `http://fuseki:3030`     | Fuseki base URL (Docker-internal hostname)              |
-| `FUSEKI_AUTH_HEADER`  | *(required)*             | Full `Authorization` header value sent to Fuseki        |
+For working on the code. Requires Node.js 18+.
 
-For `FUSEKI_AUTH_HEADER`:
-- Basic auth: `Basic $(echo -n "user:password" | base64)`
-- Bearer token: `Bearer <token>`
-- API key: `ApiKey <key>` (or whatever scheme your Fuseki expects)
+1. Install dependencies:
+   ```
+   npm install
+   ```
+2. Start the dev server with hot reloading:
+   ```
+   npm run dev
+   ```
+   Open [http://localhost:8080](http://localhost:8080)
 
-### Build and Start
-
+Or build a static production bundle:
 ```
-docker compose up --build -d
+npm run release
+serve deploy/
 ```
 
-Visit [http://localhost:8080](http://localhost:8080) to use WebVOWL (or your configured port).
+## Loading Ontologies
 
-### Loading Ontologies from Fuseki
+OWL2VOWL converts OWL/RDF into the VOWL JSON format that WebVOWL renders. Three ways to load an ontology:
 
-Fuseki runs in a separate stack behind authentication. nginx acts as an authenticating proxy — it injects the `Authorization` header so OWL2VOWL never handles credentials directly.
+- **By URL** — paste any publicly accessible OWL/RDF URL into the ontology menu
+- **By file** — use the file picker in the ontology menu to load a local file
+- **From Fuseki** — see [Fuseki Integration](#fuseki-integration-optional) below
+
+## Fuseki Integration (Optional)
+
+nginx sits in front of everything. When OWL2VOWL needs to fetch from Fuseki, it sends the request to `http://server/fuseki/...`. nginx intercepts that path, injects your `Authorization` header from `.env`, and forwards the request to Fuseki — so credentials never touch OWL2VOWL.
+
+### Prerequisites
+
+- An external `semantic-web` Docker network shared with your Fuseki stack:
+  ```
+  docker network create --internal semantic-web
+  ```
+  The `--internal` flag blocks internet access — containers communicate only within the network. Ensure your Fuseki stack also joins this network.
+- Set `FUSEKI_AUTH_HEADER` in `.env`:
+  ```
+  # Basic auth:
+  FUSEKI_AUTH_HEADER=Basic $(echo -n "user:password" | base64)
+  # Bearer token:
+  FUSEKI_AUTH_HEADER=Bearer <token>
+  ```
+
+### Loading from Fuseki
 
 Enter this IRI pattern in the WebVOWL ontology menu:
 
 ```
-http://server/fuseki/<dataset>/data?graph=<your-graph-uri>
-# e.g. if Fuseki has a bfo/ dataset with a default named graph, http://server/fuseki/bfo/data
+http://server/fuseki/<dataset>/data?graph=<graph-uri>
 ```
 
-The `/fuseki/` prefix routes through nginx, which strips it and forwards to
-`${FUSEKI_URL}/<dataset>/data?graph=...` with the auth header attached.
+For example, if Fuseki has a `bfo` dataset: `http://server/fuseki/bfo/data`
 
-> **Note:** `server` is the nginx container's Docker-internal hostname. OWL2VOWL resolves it
-> via the shared `default` compose network. Do not use `localhost` — that refers to the
-> container itself, not the host machine.
+The `/fuseki/` prefix routes through nginx, which strips it and forwards to `${FUSEKI_URL}/<dataset>/data?graph=...` with the auth header attached.
 
-OWL2VOWL runs as a sidecar container (not exposed to the host) and is proxied by nginx on
-the `/convert`, `/read`, `/directInput`, `/serverTimeStamp`, `/loadingStatus`, and
-`/conversionDone` endpoints.
+> `server` is the nginx container's Docker-internal hostname — do not use `localhost`.
 
-## Requirements
-------------
+### Environment Variables
 
-Node.js 18+ for installing the development tools and dependencies.
+| Variable             | Default               | Description                                      |
+|----------------------|-----------------------|--------------------------------------------------|
+| `PORT`               | `8080`                | Host port WebVOWL is accessible on               |
+| `FUSEKI_AUTH_HEADER` | *(required for Fuseki)* | Full `Authorization` header value sent to Fuseki |
+| `DOCKER_NETWORK`     | `semantic-web`        | External Docker network name                     |
+| `FUSEKI_URL`         | `http://fuseki:3030`  | Fuseki base URL (Docker-internal)                |
 
+`DOCKER_NETWORK` and `FUSEKI_URL` rarely need to change. `FUSEKI_AUTH_HEADER` is the one you'll actually configure.
 
-## Development setup
------------------
+## Development Reference
 
-1. Download and install Node.js from http://nodejs.org/download/
-2. Open the terminal in the root directory
-3. Run `npm install` to install dependencies
-4. Edit the code
-5. Run `npm run release` to build into the `deploy/` directory
-6. Run `serve deploy/` to serve locally (`npm install serve -g` if needed)
+### npm scripts
 
-Visit [http://localhost:3000](http://localhost:3000) to use WebVOWL.
+| Command           | Description                                    |
+|-------------------|------------------------------------------------|
+| `npm run dev`     | Live-reloading dev server                      |
+| `npm run build`   | Production build into `deploy/`                |
+| `npm run build:dev` | Development build                            |
+| `npm run release` | Production build, removing benchmark data      |
+| `npm run zip`     | Build and package into a zip file              |
+| `npm test`        | Run unit tests (Vitest)                        |
+| `npm run lint`    | Lint source with ESLint 9                      |
 
-### npm scripts ###
+### Hot-swap deploy (no Docker rebuild)
 
-| Command | Description |
-|---|---|
-| `npm run build` | Production build into `deploy/` |
-| `npm run build:dev` | Development build |
-| `npm run release` | Production build, removing benchmark data |
-| `npm run dev` | Live-reloading dev server |
-| `npm test` | Run unit tests (Vitest) |
-| `npm run lint` | Lint source with ESLint 9 |
-| `npm run zip` | Build and package into a zip file |
+For code-only changes, skip the full image rebuild:
 
+```
+npm run release && docker cp deploy/. webvowl-server-1:/usr/share/nginx/html/
+```
 
-## Additional information
-----------------------
+If you modify `package.json` or `docker-compose.yml`, do a full rebuild instead:
 
-To export the VOWL visualization to an SVG image, all css styles have to be included into the SVG code. This means that if you change the CSS code in the `vowl.css` file, you also have to update the code that inlines the styles - otherwise the exported SVG will not look the same as the displayed graph.
+```
+docker compose build --no-cache && docker compose up -d
+```
 
-The tool which creates the code that inlines the styles can be found in the util directory. Please follow the instructions in its [README](util/VowlCssToD3RuleConverter/README.md) file.
+## Notes
+
+**SVG export and CSS:** To export the VOWL visualization as SVG, all CSS styles must be inlined into the SVG. If you change `vowl.css`, update the inlined styles accordingly. The tool for this is in `util/VowlCssToD3RuleConverter/` — see its [README](util/VowlCssToD3RuleConverter/README.md).
+
+**Submodule:** OWL2VOWL is pinned to a specific fork commit via a git submodule. Run `git submodule update --init` on fresh clones, and again after pulling if the submodule pointer has advanced.
