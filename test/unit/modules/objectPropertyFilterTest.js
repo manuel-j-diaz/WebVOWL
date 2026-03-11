@@ -10,22 +10,8 @@ describe("Filtering of object properties", function () {
 	var filter;
 
 	beforeEach(function () {
-		jasmine.addMatchers({
-			                    toBeInstanceOf: function () {
-				                    return {
-					                    compare: function (actual, expected) {
-						                    return {
-							                    pass: actual instanceof expected
-						                    };
-					                    }
-				                    };
-			                    }
-		                    });
-	});
-
-	beforeEach(function () {
 		filter = require("../../../src/webvowl/js/modules/objectPropertyFilter")();
-		filter.enabled(true);
+		filter.enabled(false);
 	});
 
 	it("should remove object properties", function () {

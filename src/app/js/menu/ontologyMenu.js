@@ -574,7 +574,7 @@ module.exports = function ( graph ){
       var uglyJson=xhr.responseText;
       var jsonResut=JSON.parse(uglyJson);
       var niceJSON=JSON.stringify(jsonResut, 'null', '  ');
-      niceJSON= niceJSON.replace(new RegExp('\r?\n','g'), '<br />');
+      niceJSON= niceJSON.replace(/\r?\n/g, '<br />');
       callbackUpdateLoadingMessage("Failed to convert the file. " +
           "<br />Server answer: <br />"+
           "<hr>"+niceJSON+ "<hr>"+

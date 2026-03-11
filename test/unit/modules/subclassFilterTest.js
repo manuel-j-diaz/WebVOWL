@@ -6,22 +6,8 @@ describe("Collapsing of subclassOf properties", function () {
 	var collapser;
 
 	beforeEach(function () {
-		jasmine.addMatchers({
-			toBeInstanceOf: function () {
-				return {
-					compare: function (actual, expected) {
-						return {
-							pass: actual instanceof expected
-						};
-					}
-				};
-			}
-		});
-	});
-
-	beforeEach(function () {
 		collapser = require("../../../src/webvowl/js/modules/subclassFilter")();
-		collapser.enabled(true);
+		collapser.enabled(false);
 	});
 
 

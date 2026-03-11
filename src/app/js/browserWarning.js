@@ -41,7 +41,7 @@ function showBrowserWarningIfRequired(){
     d3.select("#optionsArea").classed("hidden", true);
     d3.select("#logo").classed("hidden", true);
   }
-  if ( version == 12 ) {
+  if ( version === 12 ) {
     d3.select("#logo").classed("hidden", false);
     d3.select("#browserCheck").classed("hidden", false);
     // connect the button;

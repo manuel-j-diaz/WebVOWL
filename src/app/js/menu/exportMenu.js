@@ -1325,8 +1325,6 @@ module.exports = function ( graph ){
             }
           }
         }
-        else {
-        }
       }
       if ( correspondingProp.type() === "setOperatorProperty" ) {
         continue; // this property does not have a label

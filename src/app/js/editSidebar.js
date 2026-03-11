@@ -1244,9 +1244,6 @@ module.exports = function ( graph ){
       if ( graph.changeNodeType(element) === false ) {
         //restore old value
         
-        if ( elementTools.isDatatype(element) === true ) {
-          
-        }
         editSidebar.updateSelectionInformation(element);
       }
     }

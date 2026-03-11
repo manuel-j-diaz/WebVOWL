@@ -1027,13 +1027,6 @@ module.exports = function ( graphContainerSelector ){
     var allProperties = unfilteredData.properties;
     for ( var i = 0; i < allProperties.length; i++ ) {
       // currently using only the object properties
-      if ( allProperties[i].type() === "owl:ObjectProperty" ||
-        allProperties[i].type() === "owl:DatatypeProperty" ||
-        allProperties[i].type() === "owl:ObjectProperty" ||
-        allProperties[i].type() === "rdfs:subClassOf"
-      ) {
-      } else {
-      }
     }
     return axioms;
   };
@@ -2386,9 +2379,6 @@ module.exports = function ( graphContainerSelector ){
       }
     }
     
-    if ( missedIds.length === nodeIdArray.length ) {
-      
-    }
     // store the highlight on the missed nodes;
     var s_nodes = unfilteredData.nodes;
     var s_props = unfilteredData.properties;
