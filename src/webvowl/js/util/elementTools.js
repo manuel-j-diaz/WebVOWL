@@ -43,7 +43,9 @@ tools.isObjectProperty = function ( element ){
   return t === "owl:FunctionalProperty" ||
     t === "owl:InverseFunctionalProperty" ||
     t === "owl:SymmetricProperty" ||
-    t === "owl:TransitiveProperty";
+    t === "owl:TransitiveProperty" ||
+    t === "owl:someValuesFrom" ||
+    t === "owl:allValuesFrom";
 };
 
 tools.isDatatypeProperty = function ( element ){
