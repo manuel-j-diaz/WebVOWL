@@ -26,13 +26,11 @@
             to run WebVOWL.
             <label id="killWarning">Hide warning</label>
         </div>
-        <!-- build:process -->
         <div id="logo" class="noselect">
             <h2>WebVOWL
                 <br> <span><%= version %></span>
             </h2>
         </div>
-        <!-- /build -->
 
         <div id="loading-info" class="hidden">
             <div id="loading-progress" style="border-radius: 10px;">
@@ -136,9 +134,9 @@
                 <li><a href="#personasonto" id="personasonto">Personas Ontology (PersonasOnto)</a></li>
                 <li><a href="#sioc" id="sioc">SIOC (Semantically-Interlinked Online Communities) Core Ontology</a></li>
 
-                <!-- build:remove release-->
+                <% if (!isRelease) { %>
                 <li><a href="#benchmark" id="benchmark">Benchmark Graph for VOWL</a></li>
-                <!-- /build -->
+                <% } %>
                 <li class="option" id="converter-option">
                     <form class="converter-form" id="iri-converter-form">
                         <label for="iri-converter-input">Custom Ontology:</label>
@@ -236,10 +234,8 @@
                 <li id="credits" class="option">WebVOWL Developers:<br/>
                     Vincent Link, Steffen Lohmann, Eduard Marbach, Stefan Negru, Vitalis Wiens
                 </li>
-                <!-- build:process -->
                 <li><a href="http://vowl.visualdataweb.org/webvowl.html#releases" target="_blank">
                     Version: <%= version %><br/>(release history)</a></li>
-                <!-- /build -->
                 <li><a href="http://purl.org/vowl/" target="_blank">VOWL Specification &raquo;</a></li>
             </ul>
             <ul id="m_search" class="toolTipMenu"></ul>

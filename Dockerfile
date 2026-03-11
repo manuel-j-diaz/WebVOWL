@@ -14,7 +14,7 @@ RUN npm install --ignore-scripts --legacy-peer-deps
 
 # Copy source and build into deploy/
 COPY . .
-RUN ./node_modules/.bin/grunt release
+RUN npm run release
 
 # Stage 2: Serve static output
 FROM nginx:1.29.5-alpine
