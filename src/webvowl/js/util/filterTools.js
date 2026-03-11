@@ -12,20 +12,20 @@ module.exports = (function (){
    * @returns {{nodes: Array, properties: Array}} the filtered nodes and properties
    */
   tools.filterNodesAndTidy = function ( nodes, properties, shouldKeepNode ){
-    var removedNodes = require("./set")(),
+    var removedNodeIds = new Set(),
       cleanedNodes = [],
       cleanedProperties = [];
-    
+
     nodes.forEach(function ( node ){
       if ( shouldKeepNode(node) ) {
         cleanedNodes.push(node);
       } else {
-        removedNodes.add(node);
+        removedNodeIds.add(node.id());
       }
     });
     
     properties.forEach(function ( property ){
-      if ( propertyHasVisibleNodes(removedNodes, property) ) {
+      if ( propertyHasVisibleNodes(removedNodeIds, property) ) {
         cleanedProperties.push(property);
       } else if ( elementTools.isDatatypeProperty(property) ) {
         // Remove floating datatypes/literals, because they belong to their datatype property
@@ -48,8 +48,8 @@ module.exports = (function (){
    * @param property
    * @returns {boolean} true if property isn't dangling
    */
-  function propertyHasVisibleNodes( removedNodes, property ){
-    return !removedNodes.has(property.domain()) && !removedNodes.has(property.range());
+  function propertyHasVisibleNodes( removedNodeIds, property ){
+    return !removedNodeIds.has(property.domain().id()) && !removedNodeIds.has(property.range().id());
   }
   
   

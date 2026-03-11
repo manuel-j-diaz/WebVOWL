@@ -58,8 +58,6 @@ module.exports = function ( graph ){
           var dist = (classNode.radius ? classNode.radius() : 50) + 40;
           indNode.x = (classNode.x || 0) + Math.cos(angle) * dist;
           indNode.y = (classNode.y || 0) + Math.sin(angle) * dist;
-          indNode.px = indNode.x;
-          indNode.py = indNode.y;
 
           var edge = new RdfTypeProperty(graph);
           edge.id(protoIndividual.iri() + "__rdftype")

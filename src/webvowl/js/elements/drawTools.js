@@ -80,13 +80,13 @@ module.exports = (function (){
     var base = pinGroupElement.append("circle")
       .classed("class pin feature", true)
       .attr("r", 12)
-      .on("click", function (){
+      .on("click", function ( event ){
         if ( onClick ) {
           onClick();
         }
-        d3.event.stopPropagation();
+        event.stopPropagation();
       });
-    
+
     pinGroupElement.append("line")
       .attr("x1", 0)
       .attr("x2", 0)
@@ -100,11 +100,11 @@ module.exports = (function (){
         .attr("cy", -7)
         .classed("superHiddenElement ", true)
         .classed("superOpacityElement", !accuraciesHelperFunction())
-        .on("click", function (){
+        .on("click", function ( event ){
           if ( onClick ) {
             onClick();
           }
-          d3.event.stopPropagation();
+          event.stopPropagation();
         })
         .on("mouseover", function (){
           base.classed("feature_hover", true);

@@ -127,8 +127,8 @@ module.exports = function ( graph ){
     });
     
     var languageSelection = d3.select("#language")
-      .on("change", function (){
-        graph.language(d3.event.target.value);
+      .on("change", function ( event ){
+        graph.language(event.target.value);
         updateGraphInformation();
         sidebar.updateSelectionInformation(lastSelectedElement);
       });
@@ -240,11 +240,6 @@ module.exports = function ( graph ){
    */
   sidebar.updateSelectionInformation = function ( selectedElement ){
     lastSelectedElement = selectedElement;
-    
-    // Click event was prevented when dragging
-    if ( d3.event && d3.event.defaultPrevented ) {
-      return;
-    }
     
     var isTriggerActive = d3.select("#selection-details-trigger").classed("accordion-trigger-active");
     if ( selectedElement && !isTriggerActive ) {

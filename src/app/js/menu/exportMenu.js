@@ -6,6 +6,7 @@ module.exports = function ( graph ){
   
   var exportMenu = {},
     exportSvgButton,
+    exportPngButton,
     exportFilename,
     exportJsonButton,
     exportTurtleButton,
@@ -28,6 +29,8 @@ module.exports = function ( graph ){
   exportMenu.setup = function (){
     exportSvgButton = d3.select("#exportSvg")
       .on("click", exportSvg);
+    exportPngButton = d3.select("#exportPng")
+      .on("click", exportPng);
     exportJsonButton = d3.select("#exportJson")
       .on("click", exportJson);
     
@@ -47,7 +50,7 @@ module.exports = function ( graph ){
       exportMenu.exportAsUrl();
     });
   };
-  function exportTurtle(){
+  function exportTurtle( event ){
     var success = exportTTLModule.requestExport();
     var result = exportTTLModule.resultingTTL_Content();
     var ontoTitle = "NewOntology";
@@ -78,10 +81,10 @@ module.exports = function ( graph ){
       graph.options().warningModule().showExporterWarning();
       console.log("Stay on the page! " + window.location.href);
       exportTurtleButton.attr("href", window.location.href);
-      d3.event.preventDefault(); // prevent the href to be called ( reloads the page otherwise )
+      event.preventDefault(); // prevent the href to be called ( reloads the page otherwise )
     }
   }
-  
+
   exportMenu.setFilename = function ( filename ){
     exportFilename = filename || "export";
   };
@@ -90,12 +93,12 @@ module.exports = function ( graph ){
     exportableJsonText = jsonText;
   };
   
-  function copyUrl(){
+  function copyUrl( event ){
     d3.select("#exportedUrl").node().focus();
     d3.select("#exportedUrl").node().select();
     document.execCommand("copy");
     graph.options().navigationMenu().hideAllMenus();
-    d3.event.preventDefault(); // prevent the href to be called ( reloads the page otherwise )
+    event.preventDefault(); // prevent the href to be called ( reloads the page otherwise )
   }
   
   function prepareOptionString( defOpts, currOpts ){
@@ -217,7 +220,13 @@ module.exports = function ( graph ){
       graphSvgCode,
       escapedGraphSvgCode,
       dataURI;
-    
+
+    // Temporarily remove canvas-mode so SVG elements are visible for export
+    var wasCanvasMode = graph.options().useCanvasRenderer();
+    if ( wasCanvasMode ) {
+      d3.select(graph.options().graphContainerSelector()).classed("canvas-mode", false);
+    }
+
     // inline the styles, so that the exported svg code contains the css rules
     inlineVowlStyles();
     hideNonExportableElements();
@@ -241,9 +250,28 @@ module.exports = function ( graph ){
     // remove graphic styles for interaction to go back to normal
     removeVowlInlineStyles();
     showNonExportableElements();
+    // Restore canvas-mode class if it was active
+    if ( wasCanvasMode ) {
+      d3.select(graph.options().graphContainerSelector()).classed("canvas-mode", true);
+    }
     graph.lazyRefresh();
   }
-  
+
+  function exportPng(){
+    var srcCanvas = graph.canvasElement ? graph.canvasElement() : null;
+    if ( !srcCanvas ) return;
+    // Composite onto a white-background canvas so the PNG isn't transparent
+    var tmp = document.createElement("canvas");
+    tmp.width = srcCanvas.width;
+    tmp.height = srcCanvas.height;
+    var tmpCtx = tmp.getContext("2d");
+    tmpCtx.fillStyle = "#ecf0f1";
+    tmpCtx.fillRect(0, 0, tmp.width, tmp.height);
+    tmpCtx.drawImage(srcCanvas, 0, 0);
+    exportPngButton.attr("href", tmp.toDataURL("image/png"))
+      .attr("download", exportFilename + ".png");
+  }
+
   function escapeUnicodeCharacters( text ){
     var textSnippets = [],
       i, textLength = text.length,
@@ -758,13 +786,13 @@ module.exports = function ( graph ){
     return exportObj;
   };
   
-  function exportJson(){
+  function exportJson( event ){
     graph.options().navigationMenu().hideAllMenus();
     /**  check if there is data **/
     if ( !exportableJsonText ) {
       alert("No graph data available.");
       // Stop the redirection to the path of the href attribute
-      d3.event.preventDefault();
+      event.preventDefault();
       return;
     }
     
@@ -782,25 +810,11 @@ module.exports = function ( graph ){
       .attr("download", jsonExportFileName);
   }
   
-  var curveFunction = d3.svg.line()
-    .x(function ( d ){
-      return d.x;
-    })
-    .y(function ( d ){
-      return d.y;
-    })
-    .interpolate("cardinal");
-  var loopFunction = d3.svg.line()
-    .x(function ( d ){
-      return d.x;
-    })
-    .y(function ( d ){
-      return d.y;
-    })
-    .interpolate("cardinal")
-    .tension(-1);
+  var lineGenerators = require("../../../webvowl/js/util/lineGenerators");
+  var curveFunction = lineGenerators.curveFunction;
+  var loopFunction = lineGenerators.loopFunction;
   
-  function exportTex(){
+  function exportTex( event ){
     var zoom = graph.scaleFactor();
     var grTranslate = graph.translation();
     var bbox = graph.getBoundingBoxForTex();
@@ -932,10 +946,10 @@ module.exports = function ( graph ){
     if ( !exportableJsonText ) {
       alert("No graph data available.");
       // Stop the redirection to the path of the href attribute
-      d3.event.preventDefault();
+      event.preventDefault();
       return;
     }
-    
+
     var i = 0, identifier;
     
     /** get data for exporter **/

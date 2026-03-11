@@ -100,7 +100,7 @@ module.exports = function ( graph ){
     var gotItButton = warningContainer.append("label");
     gotItButton.node().id = "killWarningErrorMessages_" + id;
     gotItButton.node().innerHTML = "Got It";
-    gotItButton.on("click", warningModule.closeMessage);
+    gotItButton.on("click", function(){ warningModule.closeMessage(this.id); });
     
     moduleContainer.classed("hidden", false);
     moduleContainer.style("-webkit-animation-name", "warn_ExpandAnimation");
@@ -292,7 +292,7 @@ module.exports = function ( graph ){
     var gotItButton = warningContainer.append("label");
     gotItButton.node().id = "killFilterMessages_" + id;
     gotItButton.node().innerHTML = "Got It";
-    gotItButton.on("click", warningModule.closeMessage);
+    gotItButton.on("click", function(){ warningModule.closeMessage(this.id); });
     
     moduleContainer.classed("hidden", false);
     moduleContainer.style("-webkit-animation-name", "warn_ExpandAnimation");
@@ -317,7 +317,7 @@ module.exports = function ( graph ){
     var gotItButton = warningContainer.append("label");
     gotItButton.node().id = "killFilterMessages_" + id;
     gotItButton.node().innerHTML = "Got It";
-    gotItButton.on("click", warningModule.closeMessage);
+    gotItButton.on("click", function(){ warningModule.closeMessage(this.id); });
     
     moduleContainer.classed("hidden", false);
     moduleContainer.style("-webkit-animation-name", "warn_ExpandAnimation");
@@ -383,14 +383,14 @@ module.exports = function ( graph ){
       gotItButton = warningContainer.append("label");
       gotItButton.node().id = "killWarningErrorMessages_" + id;
       gotItButton.node().innerHTML = "Got It";
-      gotItButton.on("click", warningModule.closeMessage);
+      gotItButton.on("click", function(){ warningModule.closeMessage(this.id); });
     }
     
     if ( type === 2 ) {
       gotItButton = warningContainer.append("label");
       gotItButton.node().id = "killWarningErrorMessages_" + id;
       gotItButton.node().innerHTML = "Got It";
-      gotItButton.on("click", warningModule.closeMessage);
+      gotItButton.on("click", function(){ warningModule.closeMessage(this.id); });
       warningContainer.append("span").node().innerHTML = "|";
       var zoomToElementButton = warningContainer.append("label");
       zoomToElementButton.node().id = "zoomElementThing_" + id;

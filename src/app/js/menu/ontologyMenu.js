@@ -1,4 +1,4 @@
-var unescape = require("lodash/unescape");
+var xhrRequest = require("../util/xhrHelper");
 
 module.exports = function ( graph ){
   
@@ -16,10 +16,6 @@ module.exports = function ( graph ){
     loadingModule,
     loadOntologyFromText;
   var currentLoadedOntologyName = "";
-  
-  String.prototype.beginsWith = function ( string ){
-    return (this.indexOf(string) === 0);
-  };
   
   ontologyMenu.getLoadingFunction = function (){
     return loadOntologyFromText;
@@ -107,8 +103,8 @@ module.exports = function ( graph ){
   
   function setupUriListener(){
     // reload ontology when hash parameter gets changed manually
-    d3.select(window).on("hashchange", function (){
-      var oldURL = d3.event.oldURL, newURL = d3.event.newURL;
+    d3.select(window).on("hashchange", function ( event ){
+      var oldURL = event.oldURL, newURL = event.newURL;
       if ( oldURL !== newURL ) {
         // don't reload when just the hash parameter gets appended
         if ( newURL === oldURL + "#" ) {
@@ -202,12 +198,12 @@ module.exports = function ( graph ){
       keepOntologySelectionOpenShortly();
     });
     
-    d3.select("#iri-converter-form").on("submit", function (){
+    d3.select("#iri-converter-form").on("submit", function ( event ){
       var inputName = iriConverterInput.property("value");
       
       // remove first spaces
       var clearedName = inputName.replace(/%20/g, " ");
-      while ( clearedName.beginsWith(" ") ) {
+      while ( clearedName.startsWith(" ") ) {
         clearedName = clearedName.substr(1, clearedName.length);
       }
       // remove ending spaces
@@ -227,11 +223,11 @@ module.exports = function ( graph ){
         iriConverterInput.property("value", "");
         iriConverterInput.on("input")();
       }
-      d3.event.preventDefault();
+      event.preventDefault();
       return false;
     });
   }
-  
+
   function setupUploadButton(){
     var input = d3.select("#file-converter-input"),
       inputLabel = d3.select("#file-converter-label"),
@@ -307,7 +303,7 @@ module.exports = function ( graph ){
   };
   
   function getLoadingStatusOnceCallBacked( callback, parameter ){
-    d3.xhr("loadingStatus?sessionId=" + conversion_sessionId, "application/text", function ( error, request ){
+    xhrRequest("loadingStatus?sessionId=" + conversion_sessionId, "application/text", function ( error, request ){
       if ( error ) {
         console.log("ontologyMenu getLoadingStatusOnceCallBacked throws error");
         console.log("---------Error -----------");
@@ -321,7 +317,7 @@ module.exports = function ( graph ){
   }
   
   function getLoadingStatusTimeLooped(){
-    d3.xhr("loadingStatus?sessionId=" + conversion_sessionId, "application/text", function ( error, request ){
+    xhrRequest("loadingStatus?sessionId=" + conversion_sessionId, "application/text", function ( error, request ){
       if ( error ) {
         console.log("ontologyMenu getLoadingStatusTimeLooped throws error");
         console.log("---------Error -----------");
@@ -346,7 +342,7 @@ module.exports = function ( graph ){
   }
   
   function callbackUpdateLoadingMessage( msg ){
-    d3.xhr("loadingStatus", "application/text", function ( error, request ){
+    xhrRequest("loadingStatus", "application/text", function ( error, request ){
       if ( request !== undefined ) {
         setLoadingStatusInfo(request.responseText + "<br>" + msg);
       } else {
@@ -365,7 +361,7 @@ module.exports = function ( graph ){
     var localThreadId = parameter[2];
     stopTimer = false;
     timedLoadingStatusLogger();
-    d3.xhr(relativePath, "application/json", function ( error, request ){
+    xhrRequest(relativePath, "application/json", function ( error, request ){
       var loadingSuccessful = !error;
       // check if error occurred or responseText is empty
       if ( (error !== null && error.status === 500) || (request && request.responseText.length === 0) ) {
@@ -439,7 +435,7 @@ module.exports = function ( graph ){
     var local_conversionId = parameter[2];
     stopTimer = false;
     timedLoadingStatusLogger();
-    d3.xhr(relativePath, "application/json", function ( error, request ){
+    xhrRequest(relativePath, "application/json", function ( error, request ){
       var loadingSuccessful = !error;
       // check if error occurred or responseText is empty
       if ( (error !== null && error.status === 500) || (request && request.responseText.length === 0) ) {
@@ -595,7 +591,7 @@ module.exports = function ( graph ){
     if ( id ) {
       local_id = id;
     }
-    d3.xhr("conversionDone?sessionId=" + local_id, "application/text", function ( error, request ){
+    xhrRequest("conversionDone?sessionId=" + local_id, "application/text", function ( error, request ){
       if ( error ) {
         console.log("ontologyMenu conversionFinished throws error");
         console.log("---------Error -----------");
@@ -609,10 +605,10 @@ module.exports = function ( graph ){
   function keepOntologySelectionOpenShortly(){
     // Events in the menu should not be considered
     var ontologySelection = d3.select("#select .toolTipMenu");
-    ontologySelection.on("click", function (){
-      d3.event.stopPropagation();
-    }).on("keydown", function (){
-      d3.event.stopPropagation();
+    ontologySelection.on("click", function ( event ){
+      event.stopPropagation();
+    }).on("keydown", function ( event ){
+      event.stopPropagation();
     });
     
     ontologySelection.style("display", "block");

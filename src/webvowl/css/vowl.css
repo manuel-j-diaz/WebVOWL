@@ -77,8 +77,12 @@ marker path {
     stroke: #000;
 }
 
-.white, .subclass, .subclassproperty, .external + text {
+.white, .external + text {
     fill: #fff;
+}
+
+.subclass, .subclassproperty {
+    fill: #ecf0f1;
 }
 
 .class.hovered, .property.hovered, .cardinality.hovered, .cardinality.focused, .filled.hovered, .filled.focused, .values-from.filled.hovered {
@@ -305,4 +309,30 @@ marker path {
     /* Safari and Chrome workaround for inheriting the style of its link.
        Use any value that is larger than the length of the marker path. */
     stroke-dasharray: 100;
+}
+
+/*--- Canvas rendering mode ---*/
+canvas.vowlCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+.canvas-mode .link-path,
+.canvas-mode .label rect,
+.canvas-mode .label text,
+.canvas-mode .cardinality,
+.canvas-mode circle.node,
+.canvas-mode text.node,
+.canvas-mode .node circle,
+.canvas-mode .node rect,
+.canvas-mode .node text {
+    fill: transparent !important;
+    stroke: transparent !important;
+}
+
+.canvas-mode .link-path {
+    marker-end: none !important;
+    marker-start: none !important;
 }

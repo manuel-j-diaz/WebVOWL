@@ -121,8 +121,8 @@ module.exports = function ( graph ){
     });
     
     // add wheel event to the slider
-    slider.on("wheel", function (){
-      var wheelEvent = d3.event;
+    slider.on("wheel", function ( event ){
+      var wheelEvent = event;
       var offset;
       if ( wheelEvent.deltaY < 0 ) offset = 10;
       if ( wheelEvent.deltaY > 0 ) offset = -10;
@@ -133,10 +133,10 @@ module.exports = function ( graph ){
         distanceFunction(newSliderValue);
         slider.on("input")(); // << set text and update the graphStyles
       }
-      d3.event.preventDefault();
+      event.preventDefault();
     });
   }
-  
+
   function addSeparationSlider( selector, identifier, label, separationFunction ){
     var sliderContainer, sliderValueLabel;
 
@@ -176,8 +176,8 @@ module.exports = function ( graph ){
       graph.update();
     });
 
-    slider.on("wheel", function (){
-      var wheelEvent = d3.event;
+    slider.on("wheel", function ( event ){
+      var wheelEvent = event;
       var offset;
       if ( wheelEvent.deltaY < 0 ) offset = 10;
       if ( wheelEvent.deltaY > 0 ) offset = -10;
@@ -188,7 +188,7 @@ module.exports = function ( graph ){
         separationFunction(newVal);
         slider.on("input")();
       }
-      d3.event.preventDefault();
+      event.preventDefault();
     });
   }
 

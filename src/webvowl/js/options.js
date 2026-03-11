@@ -8,7 +8,7 @@ module.exports = function (){
     charge = -500,
     gravity = 0.025,
     linkStrength = 1,
-    nodeSeparation = 150,
+    nodeSeparation = 180,
     levelSeparation = 180,
     height = 600,
     width = 800,
@@ -581,6 +581,13 @@ module.exports = function (){
   options.scaleNodesByIndividuals = function ( p ){
     if ( !arguments.length ) return scaleNodesByIndividuals;
     scaleNodesByIndividuals = p;
+    return options;
+  };
+
+  var useCanvasRenderer = false;
+  options.useCanvasRenderer = function ( p ){
+    if ( !arguments.length ) return useCanvasRenderer;
+    useCanvasRenderer = p;
     return options;
   };
   

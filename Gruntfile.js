@@ -65,7 +65,7 @@ module.exports = function (grunt) {
 		copy: {
 			dependencies: {
 				files: [
-					{expand: true, cwd: "node_modules/d3/", src: ["d3.min.js"], dest: deployPath + "/js/"}
+					{expand: true, cwd: "node_modules/d3/dist/", src: ["d3.min.js"], dest: deployPath + "/js/"}
 				]
 			},
 			static: {
@@ -128,16 +128,11 @@ module.exports = function (grunt) {
 		webpack: {
 			options: webpackConfig,
 			build: {
-				plugins: webpackConfig.plugins.concat(
-          // minimize the deployed code
-          //new webpack.optimize.UglifyJsPlugin(),
-					new webpack.optimize.DedupePlugin()
-
-				)
+				mode: "production"
 			},
 			"build-dev": {
-				devtool: "sourcemap",
-				debug: true
+				mode: "development",
+				devtool: "source-map"
 			}
 		},
 		watch: {

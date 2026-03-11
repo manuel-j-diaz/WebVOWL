@@ -650,10 +650,10 @@ module.exports = (function (){
         myWidth = Math.min(that.getMyWidth(), graph.options().maxLabelWidth());
         shapeElement.transition().tween("attr", function (){
         })
-          .ease('linear')
+          .ease(d3.easeLinear)
           .duration(100)
-          .attr({ x: -myWidth / 2, y: -h / 2, width: myWidth, height: h })
-          .each("end", function (){
+          .attr("x", -myWidth / 2).attr("y", -h / 2).attr("width", myWidth).attr("height", h)
+          .on("end", function (){
             that.updateTextElement();
           });
       } else {
@@ -662,9 +662,9 @@ module.exports = (function (){
         that.updateTextElement();
         shapeElement.transition().tween("attr", function (){
         })
-          .ease('linear')
+          .ease(d3.easeLinear)
           .duration(100)
-          .attr({ x: -myWidth / 2, y: -h / 2, width: myWidth, height: h });
+          .attr("x", -myWidth / 2).attr("y", -h / 2).attr("width", myWidth).attr("height", h);
       }
       if ( that.pinned() === true && pinGroupElement ) {
         var dx = -0.5 * myWidth + 10,
@@ -673,7 +673,7 @@ module.exports = (function (){
           .tween("attr.translate", function (){
           })
           .attr("transform", "translate(" + dx + "," + dy + ")")
-          .ease('linear')
+          .ease(d3.easeLinear)
           .duration(100);
       }
     };
@@ -760,27 +760,25 @@ module.exports = (function (){
       txtNode.value = that.labelForCurrentLanguage();
       txtNode.focus();
       txtNode.select();
-      if ( d3.event.stopPropagation ) d3.event.stopPropagation();
-      if ( d3.event.sourceEvent && d3.event.sourceEvent.stopPropagation ) d3.event.sourceEvent.stopPropagation();
-      
+
       // add some events that relate to this object
-      editText.on("click", function (){
-        if ( d3.event.stopPropagation ) d3.event.stopPropagation();
-        if ( d3.event.sourceEvent && d3.event.sourceEvent.stopPropagation ) d3.event.sourceEvent.stopPropagation();
-        
+      editText.on("click", function ( event ){
+        if ( event.stopPropagation ) event.stopPropagation();
+        if ( event.sourceEvent && event.sourceEvent.stopPropagation ) event.sourceEvent.stopPropagation();
+
       });
       // // remove hover Events for now;
-      editText.on("mouseout", function (){
-        if ( d3.event.stopPropagation ) d3.event.stopPropagation();
-        if ( d3.event.sourceEvent && d3.event.sourceEvent.stopPropagation ) d3.event.sourceEvent.stopPropagation();
+      editText.on("mouseout", function ( event ){
+        if ( event.stopPropagation ) event.stopPropagation();
+        if ( event.sourceEvent && event.sourceEvent.stopPropagation ) event.sourceEvent.stopPropagation();
       });
-      editText.on("mousedown", function (){
-        if ( d3.event.stopPropagation ) d3.event.stopPropagation();
-        if ( d3.event.sourceEvent && d3.event.sourceEvent.stopPropagation ) d3.event.sourceEvent.stopPropagation();
+      editText.on("mousedown", function ( event ){
+        if ( event.stopPropagation ) event.stopPropagation();
+        if ( event.sourceEvent && event.sourceEvent.stopPropagation ) event.sourceEvent.stopPropagation();
       })
-        .on("keydown", function (){
-          
-          if ( d3.event.keyCode === 13 ) {
+        .on("keydown", function ( event ){
+
+          if ( event.keyCode === 13 ) {
             this.blur();
             that.frozen(false); // << releases the not after selection
             that.locked(false);

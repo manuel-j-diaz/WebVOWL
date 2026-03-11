@@ -220,35 +220,35 @@ module.exports = (function (){
         labelWidth = Math.min(that.getMyWidth(), graph.options().maxLabelWidth());
         shapeElement.transition().tween("attr", function (){
         })
-          .ease('linear')
+          .ease(d3.easeLinear)
           .duration(100)
-          .attr({ x: -labelWidth / 2, y: -height / 2, width: labelWidth, height: height })
-          .each("end", function (){
+          .attr("x", -labelWidth / 2).attr("y", -height / 2).attr("width", labelWidth).attr("height", height)
+          .on("end", function (){
             that.updateTextElement();
           });
-        
+
       } else {
         labelWidth = defaultWidth;
         that.updateTextElement();
         shapeElement.transition().tween("attr", function (){
         })
-          .ease('linear')
+          .ease(d3.easeLinear)
           .duration(100)
-          .attr({ x: -labelWidth / 2, y: -height / 2, width: labelWidth, height: height });
-        
+          .attr("x", -labelWidth / 2).attr("y", -height / 2).attr("width", labelWidth).attr("height", height);
+
       }
-      
+
       // for the pin we dont need to differ between different widths -- they are already set
       if ( that.pinned() === true && pinGroupElement ) {
-        
+
         var dx = 0.5 * labelWidth - 10,
           dy = -1.1 * height;
-        
+
         pinGroupElement.transition()
           .tween("attr.translate", function (){
           })
           .attr("transform", "translate(" + dx + "," + dy + ")")
-          .ease('linear')
+          .ease(d3.easeLinear)
           .duration(100);
       }
     };

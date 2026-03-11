@@ -159,26 +159,24 @@ module.exports = (function (){
       txtNode.select();
       that.frozen(true); // << releases the not after selection
       that.locked(true);
-      
-      
-      d3.event.stopPropagation();
+
       // ignoreNodeHoverEvent=true;
       // // add some events that relate to this object
-      editText.on("click", function (){
-        d3.event.stopPropagation();
+      editText.on("click", function ( event ){
+        event.stopPropagation();
       });
       // // remove hover Events for now;
-      editText.on("mouseout", function (){
-        d3.event.stopPropagation();
-        
-        
+      editText.on("mouseout", function ( event ){
+        event.stopPropagation();
+
+
       });
-      editText.on("mousedown", function (){
-        d3.event.stopPropagation();
+      editText.on("mousedown", function ( event ){
+        event.stopPropagation();
       })
-        .on("keydown", function (){
-          d3.event.stopPropagation();
-          if ( d3.event.keyCode === 13 ) {
+        .on("keydown", function ( event ){
+          event.stopPropagation();
+          if ( event.keyCode === 13 ) {
             this.blur();
             that.frozen(false); // << releases the not after selection
             that.locked(false);

@@ -89,8 +89,8 @@ module.exports = function ( graph ){
     }
     
     // connect to mouseWheel
-    d3.select("#menuElementContainer").on("wheel", function (){
-      var wheelEvent = d3.event;
+    d3.select("#menuElementContainer").on("wheel", function ( event ){
+      var wheelEvent = event;
       var offset;
       if ( wheelEvent.deltaY < 0 ) offset = 20;
       if ( wheelEvent.deltaY > 0 ) offset = -20;

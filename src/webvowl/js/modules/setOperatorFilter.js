@@ -5,7 +5,7 @@ module.exports = function (){
   var filter = {},
     nodes,
     properties,
-    enabled = true,
+    enabled = false,
     filteredNodes,
     filteredProperties,
     filterTools = require("../util/filterTools")();

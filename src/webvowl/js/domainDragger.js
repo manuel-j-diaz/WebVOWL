@@ -74,9 +74,7 @@ module.exports = function ( graph ){
     var cY = 0.49 * (dY + rY);
     // put position there;
     Domain_dragger.parent.labelObject().x = cX;
-    Domain_dragger.parent.labelObject().px = cX;
     Domain_dragger.parent.labelObject().y = cY;
-    Domain_dragger.parent.labelObject().py = cY;
     Domain_dragger.updateElement();
     
   };

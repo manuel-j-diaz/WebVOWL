@@ -219,8 +219,6 @@ module.exports = function ( graph ){
           if ( element.pos ) {
             node.x = element.pos[0];
             node.y = element.pos[1];
-            node.px = node.x;
-            node.py = node.y;
           }
           //class element pin
           var elementPinned = element.pinned;
@@ -240,8 +238,8 @@ module.exports = function ( graph ){
           }
           
           if ( element.attributes ) {
-            var deduplicatedAttributes = d3.set(element.attributes.concat(node.attributes()));
-            node.attributes(deduplicatedAttributes.values());
+            var deduplicatedAttributes = Array.from(new Set(element.attributes.concat(node.attributes())));
+            node.attributes(deduplicatedAttributes);
           }
           combinations.push(node);
         } else {
@@ -301,8 +299,6 @@ module.exports = function ( graph ){
           if ( element.pos ) {
             property.x = element.pos[0];
             property.y = element.pos[1];
-            property.px = element.pos[0];
-            property.py = element.pos[1];
           }
           var elementPinned = element.pinned;
           if ( elementPinned === true ) {
@@ -312,8 +308,8 @@ module.exports = function ( graph ){
           
           
           if ( element.attributes ) {
-            var deduplicatedAttributes = d3.set(element.attributes.concat(property.attributes()));
-            property.attributes(deduplicatedAttributes.values());
+            var deduplicatedAttributes = Array.from(new Set(element.attributes.concat(property.attributes())));
+            property.attributes(deduplicatedAttributes);
           }
           combinations.push(property);
         } else {
@@ -327,9 +323,11 @@ module.exports = function ( graph ){
   }
   
   function createLowerCasePrototypeMap( prototypeMap ){
-    return d3.map(prototypeMap.values(), function ( Prototype ){
-      return new Prototype().type().toLowerCase();
+    var newMap = new Map();
+    prototypeMap.forEach(function ( Prototype ){
+      newMap.set(new Prototype().type().toLowerCase(), Prototype);
     });
+    return newMap;
   }
   
   function mergeRangesOfEquivalentProperties( properties, nodes ){
@@ -437,7 +435,6 @@ module.exports = function ( graph ){
         if ( inversePropertyId ) {
           inverse = propertyMap[inversePropertyId];
           if ( !inverse ) {
-            console.warn("No inverse property was found for id: " + inversePropertyId);
             property.inverse(undefined);
           }
         }
@@ -545,7 +542,7 @@ module.exports = function ( graph ){
         // Replace id with object
         subOrSuperPropertiesArray[i] = subOrSuperProperty;
       } else {
-        console.warn("No sub-/superproperty was found for id: " + subOrSuperPropertyId);
+        // Referenced property not in data — stale reference, skip silently.
       }
     }
   }

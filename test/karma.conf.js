@@ -3,23 +3,23 @@ module.exports = function (config) {
 		basePath: "../",
 		frameworks: ["jasmine"],
 		files: [
-			"node_modules/d3/d3.js",
+			"node_modules/d3/dist/d3.min.js",
 			"test/unit/index.js"
 		],
 		preprocessors: {
 			"test/unit/index.js": ["webpack"]
 		},
 		reporters: ["spec"],
-		browsers: ["PhantomJS"],
+		browsers: ["ChromeHeadless"],
 		plugins: [
 			require("karma-jasmine"),
-			require("karma-phantomjs-launcher"),
+			require("karma-chrome-launcher"),
 			require("karma-spec-reporter"),
 			require("karma-webpack")
 		],
 		webpack: {
 			resolve: {
-				extensions: ["", ".js"]
+				extensions: [".js"]
 			}
 		},
 		webpackMiddleware: {
