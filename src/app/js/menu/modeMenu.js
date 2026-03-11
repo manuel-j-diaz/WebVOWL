@@ -191,7 +191,7 @@ module.exports = function ( graph ){
     checkbox.on("click", function (){
       var isEnabled = checkbox.property("checked");
       graph.options().useCanvasRenderer(isEnabled);
-      graph.start();
+      graph.switchRenderMode();
     });
 
     container.append("label")

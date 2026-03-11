@@ -12,9 +12,6 @@ module.exports = function () {
   // Current frame render state, stored for viewport culling helpers
   var _zoom = 1, _tx = 0, _ty = 0;
 
-  // Offscreen bitmap cache for node backgrounds: key → { canvas, cx }
-  var nodeCache = {};
-
   var CARDINALITY_HDISTANCE = 20,
     CARDINALITY_VDISTANCE = 10;
 
@@ -139,12 +136,6 @@ module.exports = function () {
   };
 
 
-  /** Invalidate the offscreen node shape cache (call after color theme changes). */
-  renderer.clearNodeCache = function () {
-    nodeCache = {};
-  };
-
-
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   /**
@@ -186,40 +177,6 @@ module.exports = function () {
     c.lineTo(x, y + r);
     c.arcTo(x, y, x + r, y, r);
     c.closePath();
-  }
-
-  /**
-   * Returns (or creates) an offscreen canvas bitmap for a node's background shape.
-   * Only used for non-interactive (non-hovered, non-focused) nodes.
-   * @param {string} sc   styleClass
-   * @param {number} r    radius (ignored for rect nodes)
-   * @param {string} fill fill color
-   * @param {string} stroke stroke color
-   * @param {boolean} isRect rectangular representation
-   */
-  function getNodeBitmap(sc, r, fill, stroke, isRect) {
-    var key = sc + "_" + r + "_" + fill + "_" + stroke + "_" + isRect;
-    if (!nodeCache[key]) {
-      var margin = 4;
-      var sz = isRect ? 92 : (r + margin) * 2;
-      var off = document.createElement("canvas");
-      off.width = off.height = sz;
-      var c = off.getContext("2d");
-      var cx = sz / 2;
-      c.fillStyle = fill;
-      c.strokeStyle = stroke;
-      c.lineWidth = 2;
-      if (isRect) {
-        roundedRect(c, cx - 40, cx - 40, 80, 80, 4);
-      } else {
-        c.beginPath();
-        c.arc(cx, cx, r, 0, 2 * Math.PI);
-      }
-      c.fill();
-      c.stroke();
-      nodeCache[key] = { canvas: off, cx: cx };
-    }
-    return nodeCache[key];
   }
 
   // Word-wrap text to fit within maxWidth. Returns array of lines.
@@ -295,22 +252,14 @@ module.exports = function () {
     ctx.strokeStyle = stroke;
     ctx.fillStyle = fill;
 
-    if (!isHovered && !isFocused) {
-      // Use offscreen bitmap cache for normal-state nodes
-      var sc = node.styleClass ? node.styleClass() : "class";
-      var cached = getNodeBitmap(sc, r, fill, stroke, isRect);
-      ctx.drawImage(cached.canvas, -cached.cx, -cached.cx);
+    if (isRect) {
+      roundedRect(ctx, -40, -40, 80, 80, 4);
     } else {
-      // Draw directly for interactive state (hovered / focused)
-      if (isRect) {
-        roundedRect(ctx, -40, -40, 80, 80, 4);
-      } else {
-        ctx.beginPath();
-        ctx.arc(0, 0, r, 0, 2 * Math.PI);
-      }
-      ctx.fill();
-      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, 2 * Math.PI);
     }
+    ctx.fill();
+    ctx.stroke();
 
     // Label text with word-wrap
     var label = node.labelForCurrentLanguage ? node.labelForCurrentLanguage() : "";

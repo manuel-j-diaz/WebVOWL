@@ -435,7 +435,6 @@ module.exports = function ( graph ){
         if ( inversePropertyId ) {
           inverse = propertyMap[inversePropertyId];
           if ( !inverse ) {
-            console.warn("No inverse property was found for id: " + inversePropertyId);
             property.inverse(undefined);
           }
         }
@@ -543,7 +542,7 @@ module.exports = function ( graph ){
         // Replace id with object
         subOrSuperPropertiesArray[i] = subOrSuperProperty;
       } else {
-        console.warn("No sub-/superproperty was found for id: " + subOrSuperPropertyId);
+        // Referenced property not in data — stale reference, skip silently.
       }
     }
   }

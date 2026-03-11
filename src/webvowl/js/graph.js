@@ -99,6 +99,7 @@ module.exports = function ( graphContainerSelector ){
   var shadowClone = require("./shadowClone")(graph);
   var canvasRenderer = CanvasRenderer();
   var canvasRenderPending = false;
+  var FORCE_EARLY_STOP_ALPHA = 0.05; // stop simulation early; last 5% adds lag without visible benefit
   
   graph.math = function (){
     return math;
@@ -231,6 +232,12 @@ module.exports = function ( graphContainerSelector ){
     force = d3.forceSimulation()
       .force("link", d3.forceLink())
       .on("tick", hiddenRecalculatePositions)
+      .on("end", function () {
+        // Render the final settled layout in canvas mode.
+        if ( options.useCanvasRenderer() ) {
+          graph.requestCanvasRender();
+        }
+      })
       .stop();
     
     dragBehaviour = d3.drag()
@@ -319,7 +326,11 @@ module.exports = function ( graphContainerSelector ){
           if ( d.renderType && d.renderType() === "round" ) {
             classDragger.setParentNode(d);
           }
-          
+          // Canvas mode: tick handler never renders during simulation, so we must
+          // trigger a render directly on each drag event for immediate visual feedback.
+          if ( options.useCanvasRenderer() ) {
+            graph.requestCanvasRender();
+          }
         }
       })
       .on("end", function ( event, d ){
@@ -486,6 +497,11 @@ module.exports = function ( graphContainerSelector ){
         
         
         finishedLoadingSequence = true;
+        // In canvas mode, do one immediate render so the graph isn't blank during
+        // the fast-settle phase (alpha 0.3 → CANVAS_SETTLE_ALPHA, no renders).
+        if ( options.useCanvasRenderer() ) {
+          graph.requestCanvasRender();
+        }
         if ( showFPS === true ) {
           force.on("tick", recalculatePositionsWithFPS);
           recalculatePositionsWithFPS();
@@ -571,7 +587,10 @@ module.exports = function ( graphContainerSelector ){
           }
         });
         updateHaloRadius();
-        graph.requestCanvasRender();
+        if ( force.alpha() < FORCE_EARLY_STOP_ALPHA ) {
+          force.stop();
+          graph.requestCanvasRender();
+        }
         return;
       }
 
@@ -609,7 +628,6 @@ module.exports = function ( graphContainerSelector ){
       // Set cardinality positions
       cardinalityElements.attr("transform", function ( property ){
         if ( !property.link() ) {
-          console.warn("[cardinality] property.link() undefined for", property.type && property.type(), property.id && property.id());
           return null;
         }
         var label = property.link().label(),
@@ -621,6 +639,9 @@ module.exports = function ( graphContainerSelector ){
 
 
       updateHaloRadius();
+      if ( force.alpha() < FORCE_EARLY_STOP_ALPHA ) {
+        force.stop();
+      }
       return;
     }
 
@@ -1228,6 +1249,26 @@ module.exports = function ( graphContainerSelector ){
     
   };
   
+  /**
+   * Switch between SVG and canvas rendering without disturbing the force simulation.
+   * Node positions, zoom, and translation are all preserved.
+   */
+  graph.switchRenderMode = function (){
+    if ( graph.options().loadingModule().successfullyLoadedOntology() === false ) return;
+    force.stop();
+    remove();        // destroy old SVG + canvas
+    redrawGraph();   // recreate SVG, set up canvas if now enabled
+    refreshGraphData();  // rebind data arrays to force and D3 selections
+    redrawContent(); // create SVG node/link elements with current data
+    refreshGraphStyle(); // restore zoom transform and force parameters (no alpha restart)
+    // Apply current node positions to the display without restarting the simulation.
+    if ( options.useCanvasRenderer() ) {
+      graph.requestCanvasRender();
+    } else {
+      recalculatePositions();
+    }
+  };
+
   // Updates only the style of the graph.
   graph.updateStyle = function (){
     refreshGraphStyle();

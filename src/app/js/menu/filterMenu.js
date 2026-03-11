@@ -178,7 +178,7 @@ module.exports = function ( graph ){
     var sliderValueLabel = sliderContainer.append("label")
       .classed("value", true)
       .attr("for", "individualsCollapseSlider")
-      .text(0);
+      .text(5);
 
     collapseSlider.on("input", function (){
       sliderValueLabel.text(collapseSlider.property("value"));
