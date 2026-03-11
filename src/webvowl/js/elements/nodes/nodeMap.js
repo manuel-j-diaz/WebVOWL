@@ -1,4 +1,4 @@
-var nodes = [];
+const nodes = [];
 nodes.push(require("./implementations/ExternalClass"));
 nodes.push(require("./implementations/OwlClass"));
 nodes.push(require("./implementations/OwlComplementOf"));
@@ -15,8 +15,8 @@ nodes.push(require("./implementations/RdfsLiteral"));
 nodes.push(require("./implementations/RdfsResource"));
 nodes.push(require("./implementations/OwlNamedIndividual"));
 
-var map = new Map();
-nodes.forEach(function ( Prototype ){
+const map = new Map();
+nodes.forEach(( Prototype ) => {
   map.set(new Prototype().type(), Prototype);
 });
 

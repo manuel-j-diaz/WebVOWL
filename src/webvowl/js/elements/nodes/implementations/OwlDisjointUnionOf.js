@@ -1,22 +1,22 @@
-var SetOperatorNode = require("../SetOperatorNode");
+const SetOperatorNode = require("../SetOperatorNode");
 
 module.exports = (function (){
-  
-  var o = function ( graph ){
+
+  const o = function ( graph ){
     SetOperatorNode.apply(this, arguments);
-    
-    var that = this,
+
+    const that = this,
       superDrawFunction = that.draw;
-    
+
     this.styleClass("disjointunionof")
       .type("owl:disjointUnionOf");
-    
-    this.draw = function ( element ){
+
+    this.draw = ( element ) => {
       superDrawFunction(element);
-      
-      var symbol = element.append("g").classed("embedded", true);
-      
-      var symbolRadius = 10;
+
+      const symbol = element.append("g").classed("embedded", true);
+
+      const symbolRadius = 10;
       symbol.append("circle")
         .attr("class", "symbol")
         .attr("r", symbolRadius);
@@ -33,9 +33,9 @@ module.exports = (function (){
         .attr("class", "link")
         .text("1")
         .attr("transform", "scale(.7)translate(3,5)");
-      
-      symbol.attr("transform", "translate(-" + (that.radius() - 15) / 7 + ",-" + (that.radius() - 15) / 100 + ")");
-      
+
+      symbol.attr("transform", `translate(-${(that.radius() - 15) / 7},-${(that.radius() - 15) / 100})`);
+
       that.postDrawActions();
     };
   };

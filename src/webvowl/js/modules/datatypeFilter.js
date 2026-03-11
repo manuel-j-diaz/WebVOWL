@@ -1,10 +1,10 @@
-var elementTools = require("../util/elementTools")();
-var filterTools = require("../util/filterTools")();
+const elementTools = require("../util/elementTools")();
+const filterTools = require("../util/filterTools")();
 
 module.exports = function (){
-  
-  var filter = {},
-    nodes,
+
+  const filter = {};
+  let nodes,
     properties,
     enabled = false,
     filteredNodes,
@@ -29,7 +29,7 @@ module.exports = function (){
   };
   
   function removeDatatypesAndLiterals(){
-    var filteredData = filterTools.filterNodesAndTidy(nodes, properties, isNoDatatypeOrLiteral);
+    const filteredData = filterTools.filterNodesAndTidy(nodes, properties, isNoDatatypeOrLiteral);
     
     nodes = filteredData.nodes;
     properties = filteredData.properties;

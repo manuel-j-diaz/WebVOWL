@@ -1,10 +1,10 @@
-var elementTools = require("../util/elementTools")();
+const elementTools = require("../util/elementTools")();
 
 
 module.exports = function (){
-  
-  var filter = {},
-    nodes,
+
+  const filter = {};
+  let nodes,
     properties,
     enabled = false,
     filteredNodes,
@@ -38,14 +38,13 @@ module.exports = function (){
   }
   
   function isNoFloatingThing( node ){
-    var isNoThing = !elementTools.isThing(node);
-    var hasNonFilteredProperties = hasPropertiesOtherThanObjectProperties(node, properties);
+    const isNoThing = !elementTools.isThing(node);
+    const hasNonFilteredProperties = hasPropertiesOtherThanObjectProperties(node, properties);
     return isNoThing || hasNonFilteredProperties;
   }
   
   function hasPropertiesOtherThanObjectProperties( node, properties ){
-    for ( var i = 0; i < properties.length; i++ ) {
-      var property = properties[i];
+    for ( const property of properties ) {
       if ( property.domain() !== node && property.range() !== node ) {
         continue;
       }

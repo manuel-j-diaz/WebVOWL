@@ -1,10 +1,10 @@
-var DatatypeNode = require("../DatatypeNode");
+const DatatypeNode = require("../DatatypeNode");
 
 module.exports = (function (){
-  
-  var o = function ( graph ){
+
+  const o = function ( graph ){
     DatatypeNode.apply(this, arguments);
-    var dTypeString = "undefined";
+    let dTypeString = "undefined";
     this.attributes(["datatype"])
       .type("rdfs:Datatype")
       .styleClass("datatype");

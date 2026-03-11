@@ -22,8 +22,12 @@ export default [
 			"no-use-before-define": ["error", { functions: false }],
 			"no-caller": "error",
 			"no-new": "error",
-			"no-prototype-builtins": "off",
+			"no-prototype-builtins": "warn",
 			"no-unused-vars": ["warn", { args: "none" }],
+			"no-var": "error",
+			"prefer-const": ["error", { destructuring: "all" }],
+			"prefer-template": "warn",
+			"prefer-arrow-callback": ["warn", { allowNamedFunctions: true }],
 		},
 	},
 	{

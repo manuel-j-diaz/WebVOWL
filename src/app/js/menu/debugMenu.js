@@ -1,16 +1,16 @@
 module.exports = function ( graph ){
-  var debugMenu = {},
+  const debugMenu = {},
     checkboxes = [];
-  
-  
-  var hoverFlag = false;
-  var specialCbx;
+
+
+  let hoverFlag = false;
+  let specialCbx;
   debugMenu.setup = function (){
-    var menuEntry = d3.select("#debugMenuHref");
-    
-    menuEntry.on("mouseover", function (){
+    const menuEntry = d3.select("#debugMenuHref");
+
+    menuEntry.on("mouseover", () => {
       if ( hoverFlag === false ) {
-        var searchMenu = graph.options().searchMenu();
+        const searchMenu = graph.options().searchMenu();
         searchMenu.hideSearchEntries();
         specialCbx.on("click")(true);
         if ( graph.editorMode() === false ) {
@@ -27,13 +27,13 @@ module.exports = function ( graph ){
         hoverFlag = true;
       }
     });
-    menuEntry.on("mouseout", function (){
+    menuEntry.on("mouseout", () => {
       hoverFlag = false;
     });
     
     
     specialCbx = addCheckBox("useAccuracyHelper", "Use accuracy helper", "#useAccuracyHelper", graph.options().useAccuracyHelper,
-      function ( enabled, silent ){
+      ( enabled, silent ) => {
         if ( !enabled ) {
           d3.select("#showDraggerObject").style("color", "#979797");
           d3.select("#showDraggerObject").style("pointer-events", "none");
@@ -42,31 +42,31 @@ module.exports = function ( graph ){
           d3.select("#showDraggerObject").style("color", "#2980b9");
           d3.select("#showDraggerObject").style("pointer-events", "auto");
         }
-        
+
         if ( silent === true ) return;
         graph.lazyRefresh();
         graph.updateDraggerElements();
       }
     );
     addCheckBox("showDraggerObject", "Show accuracy helper", "#showDraggerObject", graph.options().showDraggerObject,
-      function ( enabled, silent ){
+      ( enabled, silent ) => {
         if ( silent === true ) return;
         graph.lazyRefresh();
         graph.updateDraggerElements();
       });
     addCheckBox("showFPS_Statistics", "Show rendering statistics", "#showFPS_Statistics", graph.options().showRenderingStatistic,
-      function ( enabled, silent ){
-        
+      ( enabled, silent ) => {
+
         if ( graph.options().getHideDebugFeatures() === false ) {
           d3.select("#FPS_Statistics").classed("hidden", !enabled);
         } else {
           d3.select("#FPS_Statistics").classed("hidden", true);
         }
-        
-        
+
+
       });
     addCheckBox("showModeOfOperation", "Show input modality", "#showModeOfOperation", graph.options().showInputModality,
-      function ( enabled ){
+      ( enabled ) => {
         if ( graph.options().getHideDebugFeatures() === false ) {
           d3.select("#modeOfOperationString").classed("hidden", !enabled);
         } else {
@@ -79,33 +79,33 @@ module.exports = function ( graph ){
   
   
   function addCheckBox( identifier, modeName, selector, onChangeFunc, _callbackFunction ){
-    var configOptionContainer = d3.select(selector)
+    const configOptionContainer = d3.select(selector)
       .append("div")
       .classed("checkboxContainer", true);
-    var configCheckbox = configOptionContainer.append("input")
+    const configCheckbox = configOptionContainer.append("input")
       .classed("moduleCheckbox", true)
-      .attr("id", identifier + "ConfigCheckbox")
+      .attr("id", `${identifier}ConfigCheckbox`)
       .attr("type", "checkbox")
       .property("checked", onChangeFunc());
-    
-    
-    configCheckbox.on("click", function ( silent ){
-      var isEnabled = configCheckbox.property("checked");
+
+
+    configCheckbox.on("click", ( silent ) => {
+      const isEnabled = configCheckbox.property("checked");
       onChangeFunc(isEnabled);
       _callbackFunction(isEnabled, silent);
-      
+
     });
     checkboxes.push(configCheckbox);
     configOptionContainer.append("label")
-      .attr("for", identifier + "ConfigCheckbox")
+      .attr("for", `${identifier}ConfigCheckbox`)
       .text(modeName);
-    
+
     return configCheckbox;
   }
   
   debugMenu.setCheckBoxValue = function ( identifier, value ){
-    for ( var i = 0; i < checkboxes.length; i++ ) {
-      var cbdId = checkboxes[i].attr("id");
+    for ( let i = 0; i < checkboxes.length; i++ ) {
+      const cbdId = checkboxes[i].attr("id");
       if ( cbdId === identifier ) {
         checkboxes[i].property("checked", value);
         break;
@@ -114,8 +114,8 @@ module.exports = function ( graph ){
   };
   
   debugMenu.getCheckBoxValue = function ( id ){
-    for ( var i = 0; i < checkboxes.length; i++ ) {
-      var cbdId = checkboxes[i].attr("id");
+    for ( let i = 0; i < checkboxes.length; i++ ) {
+      const cbdId = checkboxes[i].attr("id");
       if ( cbdId === id ) {
         return checkboxes[i].property("checked");
       }
@@ -124,9 +124,9 @@ module.exports = function ( graph ){
   
   debugMenu.updateSettings = function (){
     d3.selectAll(".debugOption").classed("hidden", graph.options().getHideDebugFeatures());
-    
-    var silent = true;
-    checkboxes.forEach(function ( checkbox ){
+
+    const silent = true;
+    checkboxes.forEach(( checkbox ) => {
       checkbox.on("click")(silent);
     });
     if ( graph.editorMode() === false ) {

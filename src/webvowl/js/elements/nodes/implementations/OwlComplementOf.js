@@ -1,21 +1,21 @@
-var SetOperatorNode = require("../SetOperatorNode");
+const SetOperatorNode = require("../SetOperatorNode");
 
 module.exports = (function (){
-  
-  var o = function ( graph ){
+
+  const o = function ( graph ){
     SetOperatorNode.apply(this, arguments);
-    
-    var that = this,
+
+    const that = this,
       superDrawFunction = that.draw;
-    
+
     this.styleClass("complementof")
       .type("owl:complementOf");
-    
-    this.draw = function ( element ){
+
+    this.draw = ( element ) => {
       superDrawFunction(element);
-      
-      var symbol = element.append("g").classed("embedded", true);
-      
+
+      const symbol = element.append("g").classed("embedded", true);
+
       symbol.append("circle")
         .attr("class", "symbol")
         .classed("fineline", true)
@@ -24,10 +24,10 @@ module.exports = (function (){
         .attr("class", "nofill")
         .attr("d", "m -7,-1.5 12,0 0,6")
         .attr("transform", "scale(.5)");
-      
+
       symbol.attr("transform",
-        "translate(-" + (that.radius() - 15) / 100 + ",-" + (that.radius() - 15) / 100 + ")");
-      
+        `translate(-${(that.radius() - 15) / 100},-${(that.radius() - 15) / 100})`);
+
       that.postDrawActions();
     };
   };

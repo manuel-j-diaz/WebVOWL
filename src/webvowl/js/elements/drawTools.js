@@ -2,8 +2,8 @@
  * Contains reusable function for drawing nodes.
  */
 module.exports = (function (){
-  
-  var tools = {};
+
+  const tools = {};
   
   /**
    * Append a circular class node with the passed attributes.
@@ -15,7 +15,7 @@ module.exports = (function (){
    * @returns {*}
    */
   tools.appendCircularClass = function ( parent, radius, cssClasses, tooltip, backgroundColor ){
-    var circle = parent.append("circle")
+    const circle = parent.append("circle")
       .classed("class", true)
       .attr("r", radius);
     
@@ -28,7 +28,7 @@ module.exports = (function (){
   
   function addCssClasses( element, cssClasses ){
     if ( cssClasses instanceof Array ) {
-      cssClasses.forEach(function ( cssClass ){
+      cssClasses.forEach(( cssClass ) => {
         element.classed(cssClass, true);
       });
     }
@@ -57,7 +57,7 @@ module.exports = (function (){
    * @returns {*}
    */
   tools.appendRectangularClass = function ( parent, width, height, cssClasses, tooltip, backgroundColor ){
-    var rectangle = parent.append("rect")
+    const rectangle = parent.append("rect")
       .classed("class", true)
       .attr("x", -width / 2)
       .attr("y", -height / 2)
@@ -72,15 +72,15 @@ module.exports = (function (){
   };
   
   tools.drawPin = function ( container, dx, dy, onClick, accuraciesHelperFunction, useAccuracyHelper ){
-    var pinGroupElement = container
+    const pinGroupElement = container
       .append("g")
       .classed("hidden-in-export", true)
-      .attr("transform", "translate(" + dx + "," + dy + ")");
-    
-    var base = pinGroupElement.append("circle")
+      .attr("transform", `translate(${dx},${dy})`);
+
+    const base = pinGroupElement.append("circle")
       .classed("class pin feature", true)
       .attr("r", 12)
-      .on("click", function ( event ){
+      .on("click", ( event ) => {
         if ( onClick ) {
           onClick();
         }
@@ -100,16 +100,16 @@ module.exports = (function (){
         .attr("cy", -7)
         .classed("superHiddenElement ", true)
         .classed("superOpacityElement", !accuraciesHelperFunction())
-        .on("click", function ( event ){
+        .on("click", ( event ) => {
           if ( onClick ) {
             onClick();
           }
           event.stopPropagation();
         })
-        .on("mouseover", function (){
+        .on("mouseover", () => {
           base.classed("feature_hover", true);
         })
-        .on("mouseout", function (){
+        .on("mouseout", () => {
           base.classed("feature_hover", false);
         })
       ;
@@ -121,7 +121,7 @@ module.exports = (function (){
   };
   
   tools.drawRectHalo = function ( node, width, height, offset ){
-    var container;
+    let container;
     if ( node.nodeElement )
       container = node.nodeElement();
     else
@@ -132,10 +132,10 @@ module.exports = (function (){
       return;
     }
     
-    var haloGroupElement = container
+    const haloGroupElement = container
       .append("g")
       .classed("hidden-in-export", true);
-    
+
     haloGroupElement.append("rect")
       .classed("searchResultA", true)
       .attr("x", (-width - offset) / 2)
@@ -143,23 +143,23 @@ module.exports = (function (){
       .attr("width", width + offset)
       .attr("height", height + offset);
     haloGroupElement.attr("animationRunning", true);
-    
-    haloGroupElement.node().addEventListener("webkitAnimationEnd", function (){
-      var test = haloGroupElement.selectAll(".searchResultA");
+
+    haloGroupElement.node().addEventListener("webkitAnimationEnd", () => {
+      const test = haloGroupElement.selectAll(".searchResultA");
       test.classed("searchResultA", false)
         .classed("searchResultB", true);
       haloGroupElement.attr("animationRunning", false);
-    });
-    haloGroupElement.node().addEventListener("animationend", function (){
-      var test = haloGroupElement.selectAll(".searchResultA");
+    }, { once: true });
+    haloGroupElement.node().addEventListener("animationend", () => {
+      const test = haloGroupElement.selectAll(".searchResultA");
       test.classed("searchResultA", false)
         .classed("searchResultB", true);
       haloGroupElement.attr("animationRunning", false);
-    });
-    
-    
+    }, { once: true });
+
+
     return haloGroupElement;
-    
+
   };
   tools.drawHalo = function ( container, radius ){
     if ( container === undefined ) {
@@ -167,32 +167,32 @@ module.exports = (function (){
       // there is no element to add the halo to;
       // this means the node was not rendered previously
     }
-    
-    var haloGroupElement = container
+
+    const haloGroupElement = container
       .append("g")
       .classed("hidden-in-export", true);
-    
-    
+
+
     haloGroupElement.append("circle", ":first-child")
       .classed("searchResultA", true)
       .attr("r", radius + 15);
     haloGroupElement.attr("animationRunning", true);
-    
-    
-    haloGroupElement.node().addEventListener("webkitAnimationEnd", function (){
-      var test = haloGroupElement.selectAll(".searchResultA");
+
+
+    haloGroupElement.node().addEventListener("webkitAnimationEnd", () => {
+      const test = haloGroupElement.selectAll(".searchResultA");
       test.classed("searchResultA", false)
         .classed("searchResultB", true)
         .attr("animationRunning", false);
       haloGroupElement.attr("animationRunning", false);
-    });
-    haloGroupElement.node().addEventListener("animationend", function (){
-      var test = haloGroupElement.selectAll(".searchResultA");
+    }, { once: true });
+    haloGroupElement.node().addEventListener("animationend", () => {
+      const test = haloGroupElement.selectAll(".searchResultA");
       test.classed("searchResultA", false)
         .classed("searchResultB", true)
         .attr("animationRunning", false);
       haloGroupElement.attr("animationRunning", false);
-    });
+    }, { once: true });
     
     return haloGroupElement;
   };

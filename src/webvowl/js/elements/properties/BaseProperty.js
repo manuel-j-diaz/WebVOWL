@@ -1,25 +1,25 @@
-var BaseElement = require("../BaseElement");
-var CenteringTextElement = require("../../util/CenteringTextElement");
-var drawTools = require("../drawTools")();
-var forceLayoutNodeFunctions = require("../forceLayoutNodeFunctions")();
-var rectangularElementTools = require("../rectangularElementTools")();
-var math = require("../../util/math")();
+const BaseElement = require("../BaseElement");
+const CenteringTextElement = require("../../util/CenteringTextElement");
+const drawTools = require("../drawTools")();
+const forceLayoutNodeFunctions = require("../forceLayoutNodeFunctions")();
+const rectangularElementTools = require("../rectangularElementTools")();
+const math = require("../../util/math")();
 
 module.exports = (function (){
   
   // Static variables
-  var labelHeight = 28,
+  const labelHeight = 28,
     labelWidth = 80,
     smallestRadius = labelHeight / 2;
-  
-  
+
+
   // Constructor, private variables and privileged methods
-  var Base = function ( graph ){
+  const Base = function ( graph ){
     BaseElement.apply(this, arguments);
-    
-    var that = this,
-      // Basic attributes
-      cardinality,
+
+    const that = this;
+    // Basic attributes
+    let cardinality,
       domain,
       inverse,
       link,
@@ -43,13 +43,13 @@ module.exports = (function (){
       pinGroupElement,
       haloGroupElement,
       myWidth = 80,
-      defaultWidth = 80,
       shapeElement,
       textElement,
       parent_labelObject,
       backupFullIri,
-      
       redundantProperties = [];
+
+    const defaultWidth = 80;
     
     
     this.existingPropertyIRI = function ( url ){
@@ -196,7 +196,7 @@ module.exports = (function (){
     };
     
     this.markerId = function (){
-      return "marker" + that.id();
+      return `marker${that.id()}`;
     };
     
     this.toggleFocus = function (){
@@ -236,11 +236,11 @@ module.exports = (function (){
     // Reused functions TODO refactor
     this.draw = function ( labelGroup ){
       function attachLabel( property ){
-        var labelContainer = labelGroup.append("g")
+        const labelContainer = labelGroup.append("g")
           .datum(property)
           .classed("label", true)
           .attr("id", property.id());
-        
+
         property.drawLabel(labelContainer);
         return labelContainer;
       }
@@ -254,15 +254,15 @@ module.exports = (function (){
       that.labelElement(attachLabel(that));
       // Draw an inverse label and reposition both labels if necessary
       if ( that.inverse() ) {
-        var yTransformation = (that.height() / 2) + 1 /* additional space */;
+        const yTransformation = (that.height() / 2) + 1 /* additional space */;
         that.inverse()
           .labelElement(attachLabel(that.inverse()));
-        
+
         that.labelElement()
-          .attr("transform", "translate(" + 0 + ",-" + yTransformation + ")");
+          .attr("transform", `translate(0,-${yTransformation})`);
         that.inverse()
           .labelElement()
-          .attr("transform", "translate(" + 0 + "," + yTransformation + ")");
+          .attr("transform", `translate(0,${yTransformation})`);
       }
       
       if ( that.pinned() ) {
@@ -278,17 +278,17 @@ module.exports = (function (){
     };
     
     this.addRect = function ( labelContainer ){
-      var rect = labelContainer.append("rect")
+      const rect = labelContainer.append("rect")
         .classed(that.styleClass(), true)
         .classed("property", true)
         .attr("x", -that.width() / 2)
         .attr("y", -that.height() / 2)
         .attr("width", that.width())
         .attr("height", that.height())
-        .on("mouseover", function (){
+        .on("mouseover", () => {
           onMouseOver();
         })
-        .on("mouseout", function (){
+        .on("mouseout", () => {
           onMouseOut();
         });
       
@@ -299,8 +299,8 @@ module.exports = (function (){
         rect.classed(that.visualAttributes(), true);
       }
       
-      var bgColor = that.backgroundColor();
-      
+      let bgColor = that.backgroundColor();
+
       if ( that.attributes().indexOf("deprecated") > -1 ) {
         bgColor = undefined;
         rect.classed("deprecatedproperty", true);
@@ -313,11 +313,11 @@ module.exports = (function (){
     };
     this.drawLabel = function ( labelContainer ){
       shapeElement = this.addRect(labelContainer);
-      
-      var equivalentsString = that.equivalentsString();
-      var suffixForFollowingEquivalents = equivalentsString ? "," : "";
-      
-      var bgColor = that.backgroundColor();
+
+      const equivalentsString = that.equivalentsString();
+      const suffixForFollowingEquivalents = equivalentsString ? "," : "";
+
+      let bgColor = that.backgroundColor();
       if ( that.attributes().indexOf("deprecated") > -1 ) {
         bgColor = undefined;
       }
@@ -328,13 +328,13 @@ module.exports = (function (){
     };
     
     this.equivalentsString = function (){
-      var equivalentProperties = that.equivalents();
+      const equivalentProperties = that.equivalents();
       if ( !equivalentProperties ) {
         return;
       }
-      
+
       return equivalentProperties
-        .map(function ( property ){
+        .map(( property ) => {
           if ( property === undefined || typeof(property) === "string" ) { // @WORKAROUND
             return "ERROR";
           }
@@ -344,7 +344,7 @@ module.exports = (function (){
     };
     
     this.drawCardinality = function ( container ){
-      var cardinalityText = this.generateCardinalityText();
+      const cardinalityText = this.generateCardinalityText();
       
       if ( cardinalityText ) {
         that.cardinalityElement(container);
@@ -386,9 +386,9 @@ module.exports = (function (){
       if ( that.cardinality() ) {
         return that.cardinality();
       } else if ( that.minCardinality() || that.maxCardinality() ) {
-        var minBoundary = that.minCardinality() || "0";
-        var maxBoundary = that.maxCardinality() || "*";
-        return minBoundary + ".." + maxBoundary;
+        const minBoundary = that.minCardinality() || "0";
+        const maxBoundary = that.maxCardinality() || "*";
+        return `${minBoundary}..${maxBoundary}`;
       }
     };
     
@@ -404,16 +404,16 @@ module.exports = (function (){
           that.cardinalityElement().classed("hovered", enable);
         }
       }
-      var subAndSuperProperties = getSubAndSuperProperties();
-      subAndSuperProperties.forEach(function ( property ){
-        
+      const subAndSuperProperties = getSubAndSuperProperties();
+      subAndSuperProperties.forEach(( property ) => {
+
         if ( property.labelElement && property.labelElement() ) {
           property.labelElement().select("rect")
             .classed("indirect-highlighting", enable);
         }
-        
+
       });
-      var inversed = false;
+      let inversed = false;
       
       if ( graph.ignoreOtherHoverEvents() === false ) {
         if ( that.inverse() ) {
@@ -443,15 +443,15 @@ module.exports = (function (){
      * @returns {Array}
      */
     function getSubAndSuperProperties(){
-      var properties = [];
-      
+      let properties = [];
+
       if ( that.subproperties() ) {
         properties = properties.concat(that.subproperties());
       }
       if ( that.superproperties() ) {
         properties = properties.concat(that.superproperties());
       }
-      
+
       return properties;
     }
     
@@ -465,7 +465,7 @@ module.exports = (function (){
       if ( that.labelElement().node().parentNode === null ) {
         return;
       }
-      var selectedLabelGroup = that.labelElement().node().parentNode,
+      const selectedLabelGroup = that.labelElement().node().parentNode,
         labelContainer = selectedLabelGroup.parentNode,
         selectedLinkGroup = that.linkGroup().node(),
         linkContainer = that.linkGroup().node().parentNode;
@@ -480,9 +480,9 @@ module.exports = (function (){
      * This is separated from the foreground-function to prevent endless loops.
      */
     function foregroundSubAndSuperProperties(){
-      var subAndSuperProperties = getSubAndSuperProperties();
-      
-      subAndSuperProperties.forEach(function ( property ){
+      const subAndSuperProperties = getSubAndSuperProperties();
+
+      subAndSuperProperties.forEach(( property ) => {
         if ( property.foreground ) property.foreground();
       });
     }
@@ -509,11 +509,11 @@ module.exports = (function (){
       
       if ( that.inverse() ) {
         // check which element is rendered on top and add a pin to it
-        var tr_that = that.labelElement().attr("transform");
-        var tr_inv = that.inverse().labelElement().attr("transform");
-        
-        var thatY = /translate\(\s*([^\s,)]+)[ ,]([^\s,)]+)/.exec(tr_that)[2];
-        var invY = /translate\(\s*([^\s,)]+)[ ,]([^\s,)]+)/.exec(tr_inv)[2];
+        const tr_that = that.labelElement().attr("transform");
+        const tr_inv = that.inverse().labelElement().attr("transform");
+
+        const thatY = /translate\(\s*([^\s,)]+)[ ,]([^\s,)]+)/.exec(tr_that)[2];
+        const invY = /translate\(\s*([^\s,)]+)[ ,]([^\s,)]+)/.exec(tr_inv)[2];
         
         if ( thatY < invY )
           pinGroupElement = drawTools.drawPin(that.labelElement(), -0.5 * that.width() + 10, -25, this.removePin, graph.options().showDraggerObject, graph.options().useAccuracyHelper());
@@ -548,12 +548,12 @@ module.exports = (function (){
     };
     
     this.animationProcess = function (){
-      var animRuns = false;
+      let animRuns = false;
       if ( that.getHalos() ) {
-        var haloGr = that.getHalos();
-        var haloEls = haloGr.selectAll(".searchResultA");
+        const haloGr = that.getHalos();
+        const haloEls = haloGr.selectAll(".searchResultA");
         animRuns = haloGr.attr("animationRunning");
-        
+
         if ( typeof animRuns !== "boolean" ) {
           // parse this to a boolean value
           animRuns = (animRuns === 'true');
@@ -568,22 +568,22 @@ module.exports = (function (){
     
     this.drawHalo = function ( pulseAnimation ){
       that.halo(true);
-      var offset = 0;
+      const offset = 0;
       if ( that.labelElement() && that.labelElement().node() ) {
-        var labelNode = that.labelElement().node();
-        var labelContainer = labelNode.parentNode;
+        const labelNode = that.labelElement().node();
+        const labelContainer = labelNode.parentNode;
         // do this only if animation is not running
         if ( that.animationProcess() === false )
           labelContainer.appendChild(labelNode);
       }
       haloGroupElement = drawTools.drawRectHalo(that, that.width(), that.height(), offset);
       if ( haloGroupElement ) {
-        var haloNode = haloGroupElement.node();
-        var haloContainer = haloNode.parentNode;
+        const haloNode = haloGroupElement.node();
+        const haloContainer = haloNode.parentNode;
         haloContainer.appendChild(haloNode);
       }
-      var selectedNode;
-      var nodeContainer;
+      let selectedNode;
+      let nodeContainer;
       if ( that.pinned() ) {
         selectedNode = pinGroupElement.node();
         nodeContainer = selectedNode.parentNode;
@@ -597,7 +597,7 @@ module.exports = (function (){
         }
       }
       if ( pulseAnimation === false ) {
-        var pulseItem = haloGroupElement.selectAll(".searchResultA");
+        const pulseItem = haloGroupElement.selectAll(".searchResultA");
         pulseItem.classed("searchResultA", false);
         pulseItem.classed("searchResultB", true);
         pulseItem.attr("animationRunning", false);
@@ -605,11 +605,11 @@ module.exports = (function (){
     };
     
     this.getMyWidth = function (){
-      var text = that.labelForCurrentLanguage();
+      const text = that.labelForCurrentLanguage();
       myWidth = measureTextWidth(text, "text") + 20;
       // check for sub names;
-      var indicatorText = that.indicationString();
-      var indicatorWidth = measureTextWidth(indicatorText, "subtext") + 20;
+      const indicatorText = that.indicationString();
+      const indicatorWidth = measureTextWidth(indicatorText, "subtext") + 20;
       if ( indicatorWidth > myWidth )
         myWidth = indicatorWidth;
       
@@ -621,7 +621,7 @@ module.exports = (function (){
       if ( !textStyle ) {
         textStyle = "text";
       }
-      var d = d3.select("body")
+      const d = d3.select("body")
           .append("div")
           .attr("class", textStyle)
           .attr("id", "width-test") // tag this element to identify it
@@ -645,34 +645,34 @@ module.exports = (function (){
         return;
       }
       
-      var h = that.height();
+      const h = that.height();
       if ( dynamic === true ) {
         myWidth = Math.min(that.getMyWidth(), graph.options().maxLabelWidth());
-        shapeElement.transition().tween("attr", function (){
+        shapeElement.transition().tween("attr", () => {
         })
           .ease(d3.easeLinear)
           .duration(100)
           .attr("x", -myWidth / 2).attr("y", -h / 2).attr("width", myWidth).attr("height", h)
-          .on("end", function (){
+          .on("end", () => {
             that.updateTextElement();
           });
       } else {
         // Static width for property labels = 80
         myWidth = defaultWidth;
         that.updateTextElement();
-        shapeElement.transition().tween("attr", function (){
+        shapeElement.transition().tween("attr", () => {
         })
           .ease(d3.easeLinear)
           .duration(100)
           .attr("x", -myWidth / 2).attr("y", -h / 2).attr("width", myWidth).attr("height", h);
       }
       if ( that.pinned() === true && pinGroupElement ) {
-        var dx = -0.5 * myWidth + 10,
+        const dx = -0.5 * myWidth + 10,
           dy = -25;
         pinGroupElement.transition()
-          .tween("attr.translate", function (){
+          .tween("attr.translate", () => {
           })
-          .attr("transform", "translate(" + dx + "," + dy + ")")
+          .attr("transform", `translate(${dx},${dy})`)
           .ease(d3.easeLinear)
           .duration(100);
       }
@@ -686,10 +686,10 @@ module.exports = (function (){
     };
     
     this.addTextLabelElement = function (){
-      var labelContainer = that.labelElement();
-      
-      var equivalentsString = that.equivalentsString();
-      var suffixForFollowingEquivalents = equivalentsString ? "," : "";
+      const labelContainer = that.labelElement();
+
+      const equivalentsString = that.equivalentsString();
+      const suffixForFollowingEquivalents = equivalentsString ? "," : "";
       
       textElement = new CenteringTextElement(labelContainer, this.backgroundColor());
       textElement.addText(this.labelForCurrentLanguage(), "", suffixForFollowingEquivalents);
@@ -729,81 +729,77 @@ module.exports = (function (){
         .attr("y", -13)
         .attr("height", 25)
         .attr("class", "foreignelements")
-        .on("dragstart", function (){
-          return false;
-        }) // remove drag operations of text element)
+        .on("dragstart", () => false) // remove drag operations of text element)
         .attr("width", that.textWidth() - 2);
       // adding a Style to the fObject
       //
       //
       //
-      var editText = fobj.append("xhtml:input")
+      const editText = fobj.append("xhtml:input")
         .attr("class", "nodeEditSpan")
         .attr("id", that.id())
         .attr("align", "center")
         .attr("contentEditable", "true")
-        .on("dragstart", function (){
-          return false;
-        }); // remove drag operations of text element)
-      
-      var bgColor = '#f00';
-      var txtWidth = that.textWidth() - 2;
+        .on("dragstart", () => false); // remove drag operations of text element)
+
+      const bgColor = '#f00';
+      const txtWidth = that.textWidth() - 2;
       editText.style({
         // 'line-height': '30px',
         'align': 'center',
         'color': 'black',
-        'width': txtWidth + "px",
+        'width': `${txtWidth}px`,
         'background-color': bgColor,
         'border-bottom': '2px solid black'
       });
-      var txtNode = editText.node();
+      const txtNode = editText.node();
       txtNode.value = that.labelForCurrentLanguage();
       txtNode.focus();
       txtNode.select();
 
       // add some events that relate to this object
-      editText.on("click", function ( event ){
+      editText.on("click", ( event ) => {
         if ( event.stopPropagation ) event.stopPropagation();
         if ( event.sourceEvent && event.sourceEvent.stopPropagation ) event.sourceEvent.stopPropagation();
 
       });
       // // remove hover Events for now;
-      editText.on("mouseout", function ( event ){
+      editText.on("mouseout", ( event ) => {
         if ( event.stopPropagation ) event.stopPropagation();
         if ( event.sourceEvent && event.sourceEvent.stopPropagation ) event.sourceEvent.stopPropagation();
       });
-      editText.on("mousedown", function ( event ){
+      editText.on("mousedown", ( event ) => {
         if ( event.stopPropagation ) event.stopPropagation();
         if ( event.sourceEvent && event.sourceEvent.stopPropagation ) event.sourceEvent.stopPropagation();
       })
         .on("keydown", function ( event ){
 
-          if ( event.keyCode === 13 ) {
+          if ( event.key === "Enter" ) {
             this.blur();
             that.frozen(false); // << releases the not after selection
             that.locked(false);
           }
         })
-        .on("keyup", function (){
+        .on("keyup", () => {
           if ( forceIRISync ) {
-            var labelName = editText.node().value;
-            var resourceName = labelName.replaceAll(" ", "_");
-            var syncedIRI = that.baseIri() + resourceName;
+            const labelName = editText.node().value;
+            const resourceName = labelName.replaceAll(" ", "_");
+            const syncedIRI = `${that.baseIri()}${resourceName}`;
             backupFullIri = syncedIRI;
-            
+
             d3.select("#element_iriEditor").node().title = syncedIRI;
             d3.select("#element_iriEditor").node().value = graph.options().prefixModule().getPrefixRepresentationForFullURI(syncedIRI);
           }
           d3.select("#element_labelEditor").node().value = editText.node().value;
-          
+
         })
-        .on("blur", function (){
-          
-          
+        .on("blur", () => {
+
+
           that.editingTextElement = false;
           ignoreLocalHoverEvents = false;
           that.labelElement().selectAll("rect").classed("hoveredForEditing", false);
-          var newLabel = editText.node().value;
+          const newLabel = editText.node().value;
           that.labelElement().selectAll(".foreignelements").remove();
           // that.setLabelForCurrentLanguage(classNameConvention(editText.node().value));
           that.label(newLabel);
@@ -812,8 +808,8 @@ module.exports = (function (){
           updateHoverElements(true);
           graph.showHoverElementsAfterAnimation(that, false);
           graph.ignoreOtherHoverEvents(false);
-          
-          
+
+
           that.frozen(graph.paused());
           that.locked(graph.paused());
           that.domain().frozen(graph.paused());
@@ -823,10 +819,10 @@ module.exports = (function (){
           graph.removeEditElements();
           if ( backupFullIri ) {
             // console.log("Checking if element is Identical ?");
-            var sanityCheckResult = graph.options().editSidebar().checkProperIriChange(that, backupFullIri);
+            const sanityCheckResult = graph.options().editSidebar().checkProperIriChange(that, backupFullIri);
             if ( sanityCheckResult !== false ) {
               graph.options().warningModule().showWarning("Already seen this property",
-                "Input IRI: " + backupFullIri + " for element: " + that.labelForCurrentLanguage() + " already been set",
+                `Input IRI: ${backupFullIri} for element: ${that.labelForCurrentLanguage()} already been set`,
                 "Continuing with duplicate property!", 1, false, sanityCheckResult);
             }
             that.iri(backupFullIri);
@@ -834,8 +830,8 @@ module.exports = (function (){
           graph.options().focuserModule().handle(undefined);
           graph.options().focuserModule().handle(that);
           graph.updatePropertyDraggerElements(that);
-          
-          
+
+
         });	// add a foreiner element to this thing;
       
     };
@@ -843,7 +839,7 @@ module.exports = (function (){
     // update hover elements
     function updateHoverElements( enable ){
       if ( graph.ignoreOtherHoverEvents() === false ) {
-        var inversed = false;
+        let inversed = false;
         if ( that.inverse() ) {
           inversed = true;
         }

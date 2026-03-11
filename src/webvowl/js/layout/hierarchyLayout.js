@@ -7,41 +7,41 @@
  * owl:Thing and owl:NamedIndividual nodes are excluded from pinning.
  */
 module.exports = function ( graph ){
-  var layout = {},
-    hierarchyEnabled = true,
-    pinnedNodes = [];
+  const layout = {};
+  let hierarchyEnabled = true;
+  let pinnedNodes = [];
 
   // Defaults — kept here so hierarchyLayout.js stays self-contained if options are unavailable.
   // The UI sliders write into graph.options() and layout.apply() reads them at call time.
-  var DEFAULT_NODE_SEPARATION  = 150;
-  var DEFAULT_LEVEL_SEPARATION = 180;
+  const DEFAULT_NODE_SEPARATION  = 150;
+  const DEFAULT_LEVEL_SEPARATION = 180;
 
   layout.apply = function ( classNodes, allProperties ){
     pinnedNodes = [];
 
     // Read live values from options (UI sliders), falling back to defaults
-    var opts = graph.options ? graph.options() : null;
-    var NODE_SEPARATION  = (opts && typeof opts.nodeSeparation  === "function") ? opts.nodeSeparation()  : DEFAULT_NODE_SEPARATION;
-    var LEVEL_SEPARATION = (opts && typeof opts.levelSeparation === "function") ? opts.levelSeparation() : DEFAULT_LEVEL_SEPARATION;
+    const opts = graph.options ? graph.options() : null;
+    const NODE_SEPARATION  = (opts && typeof opts.nodeSeparation  === "function") ? opts.nodeSeparation()  : DEFAULT_NODE_SEPARATION;
+    const LEVEL_SEPARATION = (opts && typeof opts.levelSeparation === "function") ? opts.levelSeparation() : DEFAULT_LEVEL_SEPARATION;
 
     // Only operate on TBox class nodes — exclude injected ABox individuals
-    classNodes = classNodes.filter(function ( n ){
+    classNodes = classNodes.filter(( n ) => {
       return !(n.type && n.type() === "owl:NamedIndividual");
     });
 
-    var subclassEdges = allProperties.filter(function ( p ){
+    const subclassEdges = allProperties.filter(( p ) => {
       return p.type && p.type() === "rdfs:subClassOf";
     });
 
     // Build parent → children index (IRI strings)
-    var childrenOf = {};
-    var hasParent = {};
-    classNodes.forEach(function ( node ){
+    const childrenOf = {};
+    const hasParent = {};
+    classNodes.forEach(( node ) => {
       childrenOf[node.iri()] = [];
     });
-    subclassEdges.forEach(function ( edge ){
-      var child = edge.domain();
-      var parent = edge.range();
+    subclassEdges.forEach(( edge ) => {
+      const child = edge.domain();
+      const parent = edge.range();
       if ( !child || !parent ) return;
       if ( childrenOf[parent.iri()] ) {
         childrenOf[parent.iri()].push(child.iri());
@@ -50,17 +50,17 @@ module.exports = function ( graph ){
     });
 
     // Node index by IRI
-    var nodeIndex = {};
-    classNodes.forEach(function ( n ){ nodeIndex[n.iri()] = n; });
+    const nodeIndex = {};
+    classNodes.forEach(( n ) => { nodeIndex[n.iri()] = n; });
 
     // Find roots: class nodes with no parent in the visible set
-    var roots = classNodes.filter(function ( node ){
+    const roots = classNodes.filter(( node ) => {
       return !hasParent[node.iri()];
     });
     if ( roots.length === 0 || classNodes.length === 0 ) return;
 
     // Build tree data with cycle guard (shared visited across all roots)
-    var visited = {};
+    const visited = {};
     function buildNode( iri ){
       if ( visited[iri] ) return { iri: iri, children: [] };
       visited[iri] = true;
@@ -70,49 +70,49 @@ module.exports = function ( graph ){
       };
     }
 
-    var VIRTUAL_ROOT = "__vroot__";
-    var treeData = {
+    const VIRTUAL_ROOT = "__vroot__";
+    const treeData = {
       iri: VIRTUAL_ROOT,
-      children: roots.map(function ( root ){ return buildNode(root.iri()); })
+      children: roots.map(( root ) => { return buildNode(root.iri()); })
     };
 
     // --- First pass: determine the widest level so we can size the canvas ---
-    var tempTree = d3.tree().size([1, 1]);
-    var tempRoot = tempTree(d3.hierarchy(treeData, function ( d ){ return d.children; }));
-    var tempNodes = tempRoot.descendants();
+    const tempTree = d3.tree().size([1, 1]);
+    const tempRoot = tempTree(d3.hierarchy(treeData, ( d ) => { return d.children; }));
+    const tempNodes = tempRoot.descendants();
 
-    var depthCounts = {};
-    tempNodes.forEach(function ( n ){
+    const depthCounts = {};
+    tempNodes.forEach(( n ) => {
       if ( n.data.iri === VIRTUAL_ROOT ) return;
       depthCounts[n.depth] = (depthCounts[n.depth] || 0) + 1;
     });
 
-    var maxLevelWidth = 1;
-    Object.keys(depthCounts).forEach(function ( d ){
+    let maxLevelWidth = 1;
+    Object.keys(depthCounts).forEach(( d ) => {
       if ( depthCounts[d] > maxLevelWidth ) maxLevelWidth = depthCounts[d];
     });
 
-    var maxDepth = d3.max(tempNodes, function ( n ){ return n.depth; }) || 1;
+    const maxDepth = d3.max(tempNodes, ( n ) => { return n.depth; }) || 1;
 
     // Scale canvas using slider values directly so both sliders have full effect
-    var treeWidth  = maxLevelWidth * NODE_SEPARATION;
-    var treeHeight = maxDepth * LEVEL_SEPARATION;
+    const treeWidth  = maxLevelWidth * NODE_SEPARATION;
+    const treeHeight = maxDepth * LEVEL_SEPARATION;
 
 
     // --- Second pass: actual layout at computed size ---
-    var tree = d3.tree().size([treeWidth, treeHeight]);
-    var treeRoot = tree(d3.hierarchy(treeData, function ( d ){ return d.children; }));
-    var treeNodes = treeRoot.descendants();
+    const tree = d3.tree().size([treeWidth, treeHeight]);
+    const treeRoot = tree(d3.hierarchy(treeData, ( d ) => { return d.children; }));
+    const treeNodes = treeRoot.descendants();
 
     // Center the tree around the SVG origin (0, 0)
-    var halfWidth  = treeWidth  / 2;
-    var halfHeight = treeHeight / 2;
+    const halfWidth  = treeWidth  / 2;
+    const halfHeight = treeHeight / 2;
 
-    var noPinnedFn = 0, noClassNode = 0, skippedThing = 0;
+    let noPinnedFn = 0, noClassNode = 0, skippedThing = 0;
 
-    treeNodes.forEach(function ( tNode ){
+    treeNodes.forEach(( tNode ) => {
       if ( tNode.data.iri === VIRTUAL_ROOT ) return;
-      var classNode = nodeIndex[tNode.data.iri];
+      const classNode = nodeIndex[tNode.data.iri];
       if ( !classNode ) { noClassNode++; return; }
       // owl:Thing floats as a force node — not pinned
       if ( classNode.type && classNode.type() === "owl:Thing" ) { skippedThing++; return; }
@@ -140,7 +140,7 @@ module.exports = function ( graph ){
   };
 
   layout.unapply = function (){
-    pinnedNodes.forEach(function ( node ){
+    pinnedNodes.forEach(( node ) => {
       node.pinned(false);
     });
     pinnedNodes = [];

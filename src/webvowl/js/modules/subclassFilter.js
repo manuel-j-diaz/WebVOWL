@@ -1,9 +1,9 @@
-var elementTools = require("../util/elementTools")();
+const elementTools = require("../util/elementTools")();
 
 module.exports = function (){
-  
-  var filter = {},
-    nodes,
+
+  const filter = {};
+  let nodes,
     properties,
     enabled = false,
     filteredNodes,
@@ -19,7 +19,7 @@ module.exports = function (){
    */
   filter.setBaseProperties = function(baseProperties) {
     nodesWithOwnProperties = new Set();
-    baseProperties.forEach(function(p) {
+    baseProperties.forEach((p) => {
       if (!elementTools.isRdfsSubClassOf(p)) {
         if (p.domain()) nodesWithOwnProperties.add(p.domain().id());
         if (p.range()) nodesWithOwnProperties.add(p.range().id());
@@ -45,8 +45,7 @@ module.exports = function (){
   
   function subtreeHasOwnPropertiesInBase(connectedProperties) {
     if (!nodesWithOwnProperties) return false;
-    for (var i = 0; i < connectedProperties.length; i++) {
-      var p = connectedProperties[i];
+    for (const p of connectedProperties) {
       if (p.domain() && nodesWithOwnProperties.has(p.domain().id())) return true;
       if (p.range() && nodesWithOwnProperties.has(p.range().id())) return true;
     }
@@ -56,26 +55,19 @@ module.exports = function (){
   function hideSubclassesWithoutOwnProperties(){
     if (showAll) return;   // degree=0: show everything
 
-    var unneededProperties = [],
-      unneededClasses = [],
-      subclasses = [],
-      connectedProperties,
-      subclass,
-      property,
-      i, // index,
-      l; // length
+    let unneededProperties = [];
+    const unneededClasses = [];
+    const subclasses = [];
 
 
-    for ( i = 0, l = properties.length; i < l; i++ ) {
-      property = properties[i];
+    for ( const property of properties ) {
       if ( elementTools.isRdfsSubClassOf(property) ) {
         subclasses.push(property.domain());
       }
     }
 
-    for ( i = 0, l = subclasses.length; i < l; i++ ) {
-      subclass = subclasses[i];
-      connectedProperties = findRelevantConnectedProperties(subclass, properties);
+    for ( const subclass of subclasses ) {
+      const connectedProperties = findRelevantConnectedProperties(subclass, properties);
 
       // Only remove the node and its properties, if they're all subclassOf properties
       if ( areOnlySubclassProperties(connectedProperties) &&
@@ -101,13 +93,9 @@ module.exports = function (){
    * @returns {Array}
    */
   function findRelevantConnectedProperties( node, allProperties, visitedNodes ){
-    var connectedProperties = [],
-      property,
-      i,
-      l;
-    
-    for ( i = 0, l = allProperties.length; i < l; i++ ) {
-      property = allProperties[i];
+    let connectedProperties = [];
+
+    for ( const property of allProperties ) {
       if ( property.domain() === node ||
         property.range() === node ) {
         
@@ -121,13 +109,13 @@ module.exports = function (){
         
         // Look only for subclass properties, because these are the relevant properties
         if ( elementTools.isRdfsSubClassOf(property) ) {
-          var domain = property.domain();
+          const domain = property.domain();
           visitedNodes = visitedNodes || new Set();
 
           // If we have the range, there might be a nested property on the domain
           if ( node === property.range() && !visitedNodes.has(domain.id()) ) {
             visitedNodes.add(domain.id());
-            var nestedConnectedProperties = findRelevantConnectedProperties(domain, allProperties, visitedNodes);
+            const nestedConnectedProperties = findRelevantConnectedProperties(domain, allProperties, visitedNodes);
             connectedProperties = connectedProperties.concat(nestedConnectedProperties);
           }
         }
@@ -138,28 +126,22 @@ module.exports = function (){
   }
   
   function areOnlySubclassProperties( connectedProperties ){
-    var onlySubclassProperties = true,
-      property,
-      i,
-      l;
-    
-    for ( i = 0, l = connectedProperties.length; i < l; i++ ) {
-      property = connectedProperties[i];
-      
+    let onlySubclassProperties = true;
+
+    for ( const property of connectedProperties ) {
       if ( !elementTools.isRdfsSubClassOf(property) ) {
         onlySubclassProperties = false;
         break;
       }
     }
-    
+
     return onlySubclassProperties;
   }
   
   function doesNotInheritFromMultipleClasses( subclass, connectedProperties ){
-    var superClassCount = 0;
-    
-    for ( var i = 0, l = connectedProperties.length; i < l; i++ ) {
-      var property = connectedProperties[i];
+    let superClassCount = 0;
+
+    for ( const property of connectedProperties ) {
       
       if ( property.domain() === subclass ) {
         superClassCount += 1;
@@ -174,13 +156,9 @@ module.exports = function (){
   }
   
   function removeUnneededElements( array, removableElements ){
-    var disjoint = [],
-      element,
-      i,
-      l;
-    
-    for ( i = 0, l = array.length; i < l; i++ ) {
-      element = array[i];
+    const disjoint = [];
+
+    for ( const element of array ) {
       if ( removableElements.indexOf(element) === -1 ) {
         disjoint.push(element);
       }

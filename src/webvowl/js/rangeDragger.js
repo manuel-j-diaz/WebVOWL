@@ -1,6 +1,6 @@
 module.exports = function ( graph ){
   /** variable defs **/
-  var Range_dragger = {};
+  const Range_dragger = {};
   Range_dragger.nodeId = 10002;
   Range_dragger.parent = undefined;
   Range_dragger.x = 0;
@@ -54,7 +54,7 @@ module.exports = function ( graph ){
     if ( Range_dragger.parent.labelElement() === undefined ) return;
     if ( Range_dragger.parent.labelElement().attr("transform") === "translate(0,15)" ||
       Range_dragger.parent.labelElement().attr("transform") === "translate(0,-15)" ) {
-      var prop = Range_dragger.parent;
+      const prop = Range_dragger.parent;
       Range_dragger.parent.inverse().inverse(null);
       Range_dragger.parent.inverse(null);
       prop.range(newRange);
@@ -64,16 +64,16 @@ module.exports = function ( graph ){
       Range_dragger.parent.range(newRange);
     }
     // update the position of the new range
-    var rX = newRange.x;
-    var rY = newRange.y;
-    
-    var dX = Range_dragger.parent.domain().x;
-    var dY = Range_dragger.parent.domain().y;
-    
-    
+    const rX = newRange.x;
+    const rY = newRange.y;
+
+    const dX = Range_dragger.parent.domain().x;
+    const dY = Range_dragger.parent.domain().y;
+
+
     // center
-    var cX = 0.49 * (dX + rX);
-    var cY = 0.49 * (dY + rY);
+    const cX = 0.49 * (dX + rX);
+    const cY = 0.49 * (dY + rY);
     // put position there;
     Range_dragger.parent.labelElement().x = cX;
     Range_dragger.parent.labelElement().y = cY;
@@ -82,8 +82,8 @@ module.exports = function ( graph ){
   
   Range_dragger.setParentProperty = function ( parentProperty, inversed ){
     Range_dragger.parent = parentProperty;
-    var iP;
-    var renElem;
+    let iP;
+    let renElem;
     Range_dragger.isLoopProperty = false;
     if ( parentProperty.domain() === parentProperty.range() ) Range_dragger.isLoopProperty = true;
     Range_dragger.parent = parentProperty;
@@ -152,7 +152,7 @@ module.exports = function ( graph ){
     //     {"x": 0, "y": 0}
     // ];
     
-    var lineData = [
+    const lineData = [
       { "x": -40, "y": 0 }, // start
       { "x": -20, "y": -10 },
       { "x": 20, "y": -50 },
@@ -161,9 +161,9 @@ module.exports = function ( graph ){
       { "x": -20, "y": 10 },
       { "x": -40, "y": 0 }
     ];
-    
-    
-    var pathData = "M 61,40 C 41,15 41,-15 61,-40 L 1,0 Z";
+
+
+    const pathData = "M 61,40 C 41,15 41,-15 61,-40 L 1,0 Z";
     
     Range_dragger.nodeElement = Range_dragger.rootNodeLayer.append('path').attr("d", pathData);
     Range_dragger.nodeElement.classed("classDraggerNode", true);
@@ -180,48 +180,48 @@ module.exports = function ( graph ){
   };
   
   Range_dragger.updateElementViaDomainDragger = function ( x, y ){
-    
-    var range_x = x;
-    var range_y = y;
-    
-    var dex = Range_dragger.parent.range().x;
-    var dey = Range_dragger.parent.range().y;
-    
-    var dir_X = x - dex;
-    var dir_Y = y - dey;
-    
-    var len = Math.sqrt(dir_X * dir_X + dir_Y * dir_Y);
-    
-    var nX = dir_X / len;
-    var nY = dir_Y / len;
-    
-    
-    var ep_range_x = dex + nX * Range_dragger.parent.range().actualRadius();
-    var ep_range_y = dey + nY * Range_dragger.parent.range().actualRadius();
-    
-    
-    var dx = range_x - ep_range_x;
-    var dy = range_y - ep_range_y;
+
+    const range_x = x;
+    const range_y = y;
+
+    const dex = Range_dragger.parent.range().x;
+    const dey = Range_dragger.parent.range().y;
+
+    const dir_X = x - dex;
+    const dir_Y = y - dey;
+
+    let len = Math.sqrt(dir_X * dir_X + dir_Y * dir_Y);
+
+    let nX = dir_X / len;
+    let nY = dir_Y / len;
+
+
+    const ep_range_x = dex + nX * Range_dragger.parent.range().actualRadius();
+    const ep_range_y = dey + nY * Range_dragger.parent.range().actualRadius();
+
+
+    const dx = range_x - ep_range_x;
+    const dy = range_y - ep_range_y;
     len = Math.sqrt(dx * dx + dy * dy);
     nX = dx / len;
     nY = dy / len;
-    
-    var angle = Math.atan2(ep_range_y - range_y, ep_range_x - range_x) * 180 / Math.PI + 180;
-    Range_dragger.nodeElement.attr("transform", "translate(" + ep_range_x + "," + ep_range_y + ")" + "rotate(" + angle + ")");
-    var doX = ep_range_x + nX * 40;
-    var doY = ep_range_y + nY * 40;
-    Range_dragger.draggerObject.attr("transform", "translate(" + doX + "," + doY + ")");
-    
+
+    const angle = Math.atan2(ep_range_y - range_y, ep_range_x - range_x) * 180 / Math.PI + 180;
+    Range_dragger.nodeElement.attr("transform", `translate(${ep_range_x},${ep_range_y})rotate(${angle})`);
+    const doX = ep_range_x + nX * 40;
+    const doY = ep_range_y + nY * 40;
+    Range_dragger.draggerObject.attr("transform", `translate(${doX},${doY})`);
+
   };
   
   
   Range_dragger.updateElement = function (){
     if ( Range_dragger.mouseButtonPressed === true || Range_dragger.parent === undefined ) return;
-    
-    var range = Range_dragger.parent.range();
-    var iP = Range_dragger.parent.labelObject().linkRangeIntersection;
+
+    let range = Range_dragger.parent.range();
+    let iP = Range_dragger.parent.labelObject().linkRangeIntersection;
     if ( Range_dragger.parent.labelElement() === undefined ) return;
-    var offsetForLoop = 48;
+    let offsetForLoop = 48;
     if ( Range_dragger.parent.labelElement().attr("transform") === "translate(0,15)" ) {
       range = Range_dragger.parent.inverse().domain();
       iP = Range_dragger.parent.labelObject().linkDomainIntersection;
@@ -229,36 +229,36 @@ module.exports = function ( graph ){
     }
     
     if ( iP === undefined ) return;
-    var range_x = range.x;
-    var range_y = range.y;
-    
-    var ep_range_x = iP.x;
-    var ep_range_y = iP.y;
+    const range_x = range.x;
+    const range_y = range.y;
+
+    const ep_range_x = iP.x;
+    const ep_range_y = iP.y;
     // offset for dragger object
-    var dx = range_x - ep_range_x;
-    var dy = range_y - ep_range_y;
-    var len = Math.sqrt(dx * dx + dy * dy);
-    var nX = dx / len;
-    var nY = dy / len;
-    var angle = Math.atan2(ep_range_y - range_y, ep_range_x - range_x) * 180 / Math.PI;
-    
-    var doX = ep_range_x - nX * 40;
-    var doY = ep_range_y - nY * 40;
+    const dx = range_x - ep_range_x;
+    const dy = range_y - ep_range_y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const nX = dx / len;
+    const nY = dy / len;
+    let angle = Math.atan2(ep_range_y - range_y, ep_range_x - range_x) * 180 / Math.PI;
+
+    const doX = ep_range_x - nX * 40;
+    const doY = ep_range_y - nY * 40;
     
     if ( Range_dragger.isLoopProperty === true )
       angle -= offsetForLoop;
     
     
-    Range_dragger.nodeElement.attr("transform", "translate(" + ep_range_x + "," + ep_range_y + ")" + "rotate(" + angle + ")");
-    Range_dragger.draggerObject.attr("transform", "translate(" + doX + "," + doY + ")");
-    
-    
+    Range_dragger.nodeElement.attr("transform", `translate(${ep_range_x},${ep_range_y})rotate(${angle})`);
+    Range_dragger.draggerObject.attr("transform", `translate(${doX},${doY})`);
+
+
   };
-  
+
   /** MOUSE HANDLING FUNCTIONS ------------------------------------------------- **/
   
   Range_dragger.addMouseEvents = function (){
-    var rootLayer = Range_dragger.rootNodeLayer.selectAll("*");
+    const rootLayer = Range_dragger.rootNodeLayer.selectAll("*");
     rootLayer.on("mouseover", Range_dragger.onMouseOver)
       .on("mouseout", Range_dragger.onMouseOut)
       .on("click", function (){
@@ -300,7 +300,7 @@ module.exports = function ( graph ){
     }
     Range_dragger.nodeElement.classed("classDraggerNode", false);
     Range_dragger.nodeElement.classed("classDraggerNodeHovered", true);
-    var selectedNode = Range_dragger.rootElement.node(),
+    const selectedNode = Range_dragger.rootElement.node(),
       nodeContainer = selectedNode.parentNode;
     nodeContainer.appendChild(selectedNode);
     
@@ -316,28 +316,28 @@ module.exports = function ( graph ){
   };
   
   Range_dragger.setPosition = function ( x, y ){
-    var range_x = Range_dragger.parent.domain().x;
-    var range_y = Range_dragger.parent.domain().y;
-    
-    // var position of the rangeEndPoint
-    var ep_range_x = x;
-    var ep_range_y = y;
-    
+    const range_x = Range_dragger.parent.domain().x;
+    const range_y = Range_dragger.parent.domain().y;
+
+    // position of the rangeEndPoint
+    const ep_range_x = x;
+    const ep_range_y = y;
+
     // offset for dragger object
-    var dx = range_x - ep_range_x;
-    var dy = range_y - ep_range_y;
-    
-    var len = Math.sqrt(dx * dx + dy * dy);
-    
-    var nX = dx / len;
-    var nY = dy / len;
-    
-    
-    var angle = Math.atan2(dy, dx) * 180 / Math.PI;
-    var doX = ep_range_x + nX * 40;
-    var doY = ep_range_y + nY * 40;
-    Range_dragger.nodeElement.attr("transform", "translate(" + ep_range_x + "," + ep_range_y + ")" + "rotate(" + angle + ")");
-    Range_dragger.draggerObject.attr("transform", "translate(" + doX + "," + doY + ")");
+    const dx = range_x - ep_range_x;
+    const dy = range_y - ep_range_y;
+
+    const len = Math.sqrt(dx * dx + dy * dy);
+
+    const nX = dx / len;
+    const nY = dy / len;
+
+
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    const doX = ep_range_x + nX * 40;
+    const doY = ep_range_y + nY * 40;
+    Range_dragger.nodeElement.attr("transform", `translate(${ep_range_x},${ep_range_y})rotate(${angle})`);
+    Range_dragger.draggerObject.attr("transform", `translate(${doX},${doY})`);
     Range_dragger.x = x;
     Range_dragger.y = y;
     

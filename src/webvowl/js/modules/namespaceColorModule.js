@@ -1,6 +1,6 @@
 // D3 Paired palette: 6 pairs (12 colors), hardcoded hex
 // Index [i*2] = light (ABox individual), index [i*2+1] = dark (TBox class)
-var PAIRED = [
+const PAIRED = [
   "#a6cee3", "#1f78b4",  // pair 0: light blue / dark blue
   "#b2df8a", "#33a02c",  // pair 1: light green / dark green
   "#fb9a99", "#e31a1c",  // pair 2: light red / dark red
@@ -8,12 +8,12 @@ var PAIRED = [
   "#cab2d6", "#6a3d9a",  // pair 4: light purple / dark purple
   "#ffff99", "#b15928"   // pair 5: light yellow / dark brown
 ];
-var NEUTRAL_GRAY = "#aaaaaa";
+const NEUTRAL_GRAY = "#aaaaaa";
 
 module.exports = function (){
 
-  var filter = {},
-    nodes,
+  const filter = {};
+  let nodes,
     properties,
     enabled = false,
     filteredNodes,
@@ -39,10 +39,10 @@ module.exports = function (){
   };
 
   function buildNamespaceIndex( nodeList ){
-    var indexMap = {};
-    var count = 0;
-    nodeList.forEach(function ( node ){
-      var baseIri = node.baseIri ? node.baseIri() : undefined;
+    const indexMap = {};
+    let count = 0;
+    nodeList.forEach(( node ) => {
+      const baseIri = node.baseIri ? node.baseIri() : undefined;
       if ( baseIri && !(baseIri in indexMap) ) {
         indexMap[baseIri] = count++;
       }
@@ -51,13 +51,13 @@ module.exports = function (){
   }
 
   function applyNamespaceColors( nodeList ){
-    var nsIndex = buildNamespaceIndex(nodeList);
-    nodeList.forEach(function ( node ){
-      var baseIri = node.baseIri ? node.baseIri() : undefined;
+    const nsIndex = buildNamespaceIndex(nodeList);
+    nodeList.forEach(( node ) => {
+      const baseIri = node.baseIri ? node.baseIri() : undefined;
       if ( !baseIri ) return;
-      var idx = nsIndex[baseIri];
-      var isIndividual = node.type && node.type() === "owl:NamedIndividual";
-      var color;
+      const idx = nsIndex[baseIri];
+      const isIndividual = node.type && node.type() === "owl:NamedIndividual";
+      let color;
       if ( idx >= 6 ) {
         color = NEUTRAL_GRAY;
       } else if ( isIndividual ) {
@@ -70,7 +70,7 @@ module.exports = function (){
   }
 
   function resetNamespaceColors( nodeList ){
-    nodeList.forEach(function ( node ){
+    nodeList.forEach(( node ) => {
       node.backgroundColor(null);
     });
   }

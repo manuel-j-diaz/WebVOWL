@@ -5,14 +5,14 @@
  */
 module.exports = function ( graph ){
   
-  var editSidebar = {},
-    languageTools = webvowl.util.languageTools(),
-    elementTools = webvowl.util.elementTools();
-  
-  var prefixModule = webvowl.util.prefixTools(graph);
-  var selectedElementForCharacteristics;
-  var oldPrefix, oldPrefixURL;
-  var prefix_editMode = false;
+  const editSidebar = {};
+  const languageTools = webvowl.util.languageTools();
+  const elementTools = webvowl.util.elementTools();
+
+  const prefixModule = webvowl.util.prefixTools(graph);
+  let selectedElementForCharacteristics;
+  let oldPrefix, oldPrefixURL;
+  let prefix_editMode = false;
   
   
   editSidebar.clearMetaObjectValue = function (){
@@ -27,7 +27,7 @@ module.exports = function ( graph ){
   
   editSidebar.updatePrefixUi = function (){
     editSidebar.updateElementWidth();
-    var prefixListContainer = d3.select("#prefixURL_Container");
+    const prefixListContainer = d3.select("#prefixURL_Container");
     while ( prefixListContainer.node().firstChild ) {
       prefixListContainer.node().removeChild(prefixListContainer.node().firstChild);
     }
@@ -42,26 +42,26 @@ module.exports = function ( graph ){
     
     
     d3.select("#titleEditor")
-      .on("change", function (){
+      .on("change", () => {
         graph.options().addOrUpdateGeneralObjectEntry("title", d3.select("#titleEditor").node().value);
       })
-      .on("keydown", function ( event ){
+      .on("keydown", ( event ) => {
         event.stopPropagation();
-        if ( event.keyCode === 13 ) {
+        if ( event.key === "Enter" ) {
           event.preventDefault();
           graph.options().addOrUpdateGeneralObjectEntry("title", d3.select("#titleEditor").node().value);
         }
       });
     d3.select("#iriEditor")
-      .on("change", function (){
+      .on("change", () => {
         if ( graph.options().addOrUpdateGeneralObjectEntry("iri", d3.select("#iriEditor").node().value) === false ) {
           // restore value
           d3.select("#iriEditor").node().value = graph.options().getGeneralMetaObjectProperty('iri');
         }
       })
-      .on("keydown", function ( event ){
+      .on("keydown", ( event ) => {
         event.stopPropagation();
-        if ( event.keyCode === 13 ) {
+        if ( event.key === "Enter" ) {
           event.preventDefault();
           if ( graph.options().addOrUpdateGeneralObjectEntry("iri", d3.select("#iriEditor").node().value) === false ) {
             // restore value
@@ -70,29 +70,29 @@ module.exports = function ( graph ){
         }
       });
     d3.select("#versionEditor")
-      .on("change", function (){
+      .on("change", () => {
         graph.options().addOrUpdateGeneralObjectEntry("version", d3.select("#versionEditor").node().value);
       })
-      .on("keydown", function ( event ){
+      .on("keydown", ( event ) => {
         event.stopPropagation();
-        if ( event.keyCode === 13 ) {
+        if ( event.key === "Enter" ) {
           event.preventDefault();
           graph.options().addOrUpdateGeneralObjectEntry("version", d3.select("#versionEditor").node().value);
         }
       });
     d3.select("#authorsEditor")
-      .on("change", function (){
+      .on("change", () => {
         graph.options().addOrUpdateGeneralObjectEntry("author", d3.select("#authorsEditor").node().value);
       })
-      .on("keydown", function ( event ){
+      .on("keydown", ( event ) => {
         event.stopPropagation();
-        if ( event.keyCode === 13 ) {
+        if ( event.key === "Enter" ) {
           event.preventDefault();
           graph.options().addOrUpdateGeneralObjectEntry("author", d3.select("#authorsEditor").node().value);
         }
       });
     d3.select("#descriptionEditor")
-      .on("change", function (){
+      .on("change", () => {
         graph.options().addOrUpdateGeneralObjectEntry("description", d3.select("#descriptionEditor").node().value);
       });
     
@@ -101,18 +101,18 @@ module.exports = function ( graph ){
   };
   
   function setupSupportedDatatypes(){
-    var datatypeEditorSelection = d3.select("#typeEditor_datatype").node();
-    var supportedDatatypes = ["undefined", "xsd:boolean", "xsd:double", "xsd:integer", "xsd:string"];
-    for ( var i = 0; i < supportedDatatypes.length; i++ ) {
-      var optB = document.createElement('option');
+    const datatypeEditorSelection = d3.select("#typeEditor_datatype").node();
+    const supportedDatatypes = ["undefined", "xsd:boolean", "xsd:double", "xsd:integer", "xsd:string"];
+    for ( let i = 0; i < supportedDatatypes.length; i++ ) {
+      const optB = document.createElement('option');
       optB.innerHTML = supportedDatatypes[i];
       datatypeEditorSelection.appendChild(optB);
     }
   }
   
   function highlightDeleteButton( enable, name ){
-    var deletePath = d3.select("#del_pathFor_" + name);
-    var deleteRect = d3.select("#del_rectFor_" + name);
+    const deletePath = d3.select(`#del_pathFor_${name}`);
+    const deleteRect = d3.select(`#del_rectFor_${name}`);
     
     if ( enable === false ) {
       deletePath.node().style = "stroke: #f00;";
@@ -125,8 +125,8 @@ module.exports = function ( graph ){
   
   
   function highlightEditButton( enable, name, fill ){
-    var editPath = d3.select("#pathFor_" + name);
-    var editRect = d3.select("#rectFor_" + name);
+    const editPath = d3.select(`#pathFor_${name}`);
+    const editRect = d3.select(`#rectFor_${name}`);
     
     if ( enable === false ) {
       if ( fill )
@@ -146,37 +146,37 @@ module.exports = function ( graph ){
   }
   
   function setupAddPrefixButton(){
-    var btn = d3.select("#addPrefixButton");
-    btn.on("click", function (){
+    const btn = d3.select("#addPrefixButton");
+    btn.on("click", () => {
       
       // check if we are still in editMode?
       if ( prefix_editMode === false ) {
         // create new line entry;
-        var name = "emptyPrefixEntry";
-        var prefixListContainer = d3.select("#prefixURL_Container");
-        var prefixEditContainer = prefixListContainer.append("div");
+        const name = "emptyPrefixEntry";
+        const prefixListContainer = d3.select("#prefixURL_Container");
+        const prefixEditContainer = prefixListContainer.append("div");
         prefixEditContainer.classed("prefixIRIElements", true);
-        prefixEditContainer.node().id = "prefixContainerFor_" + name;
+        prefixEditContainer.node().id = `prefixContainerFor_${name}`;
         
-        var IconContainer = prefixEditContainer.append("div");
+        const IconContainer = prefixEditContainer.append("div");
         IconContainer.style("position", "absolute");
-        IconContainer.node().id = "containerFor_" + name;
-        var editButton = IconContainer.append("svg");
+        IconContainer.node().id = `containerFor_${name}`;
+        const editButton = IconContainer.append("svg");
         editButton.style("width", "14px");
         editButton.style("height", "20px");
         //   editButton.classed("editPrefixButton", true);
         editButton.classed("noselect", true);
         //editButton.node().innerHTML = "\u2714";
-        editButton.node().id = "editButtonFor_" + name;
+        editButton.node().id = `editButtonFor_${name}`;
         
         editButton.node().elementStyle = "save";
         editButton.node().selectorName = name;
-        var editIcon = editButton.append("g");
-        var editRect = editIcon.append("rect");
-        var editPath = editIcon.append("path");
-        editIcon.node().id = "iconFor_" + name;
-        editPath.node().id = "pathFor_" + name;
-        editRect.node().id = "rectFor_" + name;
+        const editIcon = editButton.append("g");
+        const editRect = editIcon.append("rect");
+        const editPath = editIcon.append("path");
+        editIcon.node().id = `iconFor_${name}`;
+        editPath.node().id = `pathFor_${name}`;
+        editRect.node().id = `rectFor_${name}`;
         
         editIcon.node().selectorName = name;
         editPath.node().selectorName = name;
@@ -205,37 +205,37 @@ module.exports = function ( graph ){
         editPath.attr("d", "M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z");
         editPath.attr("transform", "matrix(0.45,0,0,0.45,0,5)");
         
-        var prefInput = prefixEditContainer.append("input");
+        const prefInput = prefixEditContainer.append("input");
         prefInput.classed("prefixInput", true);
         prefInput.node().type = "text";
-        prefInput.node().id = "prefixInputFor_" + name;
+        prefInput.node().id = `prefixInputFor_${name}`;
         prefInput.node().autocomplete = "off";
         prefInput.node().value = "";
         prefInput.style("margin-left", "14px");
         
-        var prefURL = prefixEditContainer.append("input");
+        const prefURL = prefixEditContainer.append("input");
         prefURL.classed("prefixURL", true);
         prefURL.node().type = "text";
-        prefURL.node().id = "prefixURLFor_" + name;
+        prefURL.node().id = `prefixURLFor_${name}`;
         prefURL.node().autocomplete = "off";
         prefURL.node().value = "";
         
         prefInput.node().disabled = false;
         prefURL.node().disabled = false;
         prefix_editMode = true;
-        var deleteContainer = prefixEditContainer.append("div");
+        const deleteContainer = prefixEditContainer.append("div");
         deleteContainer.style("float", "right");
-        var deleteButton = deleteContainer.append("svg");
-        deleteButton.node().id = "deleteButtonFor_" + name;
+        const deleteButton = deleteContainer.append("svg");
+        deleteButton.node().id = `deleteButtonFor_${name}`;
         deleteContainer.node().title = "Delete prefix and IRI";
         deleteButton.style("width", "10px");
         deleteButton.style("height", "20px");
-        var deleteIcon = deleteButton.append("g");
-        var deleteRect = deleteIcon.append("rect");
-        var deletePath = deleteIcon.append("path");
-        deleteIcon.node().id = "del_iconFor_" + name;
-        deletePath.node().id = "del_pathFor_" + name;
-        deleteRect.node().id = "del_rectFor_" + name;
+        const deleteIcon = deleteButton.append("g");
+        const deleteRect = deleteIcon.append("rect");
+        const deletePath = deleteIcon.append("path");
+        deleteIcon.node().id = `del_iconFor_${name}`;
+        deletePath.node().id = `del_pathFor_${name}`;
+        deleteRect.node().id = `del_rectFor_${name}`;
         
         deleteIcon.node().selectorName = name;
         deletePath.node().selectorName = name;
@@ -280,35 +280,35 @@ module.exports = function ( graph ){
   
   function setupPrefixList(){
     if ( graph.isEditorMode() === false ) return;
-    var prefixListContainer = d3.select("#prefixURL_Container");
-    var prefixElements = graph.options().prefixList();
-    for ( var name in prefixElements ) {
+    const prefixListContainer = d3.select("#prefixURL_Container");
+    const prefixElements = graph.options().prefixList();
+    for ( const name in prefixElements ) {
       if ( prefixElements.hasOwnProperty(name) ) {
-        var prefixEditContainer = prefixListContainer.append("div");
+        const prefixEditContainer = prefixListContainer.append("div");
         prefixEditContainer.classed("prefixIRIElements", true);
-        prefixEditContainer.node().id = "prefixContainerFor_" + name;
+        prefixEditContainer.node().id = `prefixContainerFor_${name}`;
         
         // create edit button which enables the input fields
-        var IconContainer = prefixEditContainer.append("div");
+        const IconContainer = prefixEditContainer.append("div");
         IconContainer.style("position", "absolute");
-        IconContainer.node().id = "containerFor_" + name;
-        var editButton = IconContainer.append("svg");
+        IconContainer.node().id = `containerFor_${name}`;
+        const editButton = IconContainer.append("svg");
         editButton.style("width", "14px");
         editButton.style("height", "20px");
         editButton.classed("noselect", true);
-        editButton.node().id = "editButtonFor_" + name;
+        editButton.node().id = `editButtonFor_${name}`;
         IconContainer.node().title = "Edit prefix and IRI";
         editButton.node().elementStyle = "save";
         editButton.node().selectorName = name;
         
-        editButton.node().id = "editButtonFor_" + name;
+        editButton.node().id = `editButtonFor_${name}`;
         editButton.node().elementStyle = "edit";
-        var editIcon = editButton.append("g");
-        var editRect = editIcon.append("rect");
-        var editPath = editIcon.append("path");
-        editIcon.node().id = "iconFor_" + name;
-        editPath.node().id = "pathFor_" + name;
-        editRect.node().id = "rectFor_" + name;
+        const editIcon = editButton.append("g");
+        const editRect = editIcon.append("rect");
+        const editPath = editIcon.append("path");
+        editIcon.node().id = `iconFor_${name}`;
+        editPath.node().id = `pathFor_${name}`;
+        editRect.node().id = `rectFor_${name}`;
         
         editIcon.node().selectorName = name;
         editPath.node().selectorName = name;
@@ -324,67 +324,39 @@ module.exports = function ( graph ){
         editRect.attr("transform", "matrix(1,0,0,1,-3,4)");
         
         editButton.selectAll("g").on("mouseover", function (){
-          var sender = this;
-          var fill = false;
-          var enable = true;
-          var f_editPath = d3.select("#pathFor_" + sender.selectorName);
-          var f_editRect = d3.select("#rectFor_" + sender.selectorName);
-          
-          if ( enable === false ) {
-            if ( fill )
-              f_editPath.node().style = "fill: #fff; stroke : #fff; stroke-width : 1px";
-            else
-              f_editPath.node().style = " stroke : #fff; stroke-width : 1px";
-            
-            f_editRect.style("cursor", "auto");
-          } else {
-            if ( fill )
-              f_editPath.node().style = "fill: #ff972d; stroke : #ff972d; stroke-width : 1px";
-            else
-              f_editPath.node().style = "stroke : #ff972d; stroke-width : 1px";
-            f_editRect.style("cursor", "pointer");
-          }
+          const sender = this;
+          const f_editPath = d3.select(`#pathFor_${sender.selectorName}`);
+          const f_editRect = d3.select(`#rectFor_${sender.selectorName}`);
+
+          f_editPath.node().style = "stroke : #ff972d; stroke-width : 1px";
+          f_editRect.style("cursor", "pointer");
         });
         editButton.selectAll("g").on("mouseout", function (){
-          var sender = this;
-          var fill = false;
-          var enable = false;
-          var f_editPath = d3.select("#pathFor_" + sender.selectorName);
-          var f_editRect = d3.select("#rectFor_" + sender.selectorName);
-          
-          if ( enable === false ) {
-            if ( fill )
-              f_editPath.node().style = "fill: #fff; stroke : #fff; stroke-width : 1px";
-            else
-              f_editPath.node().style = " stroke : #fff; stroke-width : 1px";
-            
-            f_editRect.style("cursor", "auto");
-          } else {
-            if ( fill )
-              f_editPath.node().style = "fill: #ff972d; stroke : #ff972d; stroke-width : 1px";
-            else
-              f_editPath.node().style = "stroke : #ff972d; stroke-width : 1px";
-            f_editRect.style("cursor", "pointer");
-          }
+          const sender = this;
+          const f_editPath = d3.select(`#pathFor_${sender.selectorName}`);
+          const f_editRect = d3.select(`#rectFor_${sender.selectorName}`);
+
+          f_editPath.node().style = " stroke : #fff; stroke-width : 1px";
+          f_editRect.style("cursor", "auto");
         });
         
         editPath.attr("d", "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z");
         editPath.attr("transform", "matrix(-0.45,0,0,0.45,10,5)");
         
         // create input field for prefix
-        var prefInput = prefixEditContainer.append("input");
+        const prefInput = prefixEditContainer.append("input");
         prefInput.classed("prefixInput", true);
         prefInput.node().type = "text";
-        prefInput.node().id = "prefixInputFor_" + name;
+        prefInput.node().id = `prefixInputFor_${name}`;
         prefInput.node().autocomplete = "off";
         prefInput.node().value = name;
         prefInput.style("margin-left", "14px");
         
         // create input field for prefix url
-        var prefURL = prefixEditContainer.append("input");
+        const prefURL = prefixEditContainer.append("input");
         prefURL.classed("prefixURL", true);
         prefURL.node().type = "text";
-        prefURL.node().id = "prefixURLFor_" + name;
+        prefURL.node().id = `prefixURLFor_${name}`;
         prefURL.node().autocomplete = "off";
         prefURL.node().value = prefixElements[name];
         prefURL.node().title = prefixElements[name];
@@ -393,19 +365,19 @@ module.exports = function ( graph ){
         prefURL.node().disabled = true;
         
         // create the delete button
-        var deleteContainer = prefixEditContainer.append("div");
+        const deleteContainer = prefixEditContainer.append("div");
         deleteContainer.style("float", "right");
-        var deleteButton = deleteContainer.append("svg");
-        deleteButton.node().id = "deleteButtonFor_" + name;
+        const deleteButton = deleteContainer.append("svg");
+        deleteButton.node().id = `deleteButtonFor_${name}`;
         deleteContainer.node().title = "Delete prefix and IRI";
         deleteButton.style("width", "10px");
         deleteButton.style("height", "20px");
-        var deleteIcon = deleteButton.append("g");
-        var deleteRect = deleteIcon.append("rect");
-        var deletePath = deleteIcon.append("path");
-        deleteIcon.node().id = "del_iconFor_" + name;
-        deletePath.node().id = "del_pathFor_" + name;
-        deleteRect.node().id = "del_rectFor_" + name;
+        const deleteIcon = deleteButton.append("g");
+        const deleteRect = deleteIcon.append("rect");
+        const deletePath = deleteIcon.append("path");
+        deleteIcon.node().id = `del_iconFor_${name}`;
+        deletePath.node().id = `del_pathFor_${name}`;
+        deleteRect.node().id = `del_rectFor_${name}`;
         
         deleteIcon.node().selectorName = name;
         deletePath.node().selectorName = name;
@@ -423,10 +395,10 @@ module.exports = function ( graph ){
         deletePath.attr("transform", "matrix(0.45,0,0,0.45,0,5)");
         
         deleteButton.selectAll("g").on("mouseover", function (){
-          var selector = this;
-          var enable = true;
-          var f_deletePath = d3.select("#del_pathFor_" + selector.selectorName);
-          var f_deleteRect = d3.select("#del_rectFor_" + selector.selectorName);
+          const selector = this;
+          const enable = true;
+          const f_deletePath = d3.select(`#del_pathFor_${selector.selectorName}`);
+          const f_deleteRect = d3.select(`#del_rectFor_${selector.selectorName}`);
           
           if ( enable === false ) {
             f_deletePath.node().style = "stroke: #f00;";
@@ -437,10 +409,10 @@ module.exports = function ( graph ){
           }
         });
         deleteButton.selectAll("g").on("mouseout", function (){
-          var selector = this;
-          var enable = false;
-          var f_deletePath = d3.select("#del_pathFor_" + selector.selectorName);
-          var f_deleteRect = d3.select("#del_rectFor_" + selector.selectorName);
+          const selector = this;
+          const enable = false;
+          const f_deletePath = d3.select(`#del_pathFor_${selector.selectorName}`);
+          const f_deleteRect = d3.select(`#del_rectFor_${selector.selectorName}`);
           
           if ( enable === false ) {
             f_deletePath.node().style = "stroke: #f00;";
@@ -474,8 +446,8 @@ module.exports = function ( graph ){
   function deletePrefixLine(){
     if ( this.disabled === true ) return;
     d3.select("#addPrefixButton").node().innerHTML = "Add Prefix";
-    var selector = this.id.split("_")[1];
-    d3.select("#prefixContainerFor_" + selector).remove();
+    const selector = this.id.split("_")[1];
+    d3.select(`#prefixContainerFor_${selector}`).remove();
     graph.options().removePrefix(selector);
     prefix_editMode = false; // <<TODO make some sanity checks
     prefixModule.updatePrefixModel();
@@ -483,35 +455,35 @@ module.exports = function ( graph ){
   
   function enablePrefixEdit( item ){
     
-    var agent = this;
+    let agent = this;
     if ( item )
       agent = item;
-    
+
     if ( agent.disabled === true ) return;
-    var selector = agent.id.split("_")[1];
-    var stl = agent.elementStyle;
+    const selector = agent.id.split("_")[1];
+    const stl = agent.elementStyle;
     if ( stl === "edit" ) {
-      d3.select("#prefixInputFor_" + selector).node().disabled = false;
-      d3.select("#prefixURLFor_" + selector).node().disabled = false;
+      d3.select(`#prefixInputFor_${selector}`).node().disabled = false;
+      d3.select(`#prefixURLFor_${selector}`).node().disabled = false;
       // change the button content
       //  this.innerHTML = "\u2714";
       agent.elementStyle = "save";
-      oldPrefix = d3.select("#prefixInputFor_" + selector).node().value;
-      oldPrefixURL = d3.select("#prefixURLFor_" + selector).node().value;
+      oldPrefix = d3.select(`#prefixInputFor_${selector}`).node().value;
+      oldPrefixURL = d3.select(`#prefixURLFor_${selector}`).node().value;
       prefix_editMode = true;
-      if ( d3.select("#containerFor_" + selector).node() )
-        d3.select("#containerFor_" + selector).node().title = "Save new prefix and IRI";
+      if ( d3.select(`#containerFor_${selector}`).node() )
+        d3.select(`#containerFor_${selector}`).node().title = "Save new prefix and IRI";
       
-      var editButton = d3.select(agent);
-      editButton.selectAll("g").on("mouseover", function (){
-        
+      const editButton = d3.select(agent);
+      editButton.selectAll("g").on("mouseover", () => {
+
         highlightEditButton(true, agent.selectorName, true);
       });
-      editButton.selectAll("g").on("mouseout", function (){
+      editButton.selectAll("g").on("mouseout", () => {
         highlightEditButton(false, agent.selectorName, true);
       });
-      
-      var editPath = d3.select("#pathFor_" + agent.selectorName);
+
+      const editPath = d3.select(`#pathFor_${agent.selectorName}`);
       editPath.attr("d", "M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z");
       editPath.attr("transform", "matrix(0.45,0,0,0.45,0,5)");
       
@@ -520,31 +492,31 @@ module.exports = function ( graph ){
       
     }
     if ( stl === "save" ) {
-      var newPrefixURL = d3.select("#prefixURLFor_" + selector).node().value;
-      var newPrefix = d3.select("#prefixInputFor_" + selector).node().value;
+      const newPrefixURL = d3.select(`#prefixURLFor_${selector}`).node().value;
+      const newPrefix = d3.select(`#prefixInputFor_${selector}`).node().value;
       
       
       if ( graph.options().updatePrefix(oldPrefix, newPrefix, oldPrefixURL, newPrefixURL) === true ) {
-        d3.select("#prefixInputFor_" + newPrefix).node().disabled = true;
-        d3.select("#prefixURLFor_" + newPrefix).node().disabled = true;
+        d3.select(`#prefixInputFor_${newPrefix}`).node().disabled = true;
+        d3.select(`#prefixURLFor_${newPrefix}`).node().disabled = true;
         d3.select("#addPrefixButton").node().innerHTML = "Add Prefix";
-        if ( d3.select("#containerFor_" + selector).node() )
-          d3.select("#containerFor_" + selector).node().title = "Edit prefix and IRI";
+        if ( d3.select(`#containerFor_${selector}`).node() )
+          d3.select(`#containerFor_${selector}`).node().title = "Edit prefix and IRI";
         
         // change the button content
         
         agent.elementStyle = "edit";
         prefix_editMode = false;
         prefixModule.updatePrefixModel();
-        var saveButton = d3.select(agent);
-        saveButton.selectAll("g").on("mouseover", function (){
+        const saveButton = d3.select(agent);
+        saveButton.selectAll("g").on("mouseover", () => {
           highlightEditButton(true, agent.selectorName, false);
         });
-        saveButton.selectAll("g").on("mouseout", function (){
+        saveButton.selectAll("g").on("mouseout", () => {
           highlightEditButton(false, agent.selectorName, false);
         });
-        
-        var savePath = d3.select("#pathFor_" + agent.selectorName);
+
+        const savePath = d3.select(`#pathFor_${agent.selectorName}`);
         savePath.attr("d", "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z");
         savePath.attr("transform", "matrix(-0.45,0,0,0.45,10,5)");
         highlightEditButton(true, agent.selectorName, false);
@@ -553,9 +525,9 @@ module.exports = function ( graph ){
   }
   
   function changeDatatypeType( element ){
-    var datatypeEditorSelection = d3.select("#typeEditor_datatype").node();
-    var givenName = datatypeEditorSelection.value;
-    var identifier = givenName.split(":")[1];
+    const datatypeEditorSelection = d3.select("#typeEditor_datatype").node();
+    const givenName = datatypeEditorSelection.value;
+    let identifier = givenName.split(":")[1];
     
     if ( datatypeEditorSelection.value !== "undefined" ) {
       d3.select("#element_iriEditor").node().disabled = true;
@@ -567,7 +539,7 @@ module.exports = function ( graph ){
     }
     element.label(identifier);
     element.dType(givenName);
-    element.iri("http://www.w3.org/2001/XMLSchema#" + identifier);
+    element.iri(`http://www.w3.org/2001/XMLSchema#${identifier}`);
     element.baseIri("http://www.w3.org/2001/XMLSchema#");
     element.redrawLabelText();
     
@@ -585,20 +557,20 @@ module.exports = function ( graph ){
   function defaultIriValue( element ){
     // get the iri of that element;
     if ( graph.options().getGeneralMetaObject().iri ) {
-      var str2Compare = graph.options().getGeneralMetaObject().iri + element.id();
+      const str2Compare = `${graph.options().getGeneralMetaObject().iri}${element.id()}`;
       return element.iri() === str2Compare;
     }
     return false;
   }
   
   function getURLFROMPrefixedVersion( element ){
-    var url = d3.select("#element_iriEditor").node().value;
-    var base = graph.options().getGeneralMetaObjectProperty("iri");
+    let url = d3.select("#element_iriEditor").node().value;
+    const base = graph.options().getGeneralMetaObjectProperty("iri");
     if ( validURL(url) === false ) {
       
       // make better usability
       // try to split element;
-      var tokens = url.split(":");
+      const tokens = url.split(":");
       
       //console.log("try to split the input into prefix:name")
       console.log("Tokens");
@@ -606,15 +578,15 @@ module.exports = function ( graph ){
       console.log("---------------");
       // TODO MORE VALIDATION TESTS
       if ( tokens.length === 2 ) {
-        var pr = tokens[0];
-        var name = tokens[1];
+        const pr = tokens[0];
+        const name = tokens[1];
         if ( pr.length > 0 ) {
-          var basePref = graph.options().prefixList()[pr];
+          const basePref = graph.options().prefixList()[pr];
           if ( basePref === undefined ) {
             console.log("ERROR __________________");
             graph.options().warningModule().showWarning("Invalid Element IRI",
-              "Could not resolve prefix '" + basePref + "'",
-              "Restoring previous IRI for Element" + element.iri(), 1, false);
+              `Could not resolve prefix '${basePref}'`,
+              `Restoring previous IRI for Element${element.iri()}`, 1, false);
             d3.select("#element_iriEditor").node().value = element.iri();
             return;
             
@@ -624,7 +596,7 @@ module.exports = function ( graph ){
           if ( name.length === 0 ) {
             graph.options().warningModule().showWarning("Invalid Element IRI",
               "Input IRI is EMPTY",
-              "Restoring previous IRI for Element" + element.iri(), 1, false);
+              `Restoring previous IRI for Element${element.iri()}`, 1, false);
             console.log("NO INPUT PROVIDED");
             d3.select("#element_iriEditor").node().value = element.iri();
             return;
@@ -651,9 +623,9 @@ module.exports = function ( graph ){
   }
   
   function changeIriForElement( element ){
-    var url = getURLFROMPrefixedVersion(element);
-    var base = graph.options().getGeneralMetaObjectProperty("iri");
-    var sanityCheckResult;
+    const url = getURLFROMPrefixedVersion(element);
+    const base = graph.options().getGeneralMetaObjectProperty("iri");
+    let sanityCheckResult;
     if ( elementTools.isNode(element) ) {
       
       sanityCheckResult = graph.checkIfIriClassAlreadyExist(url);
@@ -662,8 +634,8 @@ module.exports = function ( graph ){
       } else {
         // throw warnign
         graph.options().warningModule().showWarning("Already seen this class",
-          "Input IRI: " + url + " for element: " + element.labelForCurrentLanguage() + " already been set",
-          "Restoring previous IRI for Element : " + element.iri(), 2, false, sanityCheckResult);
+          `Input IRI: ${url} for element: ${element.labelForCurrentLanguage()} already been set`,
+          `Restoring previous IRI for Element : ${element.iri()}`, 2, false, sanityCheckResult);
         
         editSidebar.updateSelectionInformation(element);
         return;
@@ -674,8 +646,8 @@ module.exports = function ( graph ){
       sanityCheckResult = editSidebar.checkProperIriChange(element, url);
       if ( sanityCheckResult !== false ) {
         graph.options().warningModule().showWarning("Already seen this property",
-          "Input IRI: " + url + " for element: " + element.labelForCurrentLanguage() + " already been set",
-          "Restoring previous IRI for Element : " + element.iri(), 1, false, sanityCheckResult);
+          `Input IRI: ${url} for element: ${element.labelForCurrentLanguage()} already been set`,
+          `Restoring previous IRI for Element : ${element.iri()}`, 1, false, sanityCheckResult);
         
         editSidebar.updateSelectionInformation(element);
         return;
@@ -722,7 +694,7 @@ module.exports = function ( graph ){
   }
   
   function validURL( str ){
-    var urlregex = /^(https?|ftp):\/\/([a-zA-Z0-9.-]+(:[a-zA-Z0-9.&%$-]+)*@)*((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}|([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(:[0-9]+)*(\/($|[a-zA-Z0-9.,?'\\+&%$#=~_-]+))*$/;
+    const urlregex = /^(https?|ftp):\/\/([a-zA-Z0-9.-]+(:[a-zA-Z0-9.&%$-]+)*@)*((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}|([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(:[0-9]+)*(\/($|[a-zA-Z0-9.,?'\\+&%$#=~_-]+))*$/;
     return urlregex.test(str);
   }
   
@@ -733,32 +705,30 @@ module.exports = function ( graph ){
   }
   
   editSidebar.updateEditDeleteButtonIds = function ( oldPrefix, newPrefix ){
-    d3.select("#prefixInputFor_" + oldPrefix).node().id = "prefixInputFor_" + newPrefix;
-    d3.select("#prefixURLFor_" + oldPrefix).node().id = "prefixURLFor_" + newPrefix;
-    d3.select("#deleteButtonFor_" + oldPrefix).node().id = "deleteButtonFor_" + newPrefix;
-    d3.select("#editButtonFor_" + oldPrefix).node().id = "editButtonFor_" + newPrefix;
-    
-    d3.select("#prefixContainerFor_" + oldPrefix).node().id = "prefixContainerFor_" + newPrefix;
+    d3.select(`#prefixInputFor_${oldPrefix}`).node().id = `prefixInputFor_${newPrefix}`;
+    d3.select(`#prefixURLFor_${oldPrefix}`).node().id = `prefixURLFor_${newPrefix}`;
+    d3.select(`#deleteButtonFor_${oldPrefix}`).node().id = `deleteButtonFor_${newPrefix}`;
+    d3.select(`#editButtonFor_${oldPrefix}`).node().id = `editButtonFor_${newPrefix}`;
+
+    d3.select(`#prefixContainerFor_${oldPrefix}`).node().id = `prefixContainerFor_${newPrefix}`;
   };
   
   editSidebar.checkForExistingURL = function ( url ){
-    var i;
-    var allProps = graph.getUnfilteredData().properties;
-    for ( i = 0; i < allProps.length; i++ ) {
+    const allProps = graph.getUnfilteredData().properties;
+    for ( let i = 0; i < allProps.length; i++ ) {
       if ( allProps[i].iri() === url ) return true;
     }
     return false;
-    
+
   };
   editSidebar.checkProperIriChange = function ( element, url ){
     console.log("Element changed Label");
-    console.log("Testing URL " + url);
+    console.log(`Testing URL ${url}`);
     if ( element.type() === "rdfs:subClassOf" || element.type() === "owl:disjointWith" ) {
       console.log("ignore this for now, already handled in the type and domain range changer");
     } else {
-      var i;
-      var allProps = graph.getUnfilteredData().properties;
-      for ( i = 0; i < allProps.length; i++ ) {
+      const allProps = graph.getUnfilteredData().properties;
+      for ( let i = 0; i < allProps.length; i++ ) {
         if ( allProps[i] === element ) continue;
         if ( allProps[i].iri() === url ) return allProps[i];
       }
@@ -786,19 +756,19 @@ module.exports = function ( graph ){
       d3.select("#element_iriEditor").node().title = element.iri();
       
       d3.select("#element_iriEditor")
-        .on("change", function (){
-          var elementIRI = element.iri();
-          var prefixed = graph.options().prefixModule().getPrefixRepresentationForFullURI(elementIRI);
+        .on("change", () => {
+          const elementIRI = element.iri();
+          const prefixed = graph.options().prefixModule().getPrefixRepresentationForFullURI(elementIRI);
           if ( prefixed === d3.select("#element_iriEditor").node().value ) {
             console.log("Iri is identical, nothing has changed!");
             return;
           }
-          
+
           changeIriForElement(element);
         })
-        .on("keydown", function ( event ){
+        .on("keydown", ( event ) => {
           event.stopPropagation();
-          if ( event.keyCode === 13 ) {
+          if ( event.key === "Enter" ) {
             event.preventDefault();
             console.log("IRI CHANGED Via ENTER pressed");
             changeIriForElement(element);
@@ -806,31 +776,31 @@ module.exports = function ( graph ){
           }
         });
       
-      var forceIRISync = defaultIriValue(element);
+      const forceIRISync = defaultIriValue(element);
       d3.select("#element_labelEditor")
-        .on("change", function (){
-          var sanityCheckResult;
+        .on("change", () => {
+          let sanityCheckResult;
           console.log("Element changed Label");
-          var url = getURLFROMPrefixedVersion(element);
+          const url = getURLFROMPrefixedVersion(element);
           if ( element.iri() !== url ) {
             if ( elementTools.isProperty(element) === true ) {
               sanityCheckResult = editSidebar.checkProperIriChange(element, url);
               if ( sanityCheckResult !== false ) {
                 graph.options().warningModule().showWarning("Already seen this property",
-                  "Input IRI: " + url + " for element: " + element.labelForCurrentLanguage() + " already been set",
+                  `Input IRI: ${url} for element: ${element.labelForCurrentLanguage()} already been set`,
                   "Continuing with duplicate property!", 1, false, sanityCheckResult);
                 editSidebar.updateSelectionInformation(element);
                 return;
               }
             }
-            
+
             if ( elementTools.isNode(element) === true ) {
               sanityCheckResult = graph.checkIfIriClassAlreadyExist(url);
               if ( sanityCheckResult !== false ) {
                 graph.options().warningModule().showWarning("Already seen this Class",
-                  "Input IRI: " + url + " for element: " + element.labelForCurrentLanguage() + " already been set",
-                  "Restoring previous IRI for Element : " + element.iri(), 2, false, sanityCheckResult);
-                
+                  `Input IRI: ${url} for element: ${element.labelForCurrentLanguage()} already been set`,
+                  `Restoring previous IRI for Element : ${element.iri()}`, 2, false, sanityCheckResult);
+
                 editSidebar.updateSelectionInformation(element);
                 return;
               }
@@ -840,33 +810,33 @@ module.exports = function ( graph ){
           changeLabelForElement(element);
           editSidebar.updateSelectionInformation(element); // prevents that it will be changed if node is still active
         })
-        .on("keydown", function ( event ){
+        .on("keydown", ( event ) => {
           event.stopPropagation();
-          if ( event.keyCode === 13 ) {
+          if ( event.key === "Enter" ) {
             event.preventDefault();
-            var sanityCheckResult;
+            let sanityCheckResult;
             console.log("Element changed Label");
-            var url = getURLFROMPrefixedVersion(element);
+            const url = getURLFROMPrefixedVersion(element);
             if ( element.iri() !== url ) {
               if ( elementTools.isProperty(element) === true ) {
                 sanityCheckResult = editSidebar.checkProperIriChange(element, url);
                 if ( sanityCheckResult !== false ) {
                   graph.options().warningModule().showWarning("Already seen this property",
-                    "Input IRI: " + url + " for element: " + element.labelForCurrentLanguage() + " already been set",
+                    `Input IRI: ${url} for element: ${element.labelForCurrentLanguage()} already been set`,
                     "Continuing with duplicate property!", 1, false, sanityCheckResult);
-                  
+
                   editSidebar.updateSelectionInformation(element);
                   return;
                 }
               }
-              
+
               if ( elementTools.isNode(element) === true ) {
                 sanityCheckResult = graph.checkIfIriClassAlreadyExist(url);
                 if ( sanityCheckResult !== false ) {
                   graph.options().warningModule().showWarning("Already seen this Class",
-                    "Input IRI: " + url + " for element: " + element.labelForCurrentLanguage() + " already been set",
-                    "Restoring previous IRI for Element : " + element.iri(), 2, false, sanityCheckResult);
-                  
+                    `Input IRI: ${url} for element: ${element.labelForCurrentLanguage()} already been set`,
+                    `Restoring previous IRI for Element : ${element.iri()}`, 2, false, sanityCheckResult);
+
                   editSidebar.updateSelectionInformation(element);
                   return;
                 }
@@ -876,12 +846,12 @@ module.exports = function ( graph ){
             changeLabelForElement(element);
           }
         })
-        .on("keyup", function (){
+        .on("keyup", () => {
           if ( forceIRISync ) {
-            var labelName = d3.select("#element_labelEditor").node().value;
-            var resourceName = labelName.replaceAll(" ", "_");
-            var syncedIRI = element.baseIri() + resourceName;
-            
+            const labelName = d3.select("#element_labelEditor").node().value;
+            const resourceName = labelName.replaceAll(" ", "_");
+            const syncedIRI = element.baseIri() + resourceName;
+
             //element.iri(syncedIRI);
             d3.select("#element_iriEditor").node().title = element.iri();
             d3.select("#element_iriEditor").node().value = prefixModule.getPrefixRepresentationForFullURI(syncedIRI);
@@ -921,53 +891,52 @@ module.exports = function ( graph ){
         element.iri("http://www.w3.org/2000/01/rdf-schema#Literal");
       }
       if ( element.type() === "rdfs:Datatype" ) {
-        var datatypeEditorSelection = d3.select("#typeEditor_datatype");
+        const datatypeEditorSelection = d3.select("#typeEditor_datatype");
         d3.select("#typeEditForm_datatype").classed("hidden", false);
         element.iri("http://www.w3.org/2000/01/rdf-schema#Datatype");
         d3.select("#element_iriEditor").node().value = "http://www.w3.org/2000/01/rdf-schema#Datatype";
         d3.select("#element_iriEditor").node().title = "http://www.w3.org/2000/01/rdf-schema#Datatype";
         d3.select("#element_iriEditor").node().disabled = true;
         d3.select("#element_labelEditor").node().disabled = true;
-        
+
         datatypeEditorSelection.node().value = element.dType();
         if ( datatypeEditorSelection.node().value === "undefined" ) {
           d3.select("#element_iriEditor").node().disabled = true; // always prevent IRI modifications
           d3.select("#element_labelEditor").node().disabled = false;
         }
         // reconnect the element
-        datatypeEditorSelection.on("change", function (){
+        datatypeEditorSelection.on("change", () => {
           changeDatatypeType(element);
         });
       }
       
       // add type selector
-      var typeEditorSelection = d3.select("#typeEditor").node();
-      var htmlCollection = typeEditorSelection.children;
-      var numEntries = htmlCollection.length;
-      var i;
-      var elementPrototypes = getElementPrototypes(element);
-      for ( i = 0; i < numEntries; i++ )
+      const typeEditorSelection = d3.select("#typeEditor").node();
+      const htmlCollection = typeEditorSelection.children;
+      const numEntries = htmlCollection.length;
+      const elementPrototypes = getElementPrototypes(element);
+      for ( let i = 0; i < numEntries; i++ )
         typeEditorSelection.removeChild(htmlCollection[0]);
-      
-      for ( i = 0; i < elementPrototypes.length; i++ ) {
-        var optA = document.createElement('option');
+
+      for ( let i = 0; i < elementPrototypes.length; i++ ) {
+        const optA = document.createElement('option');
         optA.innerHTML = elementPrototypes[i];
         typeEditorSelection.appendChild(optA);
       }
       // set the proper value in the selection
       typeEditorSelection.value = element.type();
-      d3.select("#typeEditor").on("change", function (){
+      d3.select("#typeEditor").on("change", () => {
         elementTypeSelectionChanged(element);
       });
       
       
       // add characteristics selection
-      var needChar = elementNeedsCharacteristics(element);
+      const needChar = elementNeedsCharacteristics(element);
       d3.select("#property_characteristics_Container").classed("hidden", !needChar);
       if ( needChar === true ) {
         addElementsCharacteristics(element);
       }
-      var fullURI = d3.select("#element_iriEditor").node().value;
+      const fullURI = d3.select("#element_iriEditor").node().value;
       d3.select("#element_iriEditor").node().value = prefixModule.getPrefixRepresentationForFullURI(fullURI);
       d3.select("#element_iriEditor").node().title = fullURI;
       editSidebar.updateElementWidth();
@@ -976,10 +945,10 @@ module.exports = function ( graph ){
   };
   
   editSidebar.updateGeneralOntologyInfo = function (){
-    var preferredLanguage = graph && graph.language ? graph.language() : null;
-    
+    const preferredLanguage = graph && graph.language ? graph.language() : null;
+
     // get it from graph.options
-    var generalMetaObj = graph.options().getGeneralMetaObject();
+    const generalMetaObj = graph.options().getGeneralMetaObject();
     if ( generalMetaObj.hasOwnProperty("title") ) {
       // title has language to it -.-
       if ( typeof generalMetaObj.title === "object" ) {
@@ -1005,59 +974,59 @@ module.exports = function ( graph ){
   };
   
   editSidebar.updateElementWidth = function (){
-    var height = window.innerHeight - 40;
-    var lsb_offset = d3.select("#logo").node().getBoundingClientRect().height + 5;
-    var lsb_height = height - lsb_offset;
-    d3.select("#containerForLeftSideBar").style("top", lsb_offset + "px");
-    d3.select("#leftSideBarCollapseButton").style("top", lsb_offset + "px");
-    d3.select("#containerForLeftSideBar").style("height", lsb_height + "px");
-    
-    var div_width = d3.select("#generalDetailsEdit").node().getBoundingClientRect().width;
+    const height = window.innerHeight - 40;
+    const lsb_offset = d3.select("#logo").node().getBoundingClientRect().height + 5;
+    const lsb_height = height - lsb_offset;
+    d3.select("#containerForLeftSideBar").style("top", `${lsb_offset}px`);
+    d3.select("#leftSideBarCollapseButton").style("top", `${lsb_offset}px`);
+    d3.select("#containerForLeftSideBar").style("height", `${lsb_height}px`);
+
+    let div_width = d3.select("#generalDetailsEdit").node().getBoundingClientRect().width;
     div_width += 10;
-    
-    var title_labelWidth = d3.select("#titleEditor-label").node().getBoundingClientRect().width + 20;
-    var iri_labelWidth = d3.select("#iriEditor-label").node().getBoundingClientRect().width + 20;
-    var version_labelWidth = d3.select("#versionEditor-label").node().getBoundingClientRect().width + 20;
-    var author_labelWidth = d3.select("#authorsEditor-label").node().getBoundingClientRect().width + 20;
+
+    const title_labelWidth = d3.select("#titleEditor-label").node().getBoundingClientRect().width + 20;
+    const iri_labelWidth = d3.select("#iriEditor-label").node().getBoundingClientRect().width + 20;
+    const version_labelWidth = d3.select("#versionEditor-label").node().getBoundingClientRect().width + 20;
+    const author_labelWidth = d3.select("#authorsEditor-label").node().getBoundingClientRect().width + 20;
     //find max width;
-    var maxW = 0;
+    let maxW = 0;
     maxW = Math.max(maxW, title_labelWidth);
     maxW = Math.max(maxW, iri_labelWidth);
     maxW = Math.max(maxW, version_labelWidth);
     maxW = Math.max(maxW, author_labelWidth);
-    
-    var meta_inputWidth = div_width - maxW - 10;
-    
-    d3.select("#titleEditor").style("width", meta_inputWidth + "px");
-    d3.select("#iriEditor").style("width", meta_inputWidth + "px");
-    d3.select("#versionEditor").style("width", meta_inputWidth + "px");
-    d3.select("#authorsEditor").style("width", meta_inputWidth + "px");
-    
-    
-    var elementIri_width = d3.select("#element_iriEditor-label").node().getBoundingClientRect().width + 20;
-    var elementLabel_width = d3.select("#element_labelEditor-label").node().getBoundingClientRect().width + 20;
-    var elementType_width = d3.select("#typeEditor-label").node().getBoundingClientRect().width + 20;
-    var elementDType_width = d3.select("#typeEditor_datatype-label").node().getBoundingClientRect().width + 20;
-    
+
+    const meta_inputWidth = div_width - maxW - 10;
+
+    d3.select("#titleEditor").style("width", `${meta_inputWidth}px`);
+    d3.select("#iriEditor").style("width", `${meta_inputWidth}px`);
+    d3.select("#versionEditor").style("width", `${meta_inputWidth}px`);
+    d3.select("#authorsEditor").style("width", `${meta_inputWidth}px`);
+
+
+    const elementIri_width = d3.select("#element_iriEditor-label").node().getBoundingClientRect().width + 20;
+    const elementLabel_width = d3.select("#element_labelEditor-label").node().getBoundingClientRect().width + 20;
+    const elementType_width = d3.select("#typeEditor-label").node().getBoundingClientRect().width + 20;
+    const elementDType_width = d3.select("#typeEditor_datatype-label").node().getBoundingClientRect().width + 20;
+
     maxW = 0;
     maxW = Math.max(maxW, elementIri_width);
     maxW = Math.max(maxW, elementLabel_width);
     maxW = Math.max(maxW, elementType_width);
     maxW = Math.max(maxW, elementDType_width);
-    var selectedElement_inputWidth = div_width - maxW - 10;
-    
-    d3.select("#element_iriEditor").style("width", selectedElement_inputWidth + "px");
-    d3.select("#element_labelEditor").style("width", selectedElement_inputWidth + "px");
-    d3.select("#typeEditor").style("width", selectedElement_inputWidth + 4 + "px");
-    d3.select("#typeEditor_datatype").style("width", selectedElement_inputWidth + 4 + "px");
-    
+    const selectedElement_inputWidth = div_width - maxW - 10;
+
+    d3.select("#element_iriEditor").style("width", `${selectedElement_inputWidth}px`);
+    d3.select("#element_labelEditor").style("width", `${selectedElement_inputWidth}px`);
+    d3.select("#typeEditor").style("width", `${selectedElement_inputWidth + 4}px`);
+    d3.select("#typeEditor_datatype").style("width", `${selectedElement_inputWidth + 4}px`);
+
     // update prefix Element width;
-    var containerWidth = d3.select("#containerForPrefixURL").node().getBoundingClientRect().width;
+    const containerWidth = d3.select("#containerForPrefixURL").node().getBoundingClientRect().width;
     if ( containerWidth !== 0 ) {
-      var inputs = d3.selectAll(".prefixInput");
+      const inputs = d3.selectAll(".prefixInput");
       if ( inputs.node() ) {
-        var prefixWidth = d3.selectAll(".prefixInput").node().getBoundingClientRect().width;
-        d3.selectAll(".prefixURL").style("width", containerWidth - prefixWidth - 45 + "px");
+        const prefixWidth = d3.selectAll(".prefixInput").node().getBoundingClientRect().width;
+        d3.selectAll(".prefixURL").style("width", `${containerWidth - prefixWidth - 45}px`);
       }
     }
   };
@@ -1065,13 +1034,12 @@ module.exports = function ( graph ){
   function addElementsCharacteristics( element ){
     // save selected element for checkbox handler
     selectedElementForCharacteristics = element;
-    var i;
     // KILL old elements
-    var charSelectionNode = d3.select("#property_characteristics_Selection");
-    var htmlCollection = charSelectionNode.node().children;
+    const charSelectionNode = d3.select("#property_characteristics_Selection");
+    const htmlCollection = charSelectionNode.node().children;
     if ( htmlCollection ) {
-      var numEntries = htmlCollection.length;
-      for ( var q = 0; q < numEntries; q++ ) {
+      const numEntries = htmlCollection.length;
+      for ( let q = 0; q < numEntries; q++ ) {
         charSelectionNode.node().removeChild(htmlCollection[0]);
       }
     }
@@ -1079,62 +1047,62 @@ module.exports = function ( graph ){
     // so we need to check if we are a node or not
     if ( element.attributes().indexOf("external") > -1 ) {
       // add external span to the div;
-      var externalCharSpan = charSelectionNode.append("span");
+      const externalCharSpan = charSelectionNode.append("span");
       externalCharSpan.classed("spanForCharSelection", true);
       externalCharSpan.node().innerHTML = "external";
     }
-    var filterContainer,
+    let filterContainer,
       filterCheckbox;
     if ( elementTools.isNode(element) === true ) {
       // add the deprecated characteristic;
-      var arrayOfNodeChars = ["deprecated"];
-      for ( i = 0; i < arrayOfNodeChars.length; i++ ) {
+      const arrayOfNodeChars = ["deprecated"];
+      for ( let i = 0; i < arrayOfNodeChars.length; i++ ) {
         filterContainer = charSelectionNode
           .append("div")
           .classed("checkboxContainer", true)
           .style("padding-top", "2px");
-        
+
         filterCheckbox = filterContainer.append("input")
           .classed("filterCheckbox", true)
-          .attr("id", "CharacteristicsCheckbox" + i)
+          .attr("id", `CharacteristicsCheckbox${i}`)
           .attr("type", "checkbox")
           .attr("characteristics", arrayOfNodeChars[i])
           .property("checked", getPresentAttribute(element, arrayOfNodeChars[i]));
         //
         filterContainer.append("label")
-          .attr("for", "CharacteristicsCheckbox" + i)
+          .attr("for", `CharacteristicsCheckbox${i}`)
           .text(arrayOfNodeChars[i]);
-        
+
         filterCheckbox.on("click", handleCheckBoxClick);
-        
+
       }
     }
-    
+
     else {
       // add the deprecated characteristic;
-      var arrayOfPropertyChars = ["deprecated", "inverse functional", "functional", "transitive"];
+      let arrayOfPropertyChars = ["deprecated", "inverse functional", "functional", "transitive"];
       if ( elementTools.isDatatypeProperty(element) === true ) {
         arrayOfPropertyChars = ["deprecated", "functional"];
       }
-      for ( i = 0; i < arrayOfPropertyChars.length; i++ ) {
+      for ( let i = 0; i < arrayOfPropertyChars.length; i++ ) {
         filterContainer = charSelectionNode
           .append("div")
           .classed("checkboxContainer", true)
           .style("padding-top", "2px");
-        
+
         filterCheckbox = filterContainer.append("input")
           .classed("filterCheckbox", true)
-          .attr("id", "CharacteristicsCheckbox" + i)
+          .attr("id", `CharacteristicsCheckbox${i}`)
           .attr("type", "checkbox")
           .attr("characteristics", arrayOfPropertyChars[i])
           .property("checked", getPresentAttribute(element, arrayOfPropertyChars[i]));
         //
         filterContainer.append("label")
-          .attr("for", "CharacteristicsCheckbox" + i)
+          .attr("for", `CharacteristicsCheckbox${i}`)
           .text(arrayOfPropertyChars[i]);
-        
+
         filterCheckbox.on("click", handleCheckBoxClick);
-        
+
       }
     }
     
@@ -1146,8 +1114,8 @@ module.exports = function ( graph ){
   }
   
   function handleCheckBoxClick(){
-    var checked = this.checked;
-    var char = this.getAttribute("characteristics");
+    const checked = this.checked;
+    const char = this.getAttribute("characteristics");
     if ( checked === true ) {
       addAttribute(selectedElementForCharacteristics, char);
     } else {
@@ -1165,17 +1133,17 @@ module.exports = function ( graph ){
   function addAttribute( selectedElement, char ){
     if ( selectedElement.attributes().indexOf(char) === -1 ) {
       // not found add it
-      var attr = selectedElement.attributes();
+      const attr = selectedElement.attributes();
       attr.push(char);
       selectedElement.attributes(attr);
     }// indications string update;
     if ( selectedElement.indications().indexOf(char) === -1 ) {
-      var indications = selectedElement.indications();
+      const indications = selectedElement.indications();
       indications.push(char);
       selectedElement.indications(indications);
     }
     // add visual attributes
-    var visAttr;
+    let visAttr;
     if ( selectedElement.visualAttributes().indexOf(char) === -1 ) {
       visAttr = selectedElement.visualAttributes();
       visAttr.push(char);
@@ -1183,7 +1151,7 @@ module.exports = function ( graph ){
     }
     if ( getPresentAttribute(selectedElement, "external") && getPresentAttribute(selectedElement, "deprecated") ) {
       visAttr = selectedElement.visualAttributes();
-      var visInd = visAttr.indexOf("external");
+      const visInd = visAttr.indexOf("external");
       if ( visInd > -1 ) {
         visAttr.splice(visInd, 1);
       }
@@ -1193,18 +1161,18 @@ module.exports = function ( graph ){
   }
   
   function removeAttribute( selectedElement, element ){
-    var attr = selectedElement.attributes();
-    var indications = selectedElement.indications();
-    var visAttr = selectedElement.visualAttributes();
-    var attrInd = attr.indexOf(element);
+    const attr = selectedElement.attributes();
+    const indications = selectedElement.indications();
+    const visAttr = selectedElement.visualAttributes();
+    const attrInd = attr.indexOf(element);
     if ( attrInd >= 0 ) {
       attr.splice(attrInd, 1);
     }
-    var indInd = indications.indexOf(element);
+    const indInd = indications.indexOf(element);
     if ( indInd > -1 ) {
       indications.splice(indInd, 1);
     }
-    var visInd = visAttr.indexOf(element);
+    const visInd = visAttr.indexOf(element);
     if ( visInd > -1 ) {
       visAttr.splice(visInd, 1);
     }
@@ -1259,7 +1227,7 @@ module.exports = function ( graph ){
   }
   
   function getElementPrototypes( selectedElement ){
-    var availiblePrototypes = [];
+    const availiblePrototypes = [];
     // TODO the text should be also complied with the prefixes loaded into the ontology
     if ( elementTools.isProperty(selectedElement) ) {
       if ( selectedElement.type() === "owl:DatatypeProperty" )
@@ -1303,13 +1271,13 @@ module.exports = function ( graph ){
       containers.classed("hidden", false);
     }
     
-    var triggers = d3.selectAll(".accordion-trigger");
-    
+    const triggers = d3.selectAll(".accordion-trigger");
+
     // Collapse all inactive triggers on startup
     // collapseContainers(d3.selectAll(".accordion-trigger:not(.accordion-trigger-active) + div"));
-    
+
     triggers.on("click", function (){
-      var selectedTrigger = d3.select(this);
+      const selectedTrigger = d3.select(this);
       if ( selectedTrigger.classed("accordion-trigger-active") ) {
         // Collapse the active (which is also the selected) trigger
         collapseContainers(d3.select(selectedTrigger.node().nextElementSibling));

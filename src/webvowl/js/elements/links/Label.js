@@ -10,15 +10,15 @@ function Label( property, link ){
   this.link = function (){
     return link;
   };
-  
+
   this.property = function (){
     return property;
   };
-  
+
   // "Forward" the fixed value set on the property to avoid having to access this container
   Object.defineProperty(this, "fixed", {
     get: function (){
-      var inverseFixed = property.inverse() ? property.inverse().fixed : false;
+      const inverseFixed = property.inverse() ? property.inverse().fixed : false;
       return property.fixed || inverseFixed;
     },
     set: function ( v ){
@@ -47,16 +47,16 @@ Label.prototype.equals = function ( other ){
   if ( !other ) {
     return false;
   }
-  
-  var instance = other instanceof Label;
-  var equalProperty = this.property().equals(other.property());
-  
-  var equalInverse = false;
+
+  const instance = other instanceof Label;
+  const equalProperty = this.property().equals(other.property());
+
+  let equalInverse = false;
   if ( this.inverse() ) {
     equalInverse = this.inverse().equals(other.inverse());
   } else if ( !other.inverse() ) {
     equalInverse = true;
   }
-  
+
   return instance && equalProperty && equalInverse;
 };

@@ -1,10 +1,10 @@
-var elementTools = require("../util/elementTools")();
-var filterTools = require("../util/filterTools")();
+const elementTools = require("../util/elementTools")();
+const filterTools = require("../util/filterTools")();
 
 module.exports = function ( menu ){
-  
-  var filter = {},
-    nodes,
+
+  const filter = {};
+  let nodes,
     properties,
     enabled = true,
     filteredNodes,
@@ -13,20 +13,20 @@ module.exports = function ( menu ){
     degreeGetter,
     lastFiltedDegree,
     degreeSetter;
-  
-  
-  var NODE_COUNT_LIMIT_FOR_AUTO_ENABLING = 50;
+
+
+  const NODE_COUNT_LIMIT_FOR_AUTO_ENABLING = 50;
   
   
   filter.initialize = function ( nodes, properties ){
     lastFiltedDegree = -1;
-    var maxLinkCount = findMaxLinkCount(nodes);
+    const maxLinkCount = findMaxLinkCount(nodes);
     if ( maxDegreeSetter instanceof Function ) {
       maxDegreeSetter(maxLinkCount);
     }
     
     menu.setDefaultDegreeValue(findAutoDefaultDegree(nodes, properties, maxLinkCount));
-    var defaultDegree = findDefaultDegree(maxLinkCount);
+    const defaultDegree = findDefaultDegree(maxLinkCount);
     if ( degreeSetter instanceof Function ) {
       degreeSetter(defaultDegree);
       if ( defaultDegree > 0 ) {
@@ -40,8 +40,8 @@ module.exports = function ( menu ){
   };
   
   function findAutoDefaultDegree( nodes, properties, maxDegree ){
-    for ( var degree = 0; degree < maxDegree; degree++ ) {
-      var filteredData = filterByNodeDegree(nodes, properties, degree);
+    for ( let degree = 0; degree < maxDegree; degree++ ) {
+      const filteredData = filterByNodeDegree(nodes, properties, degree);
       
       if ( filteredData.nodes.length <= NODE_COUNT_LIMIT_FOR_AUTO_ENABLING ) {
         return degree;
@@ -51,7 +51,7 @@ module.exports = function ( menu ){
   }
   
   function findDefaultDegree( maxDegree ){
-    var globalDegOfFilter = menu.getGraphObject().getGlobalDOF();
+    const globalDegOfFilter = menu.getGraphObject().getGlobalDOF();
     if ( globalDegOfFilter >= 0 ) {
       if ( globalDegOfFilter <= maxDegree ) {
         return globalDegOfFilter;
@@ -92,9 +92,9 @@ module.exports = function ( menu ){
   };
   
   function findMaxLinkCount( nodes ){
-    var maxLinkCount = 0;
-    for ( var i = 0, l = nodes.length; i < l; i++ ) {
-      var linksWithoutDatatypes = filterOutDatatypes(nodes[i].links());
+    let maxLinkCount = 0;
+    for ( const node of nodes ) {
+      const linksWithoutDatatypes = filterOutDatatypes(node.links());
       
       maxLinkCount = Math.max(maxLinkCount, linksWithoutDatatypes.length);
     }
@@ -102,13 +102,11 @@ module.exports = function ( menu ){
   }
   
   function filterOutDatatypes( links ){
-    return links.filter(function ( link ){
-      return !elementTools.isDatatypeProperty(link.property());
-    });
+    return links.filter(( link ) => !elementTools.isDatatypeProperty(link.property()));
   }
   
   function filterByNodeDegreeAndApply( minDegree ){
-    var filteredData = filterByNodeDegree(nodes, properties, minDegree);
+    const filteredData = filterByNodeDegree(nodes, properties, minDegree);
     nodes = filteredData.nodes;
     properties = filteredData.properties;
   }

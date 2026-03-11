@@ -6,11 +6,11 @@
 
 
 module.exports = function ( graph ){
-  
-  var DEFAULT_STATE = false;
-  
-  var filter = {},
-    nodes,
+
+  const DEFAULT_STATE = false;
+
+  const filter = {};
+  let nodes,
     properties,
     enabled = DEFAULT_STATE,
     filteredNodes,

@@ -1,13 +1,13 @@
 module.exports = function (){
-  
-  var DEFAULT_STATE = true;
-  var COLOR_MODES = [
+
+  const DEFAULT_STATE = true;
+  const COLOR_MODES = [
     { type: "same", range: [d3.rgb("#36C"), d3.rgb("#36C")] },
     { type: "gradient", range: [d3.rgb("#36C"), d3.rgb("#EE2867")] } // taken from LD-VOWL
   ];
-  
-  var filter = {},
-    nodes,
+
+  const filter = {};
+  let nodes,
     properties,
     enabled = DEFAULT_STATE,
     filteredNodes,
@@ -19,7 +19,7 @@ module.exports = function (){
     nodes = untouchedNodes;
     properties = untouchedProperties;
     
-    var externalElements = filterExternalElements(nodes.concat(properties));
+    const externalElements = filterExternalElements(nodes.concat(properties));
     
     if ( enabled ) {
       setColorsForExternals(externalElements);
@@ -32,55 +32,55 @@ module.exports = function (){
   };
   
   function filterExternalElements( elements ){
-    return elements.filter(function ( element ){
+    return elements.filter(( element ) => {
       if ( element.visualAttributes().indexOf("deprecated") >= 0 ) {
         // deprecated is the only attribute which has preference over external
         return false;
       }
-      
+
       return element.attributes().indexOf("external") >= 0;
     });
   }
   
   function setColorsForExternals( elements ){
-    var iriMap = mapExternalsToBaseUri(elements);
-    var entries = Array.from(iriMap.entries());
+    const iriMap = mapExternalsToBaseUri(elements);
+    const entries = Array.from(iriMap.entries());
 
-    var colorScale = d3.scaleLinear()
+    const colorScale = d3.scaleLinear()
       .domain([0, entries.length - 1])
-      .range(COLOR_MODES.find(function( m ) { return m.type === colorModeType; }).range)
+      .range(COLOR_MODES.find(( m ) => m.type === colorModeType).range)
       .interpolate(d3.interpolateHsl);
 
-    for ( var i = 0; i < entries.length; i++ ) {
-      var groupedElements = entries[i][1];
+    for ( let i = 0; i < entries.length; i++ ) {
+      const groupedElements = entries[i][1];
       setBackgroundColorForElements(groupedElements, colorScale(i));
     }
   }
   
   function mapExternalsToBaseUri( elements ){
-    var map = new Map();
-    
-    elements.forEach(function ( element ){
-      var baseIri = element.baseIri();
-      
+    const map = new Map();
+
+    elements.forEach(( element ) => {
+      const baseIri = element.baseIri();
+
       if ( !map.has(baseIri) ) {
         map.set(baseIri, []);
       }
       map.get(baseIri).push(element);
     });
-    
+
     return map;
   }
   
   function setBackgroundColorForElements( elements, backgroundColor ){
-    elements.forEach(function ( element ){
+    elements.forEach(( element ) => {
       element.backgroundColor(backgroundColor);
     });
   }
-  
+
   function resetBackgroundColors( elements ){
     console.log("Resetting color");
-    elements.forEach(function ( element ){
+    elements.forEach(( element ) => {
       element.backgroundColor(null);
     });
   }

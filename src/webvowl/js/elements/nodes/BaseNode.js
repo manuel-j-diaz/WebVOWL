@@ -1,14 +1,14 @@
-var BaseElement = require("../BaseElement");
-var forceLayoutNodeFunctions = require("../forceLayoutNodeFunctions")();
+const BaseElement = require("../BaseElement");
+const forceLayoutNodeFunctions = require("../forceLayoutNodeFunctions")();
 
 module.exports = (function (){
   
-  var Base = function ( graph ){
+  const Base = function ( graph ){
     BaseElement.apply(this, arguments);
-    
-    var that = this,
-      // Basic attributes
-      complement,
+
+    const that = this;
+    // Basic attributes
+    let complement,
       disjointUnion,
       disjointWith,
       individuals = [],
@@ -23,25 +23,25 @@ module.exports = (function (){
       backupFullIri,
       // Element containers
       nodeElement;
-    
+
     // array to store my properties; // we will need this also later for semantic zooming stuff
-    var assignedProperties = [];
+    let assignedProperties = [];
     that.editingTextElement = false;
     
     this.isPropertyAssignedToThisElement = function ( property ){
       // this goes via IRIS
-      console.log("Element IRI :" + property.iri());
+      console.log(`Element IRI :${property.iri()}`);
       if ( property.type() === "rdfs:subClassOf" )
-        for ( var i = 0; i < assignedProperties.length; i++ ) {
-          var iriEl = assignedProperties[i].iri();
+        for ( const assigned of assignedProperties ) {
+          const iriEl = assigned.iri();
           if ( property.iri() === iriEl ) {
             return true;
           }
-          if ( property.type() === "rdfs:subClassOf" && assignedProperties[i].type() === "rdfs:subClassOf" )
+          if ( property.type() === "rdfs:subClassOf" && assigned.type() === "rdfs:subClassOf" )
             return true;
-          if ( property.type() === "owl:disjointWith" && assignedProperties[i].type() === "owl:disjointWith" )
+          if ( property.type() === "owl:disjointWith" && assigned.type() === "owl:disjointWith" )
             return true;
-          
+
         }
       return false;
     };
@@ -49,8 +49,8 @@ module.exports = (function (){
     
     this.existingPropertyIRI = function ( url ){
       // this goes via IRIS
-      for ( var i = 0; i < assignedProperties.length; i++ ) {
-        var iriEl = assignedProperties[i].iri();
+      for ( const prop of assignedProperties ) {
+        const iriEl = prop.iri();
         if ( iriEl === url ) {
           return true;
         }
@@ -128,32 +128,28 @@ module.exports = (function (){
         .attr("y", -12)
         .attr("height", 30)
         .attr("class", "foreignelements")
-        .on("dragstart", function (){
-          return false;
-        }) // remove drag operations of text element)
+        .on("dragstart", () => false) // remove drag operations of text element)
         .attr("width", that.textWidth() - 2);
-      
-      var editText = fobj.append("xhtml:input")
+
+      const editText = fobj.append("xhtml:input")
         .attr("class", "nodeEditSpan")
         .attr("id", that.id())
         .attr("align", "center")
         .attr("contentEditable", "true")
-        .on("dragstart", function (){
-          return false;
-        }); // remove drag operations of text element)
-      
-      var bgColor = '#f00';
-      var txtWidth = that.textWidth() - 2;
+        .on("dragstart", () => false); // remove drag operations of text element)
+
+      const bgColor = '#f00';
+      const txtWidth = that.textWidth() - 2;
       editText.style({
-        
+
         'align': 'center',
         'color': 'black',
-        'width': txtWidth + "px",
+        'width': `${txtWidth}px`,
         'height': '15px',
         'background-color': bgColor,
         'border-bottom': '2px solid black'
       });
-      var txtNode = editText.node();
+      const txtNode = editText.node();
       txtNode.value = that.labelForCurrentLanguage();
       txtNode.focus();
       txtNode.select();
@@ -162,44 +158,44 @@ module.exports = (function (){
 
       // ignoreNodeHoverEvent=true;
       // // add some events that relate to this object
-      editText.on("click", function ( event ){
+      editText.on("click", ( event ) => {
         event.stopPropagation();
       });
       // // remove hover Events for now;
-      editText.on("mouseout", function ( event ){
+      editText.on("mouseout", ( event ) => {
         event.stopPropagation();
 
 
       });
-      editText.on("mousedown", function ( event ){
+      editText.on("mousedown", ( event ) => {
         event.stopPropagation();
       })
         .on("keydown", function ( event ){
           event.stopPropagation();
-          if ( event.keyCode === 13 ) {
+          if ( event.key === "Enter" ) {
             this.blur();
             that.frozen(false); // << releases the not after selection
             that.locked(false);
           }
         })
-        .on("keyup", function (){
+        .on("keyup", () => {
           if ( forceIRISync ) {
-            var labelName = editText.node().value;
-            var resourceName = labelName.replaceAll(" ", "_");
-            var syncedIRI = that.baseIri() + resourceName;
+            const labelName = editText.node().value;
+            const resourceName = labelName.replaceAll(" ", "_");
+            const syncedIRI = `${that.baseIri()}${resourceName}`;
             backupFullIri = syncedIRI;
-            
+
             d3.select("#element_iriEditor").node().title = syncedIRI;
             d3.select("#element_iriEditor").node().value = graph.options().prefixModule().getPrefixRepresentationForFullURI(syncedIRI);
           }
           d3.select("#element_labelEditor").node().value = editText.node().value;
-          
+
         })
-        .on("blur", function (){
+        .on("blur", () => {
           that.editingTextElement = false;
           ignoreLocalHoverEvents = false;
           that.nodeElement().selectAll("circle").classed("hoveredForEditing", false);
-          var newLabel = editText.node().value;
+          const newLabel = editText.node().value;
           nodeElement.selectAll(".foreignelements").remove();
           // that.setLabelForCurrentLanguage(classNameConvention(editText.node().value));
           that.label(newLabel);
@@ -210,15 +206,15 @@ module.exports = (function (){
           graph.ignoreOtherHoverEvents(false);
           // console.log("Calling blur on Node!");
           if ( backupFullIri ) {
-            var sanityCheckResult = graph.checkIfIriClassAlreadyExist(backupFullIri);
+            const sanityCheckResult = graph.checkIfIriClassAlreadyExist(backupFullIri);
             if ( sanityCheckResult === false ) {
               that.iri(backupFullIri);
             } else {
               // throw warnign
               graph.options().warningModule().showWarning("Already seen this class",
-                "Input IRI: " + backupFullIri + " for element: " + that.labelForCurrentLanguage() + " already been set",
-                "Restoring previous IRI for Element : " + that.iri(), 2, false, sanityCheckResult);
-              
+                `Input IRI: ${backupFullIri} for element: ${that.labelForCurrentLanguage()} already been set`,
+                `Restoring previous IRI for Element : ${that.iri()}`, 2, false, sanityCheckResult);
+
             }
           }
           if ( graph.isADraggerActive() === false ) {
@@ -295,14 +291,14 @@ module.exports = (function (){
      * @returns {Array}
      */
     that.collectCssClasses = function (){
-      var cssClasses = [];
-      
+      let cssClasses = [];
+
       if ( typeof that.styleClass() === "string" ) {
         cssClasses.push(that.styleClass());
       }
-      
+
       cssClasses = cssClasses.concat(that.visualAttributes());
-      
+
       return cssClasses;
     };
     
@@ -321,10 +317,10 @@ module.exports = (function (){
     };
     
     this.animationProcess = function (){
-      var animRuns = false;
+      let animRuns = false;
       if ( that.getHalos() ) {
-        var haloGr = that.getHalos();
-        var haloEls = haloGr.selectAll(".searchResultA");
+        const haloGr = that.getHalos();
+        const haloEls = haloGr.selectAll(".searchResultA");
         animRuns = haloGr.attr("animationRunning");
         if ( typeof animRuns !== "boolean" ) {
           // parse this to a boolean value
@@ -339,7 +335,7 @@ module.exports = (function (){
     };
     
     this.foreground = function (){
-      var selectedNode = that.nodeElement().node(),
+      const selectedNode = that.nodeElement().node(),
         nodeContainer = selectedNode.parentNode;
       // check if the halo is present and an animation is running
       if ( that.animationProcess() === false ) {
@@ -353,8 +349,8 @@ module.exports = (function (){
       if ( that.mouseEntered() || ignoreLocalHoverEvents === true ) {
         return;
       }
-      
-      var selectedNode = that.nodeElement().node(),
+
+      const selectedNode = that.nodeElement().node(),
         nodeContainer = selectedNode.parentNode;
       
       // Append hovered element as last child to the container list.

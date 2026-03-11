@@ -1,11 +1,11 @@
-var RoundNode = require("../RoundNode");
+const RoundNode = require("../RoundNode");
 
 module.exports = (function (){
 
-  var o = function ( graph ){
+  const o = function ( graph ){
     RoundNode.apply(this, arguments);
 
-    var that = this,
+    const that = this,
       superDraw = that.draw;
 
     this.type("owl:NamedIndividual");
@@ -14,7 +14,7 @@ module.exports = (function (){
     // Back-reference to the class this individual belongs to (set by individualsFilter)
     this.ownerClass = null;
 
-    this.draw = function ( parentElement ){
+    this.draw = ( parentElement ) => {
       return superDraw.call(that, parentElement, ["individual", "abox"]);
     };
   };

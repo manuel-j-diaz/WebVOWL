@@ -1,6 +1,6 @@
 module.exports = function ( graph ){
   /** variable defs **/
-  var Class_dragger = {};
+  const Class_dragger = {};
   Class_dragger.nodeId = 10001;
   Class_dragger.parent = undefined;
   Class_dragger.x = 0;
@@ -87,7 +87,7 @@ module.exports = function ( graph ){
     //     {"x": 0, "y": 0}
     // ];
     
-    var lineData = [
+    const lineData = [
       { "x": -40, "y": 0 }, // start
       { "x": -20, "y": -10 },
       { "x": 20, "y": -50 },
@@ -96,9 +96,9 @@ module.exports = function ( graph ){
       { "x": -20, "y": 10 },
       { "x": -40, "y": 0 }
     ];
-    
-    
-    var pathData = "M 20,40 C 0,15 0,-15 20,-40 L -40,0 Z";
+
+
+    const pathData = "M 20,40 C 0,15 0,-15 20,-40 L -40,0 Z";
     // var pathData="M 20,40 C 0,15 0,-15 20,-40 20,-40 -35.22907,-23.905556 -45.113897,0.06313453 -35.22907,20.095453 20,40 20,40 Z";
     // var pathData="M 39.107144,51.25 C 0,17.362169 0,-13.75 39.285715,-49.821429 c 0,0 -69.58321,34.511175 -100.714286,50.35714329 C -22.96643,20.324376 39.107144,51.25 39.107144,51.25 Z";
     
@@ -125,25 +125,25 @@ module.exports = function ( graph ){
       // compute start point ;
       
       
-      var sX = Class_dragger.parent.x,
+      const sX = Class_dragger.parent.x,
         sY = Class_dragger.parent.y,
         eX = Class_dragger.x,
         eY = Class_dragger.y;
-      
-      
+
+
       // this is used only when you dont have a proper layout ordering;
-      var dirX = eX - sX;
-      var dirY = eY - sY;
-      var len = Math.sqrt((dirX * dirX) + (dirY * dirY));
-      
-      var nX = dirX / len;
-      var nY = dirY / len;
-      
-      var ppX = sX + nX * Class_dragger.parent.actualRadius();
-      var ppY = sY + nY * Class_dragger.parent.actualRadius();
-      
-      var ncx = nX * 15;
-      var ncy = nY * 15;
+      const dirX = eX - sX;
+      const dirY = eY - sY;
+      const len = Math.sqrt((dirX * dirX) + (dirY * dirY));
+
+      const nX = dirX / len;
+      const nY = dirY / len;
+
+      const ppX = sX + nX * Class_dragger.parent.actualRadius();
+      const ppY = sY + nY * Class_dragger.parent.actualRadius();
+
+      const ncx = nX * 15;
+      const ncy = nY * 15;
       Class_dragger.draggerObject.attr("cx", ncx)
         .attr("cy", ncy);
       
@@ -152,10 +152,10 @@ module.exports = function ( graph ){
         .attr("x2", eX)
         .attr("y2", eY);
     }
-    var angle = Math.atan2(Class_dragger.parent.y - Class_dragger.y, Class_dragger.parent.x - Class_dragger.x) * 180 / Math.PI;
-    
-    Class_dragger.nodeElement.attr("transform", "translate(" + Class_dragger.x + "," + Class_dragger.y + ")" + "rotate(" + angle + ")");
-    Class_dragger.draggerObject.attr("transform", "translate(" + Class_dragger.x + "," + Class_dragger.y + ")");
+    const angle = Math.atan2(Class_dragger.parent.y - Class_dragger.y, Class_dragger.parent.x - Class_dragger.x) * 180 / Math.PI;
+
+    Class_dragger.nodeElement.attr("transform", `translate(${Class_dragger.x},${Class_dragger.y})rotate(${angle})`);
+    Class_dragger.draggerObject.attr("transform", `translate(${Class_dragger.x},${Class_dragger.y})`);
     // console.log("update Elmenent root element"+Class_dragger.x + "," + Class_dragger.y );
     //
     // Class_dragger.nodeElement.attr("transform", function (d) {
@@ -209,7 +209,7 @@ module.exports = function ( graph ){
     }
     Class_dragger.nodeElement.classed("classDraggerNode", false);
     Class_dragger.nodeElement.classed("classDraggerNodeHovered", true);
-    var selectedNode = Class_dragger.rootElement.node(),
+    const selectedNode = Class_dragger.rootElement.node(),
       nodeContainer = selectedNode.parentNode;
     nodeContainer.appendChild(selectedNode);
     

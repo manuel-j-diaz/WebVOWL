@@ -2,11 +2,11 @@
  * Contains a collection of mathematical functions with some additional data
  * used for WebVOWL.
  */
-var loopFunction = require("./lineGenerators").loopFunction;
+const loopFunction = require("./lineGenerators").loopFunction;
 
 module.exports = (function (){
 
-  var math = {};
+  const math = {};
   
   
   /**
@@ -17,15 +17,15 @@ module.exports = (function (){
    * @returns {{x: number, y: number}}
    */
   math.calculateNormalVector = function ( source, target, length ){
-    var dx = target.x - source.x,
+    const dx = target.x - source.x,
       dy = target.y - source.y;
-    
-    var nx = -dy,
+
+    const nx = -dy,
       ny = dx;
-    
-    var vlength = Math.sqrt(nx * nx + ny * ny);
-    
-    var ratio = vlength !== 0 ? length / vlength : 0;
+
+    const vlength = Math.sqrt(nx * nx + ny * ny);
+
+    const ratio = vlength !== 0 ? length / vlength : 0;
     
     return { "x": nx * ratio, "y": ny * ratio };
   };
@@ -39,69 +39,69 @@ module.exports = (function (){
   
   
   math.getLoopPoints = function ( link ){
-    var node = link.domain(),
+    const node = link.domain(),
       label = link.label();
-    
-    var fairShareLoopAngle = 360 / link.loops().length,
-      fairShareLoopAngleWithMargin = fairShareLoopAngle * 0.8,
-      loopAngle = Math.min(60, fairShareLoopAngleWithMargin);
-    
+
+    const fairShareLoopAngle = 360 / link.loops().length,
+      fairShareLoopAngleWithMargin = fairShareLoopAngle * 0.8;
+    let loopAngle = Math.min(60, fairShareLoopAngleWithMargin);
+
     if ( label.increasedLoopAngle === true )
       loopAngle = 120;
-    
-    
-    var dx = label.x - node.x,
+
+
+    const dx = label.x - node.x,
       dy = label.y - node.y,
       labelRadian = Math.atan2(dy, dx),
       labelAngle = calculateAngle(labelRadian);
-    
-    var startAngle = labelAngle - loopAngle / 2,
+
+    const startAngle = labelAngle - loopAngle / 2,
       endAngle = labelAngle + loopAngle / 2;
-    
-    
-    var arcFrom = calculateRadian(startAngle),
+
+
+    const arcFrom = calculateRadian(startAngle),
       arcTo = calculateRadian(endAngle),
-      
+
       x1 = Math.cos(arcFrom) * node.actualRadius(),
       y1 = Math.sin(arcFrom) * node.actualRadius(),
-      
+
       x2 = Math.cos(arcTo) * node.actualRadius(),
       y2 = Math.sin(arcTo) * node.actualRadius(),
-      
+
       fixPoint1 = { "x": node.x + x1, "y": node.y + y1 },
       fixPoint2 = { "x": node.x + x2, "y": node.y + y2 };
     
     return [fixPoint1, fixPoint2];
   };
   math.calculateLoopPath = function ( link ){
-    var node = link.domain(),
+    const node = link.domain(),
       label = link.label();
-    
-    
-    var fairShareLoopAngle = 360 / link.loops().length,
-      fairShareLoopAngleWithMargin = fairShareLoopAngle * 0.8,
-      loopAngle = Math.min(60, fairShareLoopAngleWithMargin);
-    
+
+
+    const fairShareLoopAngle = 360 / link.loops().length,
+      fairShareLoopAngleWithMargin = fairShareLoopAngle * 0.8;
+    let loopAngle = Math.min(60, fairShareLoopAngleWithMargin);
+
     if ( label.increasedLoopAngle === true )
       loopAngle = 120;
-    
-    var dx = label.x - node.x,
+
+    const dx = label.x - node.x,
       dy = label.y - node.y,
       labelRadian = Math.atan2(dy, dx),
       labelAngle = calculateAngle(labelRadian);
-    
-    var startAngle = labelAngle - loopAngle / 2,
+
+    const startAngle = labelAngle - loopAngle / 2,
       endAngle = labelAngle + loopAngle / 2;
-    
-    var arcFrom = calculateRadian(startAngle),
+
+    const arcFrom = calculateRadian(startAngle),
       arcTo = calculateRadian(endAngle),
-      
+
       x1 = Math.cos(arcFrom) * node.actualRadius(),
       y1 = Math.sin(arcFrom) * node.actualRadius(),
-      
+
       x2 = Math.cos(arcTo) * node.actualRadius(),
       y2 = Math.sin(arcTo) * node.actualRadius(),
-      
+
       fixPoint1 = { "x": node.x + x1, "y": node.y + y1 },
       fixPoint2 = { "x": node.x + x2, "y": node.y + y2 };
     
@@ -109,30 +109,30 @@ module.exports = (function (){
   };
   
   math.calculateLoopPoints = function ( link ){
-    var node = link.domain(),
+    const node = link.domain(),
       label = link.label();
-    
-    var fairShareLoopAngle = 360 / link.loops().length,
-      fairShareLoopAngleWithMargin = fairShareLoopAngle * 0.8,
-      loopAngle = Math.min(60, fairShareLoopAngleWithMargin);
-    
-    var dx = label.x - node.x,
+
+    const fairShareLoopAngle = 360 / link.loops().length,
+      fairShareLoopAngleWithMargin = fairShareLoopAngle * 0.8;
+    let loopAngle = Math.min(60, fairShareLoopAngleWithMargin);
+
+    const dx = label.x - node.x,
       dy = label.y - node.y,
       labelRadian = Math.atan2(dy, dx),
       labelAngle = calculateAngle(labelRadian);
-    
-    var startAngle = labelAngle - loopAngle / 2,
+
+    const startAngle = labelAngle - loopAngle / 2,
       endAngle = labelAngle + loopAngle / 2;
-    
-    var arcFrom = calculateRadian(startAngle),
+
+    const arcFrom = calculateRadian(startAngle),
       arcTo = calculateRadian(endAngle),
-      
+
       x1 = Math.cos(arcFrom) * node.actualRadius(),
       y1 = Math.sin(arcFrom) * node.actualRadius(),
-      
+
       x2 = Math.cos(arcTo) * (node.actualRadius()),
       y2 = Math.sin(arcTo) * (node.actualRadius()),
-      
+
       fixPoint1 = { "x": node.x + x1, "y": node.y + y1 },
       fixPoint2 = { "x": node.x + x2, "y": node.y + y2 };
     
@@ -168,17 +168,17 @@ module.exports = (function (){
    * @returns {{x: number, y: number}}
    */
   math.calculateIntersection = function ( source, target, additionalDistance ){
-    var dx = target.x - source.x,
+    const dx = target.x - source.x,
       dy = target.y - source.y,
       length = Math.sqrt(dx * dx + dy * dy);
-    
+
     if ( length === 0 ) {
       return { x: source.x, y: source.y };
     }
-    
-    var innerDistance = target.distanceToBorder(dx, dy);
-    
-    var ratio = (length - (innerDistance + additionalDistance)) / length,
+
+    const innerDistance = target.distanceToBorder(dx, dy);
+
+    const ratio = (length - (innerDistance + additionalDistance)) / length,
       x = dx * ratio + source.x,
       y = dy * ratio + source.y;
     

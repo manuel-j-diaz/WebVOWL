@@ -1,14 +1,14 @@
-var SetOperatorNode = require("../elements/nodes/SetOperatorNode");
+const SetOperatorNode = require("../elements/nodes/SetOperatorNode");
 
 module.exports = function (){
-  
-  var filter = {},
-    nodes,
+
+  const filter = {};
+  let nodes,
     properties,
     enabled = false,
     filteredNodes,
-    filteredProperties,
-    filterTools = require("../util/filterTools")();
+    filteredProperties;
+  const filterTools = require("../util/filterTools")();
   
   
   /**
@@ -29,7 +29,7 @@ module.exports = function (){
   };
   
   function removeSetOperators(){
-    var filteredData = filterTools.filterNodesAndTidy(nodes, properties, isNoSetOperator);
+    const filteredData = filterTools.filterNodesAndTidy(nodes, properties, isNoSetOperator);
     
     nodes = filteredData.nodes;
     properties = filteredData.properties;

@@ -1,11 +1,11 @@
-var BaseProperty = require("../BaseProperty");
+const BaseProperty = require("../BaseProperty");
 
 module.exports = (function (){
 
-  var o = function ( graph ){
+  const o = function ( graph ){
     BaseProperty.apply(this, arguments);
 
-    var that = this,
+    const that = this,
       superDrawFunction = that.draw;
 
     this.draw = function ( labelGroup ){

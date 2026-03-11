@@ -1,5 +1,5 @@
-var textTools = require("./textTools")();
-var AbstractTextElement = require("./AbstractTextElement");
+const textTools = require("./textTools")();
+const AbstractTextElement = require("./AbstractTextElement");
 
 module.exports = CenteringTextElement;
 function CenteringTextElement( container, backgroundColor ){
@@ -48,36 +48,36 @@ CenteringTextElement.prototype.saveStyle = function ( style ){
 
 CenteringTextElement.prototype.updateAllTextElements = function (){
   // TODO : TEST THIS postPrefix >>>  _applyPreAndPostFix
-  for ( var i = 0; i < this.storedSpanArrays.length; i++ ) {
-    var truncatedText = textTools.truncate(this.storedFullTextLines[i], this._textBlock().datum().textWidth(), this.storedStyle[i]);
+  for ( let i = 0; i < this.storedSpanArrays.length; i++ ) {
+    const truncatedText = textTools.truncate(this.storedFullTextLines[i], this._textBlock().datum().textWidth(), this.storedStyle[i]);
     this.storedSpanArrays[i].text(truncatedText);
   }
 };
 
 
 CenteringTextElement.prototype.addTextline = function ( text, style, prefix, postfix ){
-  var truncatedText = textTools.truncate(text, this._textBlock().datum().textWidth(), style);
+  const truncatedText = textTools.truncate(text, this._textBlock().datum().textWidth(), style);
   this.saveFullTextLine(text);
   this.saveStyle(style);
-  var tspan = this._textBlock().append("tspan")
+  const tspan = this._textBlock().append("tspan")
     .classed(this.CSS_CLASSES.default, true)
     .classed(style, true)
     .text(this._applyPreAndPostFix(truncatedText, prefix, postfix))
     .attr("x", 0);
   this._repositionTextLine(tspan);
   this.saveCorrespondingSpan(tspan);
-  
+
   this._repositionTextBlock();
 };
 
 CenteringTextElement.prototype._repositionTextLine = function ( tspan ){
-  var fontSizeProperty = window.getComputedStyle(tspan.node()).getPropertyValue("font-size");
-  var fontSize = parseFloat(fontSizeProperty);
-  
-  var siblingCount = this._lineCount() - 1;
-  var lineDistance = siblingCount > 0 ? this.LINE_DISTANCE : 0;
-  
-  tspan.attr("dy", fontSize + lineDistance + "px");
+  const fontSizeProperty = window.getComputedStyle(tspan.node()).getPropertyValue("font-size");
+  const fontSize = parseFloat(fontSizeProperty);
+
+  const siblingCount = this._lineCount() - 1;
+  const lineDistance = siblingCount > 0 ? this.LINE_DISTANCE : 0;
+
+  tspan.attr("dy", `${fontSize + lineDistance}px`);
 };
 
 CenteringTextElement.prototype.getTextBox = function (){
@@ -87,14 +87,14 @@ CenteringTextElement.prototype.getTextBox = function (){
 
 CenteringTextElement.prototype._repositionTextBlock = function (){
   // Nothing to do if no child elements exist
-  var lineCount = this._lineCount();
+  const lineCount = this._lineCount();
   if ( lineCount < 1 ) {
     this._textBlock().attr("y", 0);
     return;
   }
-  
-  var textBlockHeight = this._textBlock().node().getBBox().height;
-  this._textBlock().attr("y", -textBlockHeight * 0.5 + "px");
+
+  const textBlockHeight = this._textBlock().node().getBBox().height;
+  this._textBlock().attr("y", `${-textBlockHeight * 0.5}px`);
 };
 
 CenteringTextElement.prototype._lineCount = function (){

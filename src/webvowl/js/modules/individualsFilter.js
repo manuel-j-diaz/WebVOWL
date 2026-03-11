@@ -1,10 +1,10 @@
-var OwlNamedIndividual = require("../elements/nodes/implementations/OwlNamedIndividual");
-var RdfTypeProperty = require("../elements/properties/implementations/RdfTypeProperty");
+const OwlNamedIndividual = require("../elements/nodes/implementations/OwlNamedIndividual");
+const RdfTypeProperty = require("../elements/properties/implementations/RdfTypeProperty");
 
 module.exports = function ( graph ){
 
-  var filter = {},
-    nodes,
+  const filter = {};
+  let nodes,
     properties,
     enabled = false,
     collapseThreshold = 0,
@@ -22,18 +22,18 @@ module.exports = function ( graph ){
     properties = untouchedProperties;
 
     // Reset expansion flag from any previous run on these shared node objects
-    nodes.forEach(function ( node ){
+    nodes.forEach(( node ) => {
       node._individualsExpanded = false;
     });
 
     if ( enabled ) {
-      var totalIndividuals = nodes.reduce(function(sum, n){ return sum + (n.individuals ? n.individuals().length : 0); }, 0);
+      const totalIndividuals = nodes.reduce((sum, n) => sum + (n.individuals ? n.individuals().length : 0), 0);
       console.log("[individuals] enabled, nodes:", nodes.length, "total individuals across classes:", totalIndividuals);
-      var injectedNodes = nodes.slice();
-      var injectedProperties = properties.slice();
+      const injectedNodes = nodes.slice();
+      const injectedProperties = properties.slice();
 
-      nodes.forEach(function ( classNode ){
-        var individuals = classNode.individuals ? classNode.individuals() : [];
+      nodes.forEach(( classNode ) => {
+        const individuals = classNode.individuals ? classNode.individuals() : [];
         if ( !individuals || individuals.length === 0 ) return;
 
         if ( collapseThreshold > 0 && individuals.length > collapseThreshold ) {
@@ -45,8 +45,8 @@ module.exports = function ( graph ){
         // Mark class so RoundNode suppresses the duplicate count badge
         classNode._individualsExpanded = true;
 
-        individuals.forEach(function ( protoIndividual ){
-          var indNode = new OwlNamedIndividual(graph);
+        individuals.forEach(( protoIndividual ) => {
+          const indNode = new OwlNamedIndividual(graph);
           indNode.id(protoIndividual.iri())
             .label(protoIndividual.label())
             .iri(protoIndividual.iri())
@@ -54,12 +54,12 @@ module.exports = function ( graph ){
           indNode.ownerClass = classNode;
 
           // Scatter initial position around the owner class
-          var angle = Math.random() * 2 * Math.PI;
-          var dist = (classNode.radius ? classNode.radius() : 50) + 40;
+          const angle = Math.random() * 2 * Math.PI;
+          const dist = (classNode.radius ? classNode.radius() : 50) + 40;
           indNode.x = (classNode.x || 0) + Math.cos(angle) * dist;
           indNode.y = (classNode.y || 0) + Math.sin(angle) * dist;
 
-          var edge = new RdfTypeProperty(graph);
+          const edge = new RdfTypeProperty(graph);
           edge.id(protoIndividual.iri() + "__rdftype")
             .domain(indNode).range(classNode);
 

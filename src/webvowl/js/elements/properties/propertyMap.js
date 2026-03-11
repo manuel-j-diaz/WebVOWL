@@ -1,4 +1,4 @@
-var properties = [];
+const properties = [];
 properties.push(require("./implementations/OwlAllValuesFromProperty"));
 properties.push(require("./implementations/OwlDatatypeProperty"));
 properties.push(require("./implementations/OwlDeprecatedProperty"));
@@ -15,8 +15,8 @@ properties.push(require("./implementations/RdfTypeProperty"));
 properties.push(require("./implementations/RdfsSubClassOf"));
 properties.push(require("./implementations/SetOperatorProperty"));
 
-var map = new Map();
-properties.forEach(function ( Prototype ){
+const map = new Map();
+properties.forEach(( Prototype ) => {
   map.set(new Prototype().type(), Prototype);
 });
 

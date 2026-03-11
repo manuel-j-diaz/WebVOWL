@@ -4,33 +4,33 @@
  * @returns {{}}
  */
 module.exports = function ( graph ){
-  
-  var leftSidebar = {},
+
+  const leftSidebar = {},
     languageTools = webvowl.util.languageTools(),
     elementTools = webvowl.util.elementTools();
-  var collapseButton = d3.select("#leftSideBarCollapseButton");
-  var visibleSidebar = 0;
-  var backupVisibility = 0;
-  var sideBarContent = d3.select("#leftSideBarContent");
-  var sideBarContainer = d3.select("#containerForLeftSideBar");
-  var defaultClassSelectionContainers = [];
-  var defaultDatatypeSelectionContainers = [];
-  var defaultPropertySelectionContainers = [];
+  const collapseButton = d3.select("#leftSideBarCollapseButton");
+  let visibleSidebar = 0;
+  let backupVisibility = 0;
+  const sideBarContent = d3.select("#leftSideBarContent");
+  const sideBarContainer = d3.select("#containerForLeftSideBar");
+  const defaultClassSelectionContainers = [];
+  const defaultDatatypeSelectionContainers = [];
+  const defaultPropertySelectionContainers = [];
   
   leftSidebar.setup = function (){
     setupCollapsing();
     leftSidebar.initSideBarAnimation();
     
-    collapseButton.on("click", function (){
+    collapseButton.on("click", () => {
       graph.options().navigationMenu().hideAllMenus();
-      var settingValue = parseInt(leftSidebar.getSidebarVisibility());
+      const settingValue = parseInt(leftSidebar.getSidebarVisibility());
       if ( settingValue === 0 ) leftSidebar.showSidebar(1);
       else                  leftSidebar.showSidebar(0);
       backupVisibility = settingValue;
     });
     
     setupSelectionContainers();
-    d3.select("#WarningErrorMessages").node().addEventListener("animationend", function (){
+    d3.select("#WarningErrorMessages").node().addEventListener("animationend", () => {
       d3.select("#WarningErrorMessages").style("-webkit-animation-name", "none");
     });
     
@@ -42,7 +42,7 @@ module.exports = function ( graph ){
   
   
   function unselectAllElements( container ){
-    for ( var i = 0; i < container.length; i++ )
+    for ( let i = 0; i < container.length; i++ )
       container[i].classed("defaultSelected", false);
   }
   
@@ -51,13 +51,13 @@ module.exports = function ( graph ){
   }
   
   function updateDefaultNameInAccordion( element, identifier ){
-    var elementDescription = "";
+    let elementDescription = "";
     if ( identifier === "defaultClass" ) elementDescription = "Class: ";
     if ( identifier === "defaultDatatype" ) elementDescription = "Datatype: ";
     if ( identifier === "defaultProperty" ) elementDescription = "Property: ";
-    
-    d3.select("#" + identifier).node().innerHTML = elementDescription + element.innerHTML;
-    d3.select("#" + identifier).node().title = element.innerHTML;
+
+    d3.select(`#${identifier}`).node().innerHTML = `${elementDescription}${element.innerHTML}`;
+    d3.select(`#${identifier}`).node().title = element.innerHTML;
   }
   
   function classSelectorFunction(){
@@ -80,53 +80,51 @@ module.exports = function ( graph ){
   
   
   function setupSelectionContainers(){
-    var classContainer = d3.select("#classContainer");
-    var datatypeContainer = d3.select("#datatypeContainer");
-    var propertyContainer = d3.select("#propertyContainer");
+    const classContainer = d3.select("#classContainer");
+    const datatypeContainer = d3.select("#datatypeContainer");
+    const propertyContainer = d3.select("#propertyContainer");
     // create the supported elements
-    
-    var defaultClass = "owl:Class";
-    var defaultDatatype = "rdfs:Literal";
-    var defaultProperty = "owl:objectProperty";
-    
-    var supportedClasses = graph.options().supportedClasses();
-    var supportedDatatypes = graph.options().supportedDatatypes();
-    var supportedProperties = graph.options().supportedProperties();
-    var i;
-    
-    for ( i = 0; i < supportedClasses.length; i++ ) {
-      var aClassSelectionContainer;
-      aClassSelectionContainer = classContainer.append("div");
+
+    const defaultClass = "owl:Class";
+    const defaultDatatype = "rdfs:Literal";
+    const defaultProperty = "owl:objectProperty";
+
+    const supportedClasses = graph.options().supportedClasses();
+    const supportedDatatypes = graph.options().supportedDatatypes();
+    const supportedProperties = graph.options().supportedProperties();
+
+    for ( let i = 0; i < supportedClasses.length; i++ ) {
+      const aClassSelectionContainer = classContainer.append("div");
       aClassSelectionContainer.classed("containerForDefaultSelection", true);
       aClassSelectionContainer.classed("noselect", true);
-      aClassSelectionContainer.node().id = "selectedClass" + supportedClasses[i];
+      aClassSelectionContainer.node().id = `selectedClass${supportedClasses[i]}`;
       aClassSelectionContainer.node().innerHTML = supportedClasses[i];
-      
+
       if ( supportedClasses[i] === defaultClass ) {
         selectThisDefaultElement(aClassSelectionContainer.node());
       }
       aClassSelectionContainer.on("click", classSelectorFunction);
       defaultClassSelectionContainers.push(aClassSelectionContainer);
     }
-    
-    for ( i = 0; i < supportedDatatypes.length; i++ ) {
-      var aDTSelectionContainer = datatypeContainer.append("div");
+
+    for ( let i = 0; i < supportedDatatypes.length; i++ ) {
+      const aDTSelectionContainer = datatypeContainer.append("div");
       aDTSelectionContainer.classed("containerForDefaultSelection", true);
       aDTSelectionContainer.classed("noselect", true);
-      aDTSelectionContainer.node().id = "selectedDatatype" + supportedDatatypes[i];
+      aDTSelectionContainer.node().id = `selectedDatatype${supportedDatatypes[i]}`;
       aDTSelectionContainer.node().innerHTML = supportedDatatypes[i];
-      
+
       if ( supportedDatatypes[i] === defaultDatatype ) {
         selectThisDefaultElement(aDTSelectionContainer.node());
       }
       aDTSelectionContainer.on("click", datatypeSelectorFunction);
       defaultDatatypeSelectionContainers.push(aDTSelectionContainer);
     }
-    for ( i = 0; i < supportedProperties.length; i++ ) {
-      var aPropSelectionContainer = propertyContainer.append("div");
+    for ( let i = 0; i < supportedProperties.length; i++ ) {
+      const aPropSelectionContainer = propertyContainer.append("div");
       aPropSelectionContainer.classed("containerForDefaultSelection", true);
       aPropSelectionContainer.classed("noselect", true);
-      aPropSelectionContainer.node().id = "selectedClass" + supportedProperties[i];
+      aPropSelectionContainer.node().id = `selectedClass${supportedProperties[i]}`;
       aPropSelectionContainer.node().innerHTML = supportedProperties[i];
       aPropSelectionContainer.on("click", propertySelectorFunction);
       if ( supportedProperties[i] === defaultProperty ) {
@@ -146,13 +144,13 @@ module.exports = function ( graph ){
       containers.classed("hidden", false);
     }
     
-    var triggers = d3.selectAll(".accordion-trigger");
-    
+    const triggers = d3.selectAll(".accordion-trigger");
+
     // Collapse all inactive triggers on startup
     // collapseContainers(d3.selectAll(".accordion-trigger:not(.accordion-trigger-active) + div"));
-    
+
     triggers.on("click", function (){
-      var selectedTrigger = d3.select(this);
+      const selectedTrigger = d3.select(this);
       if ( selectedTrigger.classed("accordion-trigger-active") ) {
         // Collapse the active (which is also the selected) trigger
         collapseContainers(d3.select(selectedTrigger.node().nextElementSibling));
@@ -174,12 +172,12 @@ module.exports = function ( graph ){
   };
   
   leftSidebar.updateSideBarVis = function ( init ){
-    var vis = leftSidebar.getSidebarVisibility();
+    const vis = leftSidebar.getSidebarVisibility();
     leftSidebar.showSidebar(parseInt(vis), init);
   };
   
   leftSidebar.initSideBarAnimation = function (){
-    sideBarContainer.node().addEventListener("animationend", function (){
+    sideBarContainer.node().addEventListener("animationend", () => {
       sideBarContent.classed("hidden", !visibleSidebar);
       if ( visibleSidebar === true ) {
         sideBarContainer.style("width", "200px");
@@ -202,7 +200,7 @@ module.exports = function ( graph ){
   
   leftSidebar.showSidebar = function ( val, init ){
     // make val to bool
-    var collapseButton = d3.select("#leftSideBarCollapseButton");
+    const collapseButton = d3.select("#leftSideBarCollapseButton");
     if ( init === true ) {
       visibleSidebar = (backupVisibility === 0);
       sideBarContent.classed("hidden", !visibleSidebar);
@@ -259,7 +257,7 @@ module.exports = function ( graph ){
   };
   
   leftSidebar.getSidebarVisibility = function (){
-    var isHidden = sideBarContent.classed("hidden");
+    const isHidden = sideBarContent.classed("hidden");
     if ( isHidden === false ) return String(1);
     if ( isHidden === true ) return String(0);
   };

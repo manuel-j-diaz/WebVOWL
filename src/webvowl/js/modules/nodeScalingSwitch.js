@@ -4,11 +4,11 @@
  * @returns {{}}
  */
 module.exports = function ( graph ){
-  
-  var DEFAULT_STATE = true;
-  
-  var filter = {},
-    nodes,
+
+  const DEFAULT_STATE = true;
+
+  const filter = {};
+  let nodes,
     properties,
     enabled = DEFAULT_STATE,
     filteredNodes,

@@ -1,54 +1,50 @@
-String.prototype.replaceAll = function ( search, replacement ){
-  var target = this;
-  return target.split(search).join(replacement);
-};
 module.exports = function (){
-  var newOntologyCounter = 1;
-  var app = {},
-    graph = webvowl.graph(),
-    options = graph.graphOptions(),
-    languageTools = webvowl.util.languageTools(),
-    GRAPH_SELECTOR = "#graph",
-    // Modules for the webvowl app
-    exportMenu = require("./menu/exportMenu")(graph),
-    filterMenu = require("./menu/filterMenu")(graph),
-    gravityMenu = require("./menu/gravityMenu")(graph),
-    modeMenu = require("./menu/modeMenu")(graph),
-    debugMenu = require("./menu/debugMenu")(graph),
-    ontologyMenu = require("./menu/ontologyMenu")(graph),
-    pauseMenu = require("./menu/pauseMenu")(graph),
-    resetMenu = require("./menu/resetMenu")(graph),
-    searchMenu = require("./menu/searchMenu")(graph),
-    navigationMenu = require("./menu/navigationMenu")(graph),
-    zoomSlider = require("./menu/zoomSlider")(graph),
-    sidebar = require("./sidebar")(graph),
-    leftSidebar = require("./leftSidebar")(graph),
-    editSidebar = require("./editSidebar")(graph),
-    configMenu = require("./menu/configMenu")(graph),
-    loadingModule = require("./loadingModule")(graph),
-    warningModule = require("./warningModule")(graph),
-    directInputMod = require("./directInputModule")(graph),
-    
-    
-    // Graph modules
-    colorExternalsSwitch = webvowl.modules.colorExternalsSwitch(graph),
-    compactNotationSwitch = webvowl.modules.compactNotationSwitch(graph),
-    datatypeFilter = webvowl.modules.datatypeFilter(),
-    disjointFilter = webvowl.modules.disjointFilter(),
-    focuser = webvowl.modules.focuser(graph),
-    emptyLiteralFilter = webvowl.modules.emptyLiteralFilter(),
-    nodeDegreeFilter = webvowl.modules.nodeDegreeFilter(filterMenu),
-    nodeScalingSwitch = webvowl.modules.nodeScalingSwitch(graph),
-    objectPropertyFilter = webvowl.modules.objectPropertyFilter(),
-    pickAndPin = webvowl.modules.pickAndPin(),
-    selectionDetailDisplayer = webvowl.modules.selectionDetailsDisplayer(sidebar.updateSelectionInformation),
-    statistics = webvowl.modules.statistics(),
-    subclassFilter = webvowl.modules.subclassFilter(),
-    setOperatorFilter = webvowl.modules.setOperatorFilter(),
-    collapsing = webvowl.modules.collapsing(),
-    individualsFilter = webvowl.modules.individualsFilter(graph),
-    namespaceColorModule = webvowl.modules.namespaceColorModule(),
-    hierarchyLayout = require("../../webvowl/js/layout/hierarchyLayout")(graph);
+  let newOntologyCounter = 1;
+  const app = {};
+  const graph = webvowl.graph();
+  const options = graph.graphOptions();
+  const languageTools = webvowl.util.languageTools();
+  const GRAPH_SELECTOR = "#graph";
+  // Modules for the webvowl app
+  const exportMenu = require("./menu/exportMenu")(graph);
+  const filterMenu = require("./menu/filterMenu")(graph);
+  const gravityMenu = require("./menu/gravityMenu")(graph);
+  const modeMenu = require("./menu/modeMenu")(graph);
+  const debugMenu = require("./menu/debugMenu")(graph);
+  const ontologyMenu = require("./menu/ontologyMenu")(graph);
+  const pauseMenu = require("./menu/pauseMenu")(graph);
+  const resetMenu = require("./menu/resetMenu")(graph);
+  const searchMenu = require("./menu/searchMenu")(graph);
+  const navigationMenu = require("./menu/navigationMenu")(graph);
+  const zoomSlider = require("./menu/zoomSlider")(graph);
+  const sidebar = require("./sidebar")(graph);
+  const leftSidebar = require("./leftSidebar")(graph);
+  const editSidebar = require("./editSidebar")(graph);
+  const configMenu = require("./menu/configMenu")(graph);
+  const loadingModule = require("./loadingModule")(graph);
+  const warningModule = require("./warningModule")(graph);
+  const directInputMod = require("./directInputModule")(graph);
+
+
+  // Graph modules
+  const colorExternalsSwitch = webvowl.modules.colorExternalsSwitch(graph);
+  const compactNotationSwitch = webvowl.modules.compactNotationSwitch(graph);
+  const datatypeFilter = webvowl.modules.datatypeFilter();
+  const disjointFilter = webvowl.modules.disjointFilter();
+  const focuser = webvowl.modules.focuser(graph);
+  const emptyLiteralFilter = webvowl.modules.emptyLiteralFilter();
+  const nodeDegreeFilter = webvowl.modules.nodeDegreeFilter(filterMenu);
+  const nodeScalingSwitch = webvowl.modules.nodeScalingSwitch(graph);
+  const objectPropertyFilter = webvowl.modules.objectPropertyFilter();
+  const pickAndPin = webvowl.modules.pickAndPin();
+  const selectionDetailDisplayer = webvowl.modules.selectionDetailsDisplayer(sidebar.updateSelectionInformation);
+  const statistics = webvowl.modules.statistics();
+  const subclassFilter = webvowl.modules.subclassFilter();
+  const setOperatorFilter = webvowl.modules.setOperatorFilter();
+  const collapsing = webvowl.modules.collapsing();
+  const individualsFilter = webvowl.modules.individualsFilter(graph);
+  const namespaceColorModule = webvowl.modules.namespaceColorModule();
+  const hierarchyLayout = require("../../webvowl/js/layout/hierarchyLayout")(graph);
   
   
   app.getOptions = function (){
@@ -60,40 +56,40 @@ module.exports = function (){
   // app.afterInitializationCallback=undefined;
   
   
-  var executeFileDrop = false;
-  var wasMessageToShow = false;
-  var firstTime = false;
+  let executeFileDrop = false;
+  let wasMessageToShow = false;
+  let firstTime = false;
   
   function addFileDropEvents( selector ){
-    var node = d3.select(selector);
-    
-    node.node().ondragover = function ( e ){
+    const node = d3.select(selector);
+
+    node.node().ondragover = ( e ) => {
       e.preventDefault();
 
       d3.select("#dragDropContainer").classed("hidden", false);
       // get svg size
-      var w = graph.options().width();
-      var h = graph.options().height();
-      
+      const w = graph.options().width();
+      const h = graph.options().height();
+
       // get event position; (using clientX and clientY);
-      var cx = e.clientX;
-      var cy = e.clientY;
-      
+      const cx = e.clientX;
+      const cy = e.clientY;
+
       if ( firstTime === false ) {
-        var state = d3.select("#loading-info").classed("hidden");
+        const state = d3.select("#loading-info").classed("hidden");
         wasMessageToShow = !state;
         firstTime = true;
         d3.select("#loading-info").classed("hidden", true); // hide it so it does not conflict with drop event
-        var bb=d3.select("#drag_msg").node().getBoundingClientRect();
-        var hs = bb.height;
-        var ws = bb.width;
-        
-        var icon_scale=Math.min(hs,ws);
+        const bb=d3.select("#drag_msg").node().getBoundingClientRect();
+        const hs = bb.height;
+        const ws = bb.width;
+
+        let icon_scale=Math.min(hs,ws);
         icon_scale/=100;
-        
-        d3.select("#drag_icon_group").attr("transform", "translate ( " + 0.25 * ws + " " + 0.25 * hs + ")");
-        d3.select("#drag_icon").attr("transform","matrix ("+icon_scale+",0,0,"+icon_scale+",0,0)");
-        d3.select("#drag_icon_drop").attr("transform","matrix ("+icon_scale+",0,0,"+icon_scale+",0,0)");
+
+        d3.select("#drag_icon_group").attr("transform", `translate ( ${0.25 * ws} ${0.25 * hs})`);
+        d3.select("#drag_icon").attr("transform",`matrix (${icon_scale},0,0,${icon_scale},0,0)`);
+        d3.select("#drag_icon_drop").attr("transform",`matrix (${icon_scale},0,0,${icon_scale},0,0)`);
       }
       
       
@@ -134,14 +130,14 @@ module.exports = function (){
       }
       
     };
-    node.node().ondrop = function ( ev ){
+    node.node().ondrop = ( ev ) => {
       ev.preventDefault();
       firstTime = false;
       if ( executeFileDrop ) {
         if ( ev.dataTransfer.items ) {
           if ( ev.dataTransfer.items.length === 1 ) {
             if ( ev.dataTransfer.items[0].kind === 'file' ) {
-              var file = ev.dataTransfer.items[0].getAsFile();
+              const file = ev.dataTransfer.items[0].getAsFile();
               graph.options().loadingModule().fromFileDrop(file.name, file);
             }
           }
@@ -153,25 +149,25 @@ module.exports = function (){
       }
       d3.select("#dragDropContainer").classed("hidden", true);
     };
-    
-    node.node().ondragleave = function ( e ){
-      var w = graph.options().width();
-      var h = graph.options().height();
-      
+
+    node.node().ondragleave = ( e ) => {
+      const w = graph.options().width();
+      const h = graph.options().height();
+
       // get event position; (using clientX and clientY);
-      var cx = e.clientX;
-      var cy = e.clientY;
-      
-      var hidden = false;
+      const cx = e.clientX;
+      const cy = e.clientY;
+
+      let hidden = false;
       firstTime = false;
-      
+
       if ( cx < 0.1 * w || cx > 0.9 * w ) hidden = true;
       if ( cy < 0.1 * h || cy > 0.9 * h ) hidden = true;
       d3.select("#dragDropContainer").classed("hidden", hidden);
-      
+
       d3.select("#loading-info").classed("hidden", !wasMessageToShow); // show it again
       // check if it should be visible
-      var should_show=graph.options().loadingModule().getMessageVisibilityStatus();
+      const should_show=graph.options().loadingModule().getMessageVisibilityStatus();
       if (should_show===false){
         d3.select("#loading-info").classed("hidden", true); // hide it
       }
@@ -183,12 +179,10 @@ module.exports = function (){
   app.initialize = function (){
     addFileDropEvents(GRAPH_SELECTOR);
     
-    window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame || function ( f ){
-        return setTimeout(f, 1000 / 60);
-      }; // simulate calling code 60
-    window.cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame || function ( requestID ){
+    window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame || (( f ) => setTimeout(f, 1000 / 60)); // simulate calling code 60
+    window.cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame || (( requestID ) => {
         clearTimeout(requestID);
-      }; //fall back
+      }); //fall back
     
     options.graphContainerSelector(GRAPH_SELECTOR);
     options.selectionModules().push(focuser);
@@ -223,9 +217,9 @@ module.exports = function (){
     leftSidebar.setup();
     editSidebar.setup();
     debugMenu.setup();
-    var agentVersion = getInternetExplorerVersion();
+    const agentVersion = getInternetExplorerVersion();
     if ( agentVersion > 0 && agentVersion <= 11 ) {
-      console.log("Agent version " + agentVersion);
+      console.log(`Agent version ${agentVersion}`);
       console.log("This agent is not supported");
       d3.select("#browserCheck").classed("hidden", false);
       d3.select("#killWarning").classed("hidden", true);
@@ -286,17 +280,16 @@ module.exports = function (){
       
       graph.start();
       
-      var modeOp = d3.select("#modeOfOperationString");
+      const modeOp = d3.select("#modeOfOperationString");
       modeOp.style("font-size", "0.6em");
       modeOp.style("font-style", "italic");
-      
+
       adjustSize();
-      var defZoom;
-      var w = graph.options().width();
-      var h = graph.options().height();
-      defZoom = Math.min(w, h) / 1000;
-      
-      var hideDebugOptions = true;
+      const w = graph.options().width();
+      const h = graph.options().height();
+      const defZoom = Math.min(w, h) / 1000;
+
+      const hideDebugOptions = true;
       if ( hideDebugOptions === false ) {
         graph.setForceTickFunctionWithFPS();
       }
@@ -305,20 +298,20 @@ module.exports = function (){
       d3.selectAll(".debugOption").classed("hidden", hideDebugOptions);
       
       // prevent backspace reloading event
-      var htmlBody = d3.select("body");
-      d3.select(document).on("keydown", function ( event ){
-        if ( event.keyCode === 8 && event.target === htmlBody.node() ) {
+      const htmlBody = d3.select("body");
+      d3.select(document).on("keydown", ( event ) => {
+        if ( event.key === "Backspace" && event.target === htmlBody.node() ) {
           // we could add here an alert
           event.preventDefault();
         }
         // using ctrl+Shift+d as debug option
-        if ( event.ctrlKey && event.shiftKey && event.keyCode === 68 ) {
+        if ( event.ctrlKey && event.shiftKey && event.key === "D" ) {
           graph.options().executeHiddenDebugFeatuers();
           event.preventDefault();
         }
       });
       if ( d3.select("#maxLabelWidthSliderOption") ) {
-        var setValue = !graph.options().dynamicLabelWidth();
+        const setValue = !graph.options().dynamicLabelWidth();
         d3.select("#maxLabelWidthSlider").node().disabled = setValue;
         d3.select("#maxLabelWidthvalueLabel").classed("disabledLabelForSlider", setValue);
         d3.select("#maxLabelWidthDescriptionLabel").classed("disabledLabelForSlider", setValue);
@@ -329,18 +322,18 @@ module.exports = function (){
         .style("background-color", "#bdbdbd")
         .style("opacity", "0.5")
         .style("pointer-events", "auto")
-        .style("width", graph.options().width() + "px")
-        .style("height", graph.options().height() + "px")
-        .on("click", function ( event ){
+        .style("width", `${graph.options().width()}px`)
+        .style("height", `${graph.options().height()}px`)
+        .on("click", ( event ) => {
           event.preventDefault();
           event.stopPropagation();
         })
-        .on("dblclick", function ( event ){
+        .on("dblclick", ( event ) => {
           event.preventDefault();
           event.stopPropagation();
         });
       
-      d3.select("#direct-text-input").on("click", function (){
+      d3.select("#direct-text-input").on("click", () => {
         directInputMod.setDirectInputMode();
       });
       d3.select("#blockGraphInteractions").node().draggable = false;
@@ -352,7 +345,7 @@ module.exports = function (){
       debugMenu.updateSettings();
       
       // connect the reloadCachedVersionButton
-      d3.select("#reloadSvgIcon").on("click", function (){
+      d3.select("#reloadSvgIcon").on("click", () => {
         if ( d3.select("#reloadSvgIcon").node().disabled === true ) {
           graph.options().ontologyMenu().clearCachedVersion();
           return;
@@ -379,10 +372,10 @@ module.exports = function (){
       return;
     }
     graph.editorMode(); // updates the checkbox
-    var data;
+    let data;
     if ( jsonText ) {
       // validate JSON FILE
-      var validJSON;
+      let validJSON;
       try {
         data = JSON.parse(jsonText);
         validJSON = true;
@@ -397,8 +390,8 @@ module.exports = function (){
       
       if ( !filename ) {
         // First look if an ontology title exists, otherwise take the alternative filename
-        var ontologyNames = data.header ? data.header.title : undefined;
-        var ontologyName = languageTools.textInLanguage(ontologyNames);
+        const ontologyNames = data.header ? data.header.title : undefined;
+        const ontologyName = languageTools.textInLanguage(ontologyNames);
         
         if ( ontologyName ) {
           filename = ontologyName;
@@ -410,16 +403,16 @@ module.exports = function (){
     
     
     // check if we have graph data
-    var classCount = 0;
+    let classCount = 0;
     if ( data.class !== undefined ) {
       classCount = data.class.length;
     }
-    
-    var loadEmptyOntologyForEditing = false;
+
+    let loadEmptyOntologyForEditing = false;
     if ( location.hash.indexOf("#new_ontology") !== -1 ) {
       loadEmptyOntologyForEditing = true;
       newOntologyCounter++;
-      d3.select("#empty").node().href = "#opts=editorMode=true;#new_ontology" + newOntologyCounter;
+      d3.select("#empty").node().href = `#opts=editorMode=true;#new_ontology${newOntologyCounter}`;
     }
     if ( classCount === 0 && graph.editorMode() === false && loadEmptyOntologyForEditing === false ) {
       // generate message for the user;
@@ -440,17 +433,17 @@ module.exports = function (){
       graph.updateZoomSliderValueFromOutside();
       adjustSize();
       
-      var flagOfCheckBox = d3.select("#editorModeModuleCheckbox").node().checked;
+      const flagOfCheckBox = d3.select("#editorModeModuleCheckbox").node().checked;
       graph.editorMode(flagOfCheckBox);// update gui
       
     }
   }
   
   function adjustSize(){
-    var graphContainer = d3.select(GRAPH_SELECTOR),
-      svg = graphContainer.select("svg"),
-      height = window.innerHeight - 40,
-      width = window.innerWidth - (window.innerWidth * 0.22);
+    const graphContainer = d3.select(GRAPH_SELECTOR);
+    const svg = graphContainer.select("svg");
+    let height = window.innerHeight - 40;
+    let width = window.innerWidth - (window.innerWidth * 0.22);
     
     if ( sidebar.getSidebarVisibility() === "0" ) {
       height = window.innerHeight - 40;
@@ -458,15 +451,15 @@ module.exports = function (){
     }
     
     directInputMod.updateLayout();
-    d3.select("#blockGraphInteractions").style("width", window.innerWidth + "px");
-    d3.select("#blockGraphInteractions").style("height", window.innerHeight + "px");
-    
-    d3.select("#WarningErrorMessagesContainer").style("width", width + "px");
-    d3.select("#WarningErrorMessagesContainer").style("height", height + "px");
-    
-    d3.select("#WarningErrorMessages").style("max-height", (height - 12) + "px");
-    
-    graphContainer.style("height", height + "px");
+    d3.select("#blockGraphInteractions").style("width", `${window.innerWidth}px`);
+    d3.select("#blockGraphInteractions").style("height", `${window.innerHeight}px`);
+
+    d3.select("#WarningErrorMessagesContainer").style("width", `${width}px`);
+    d3.select("#WarningErrorMessagesContainer").style("height", `${height}px`);
+
+    d3.select("#WarningErrorMessages").style("max-height", `${height - 12}px`);
+
+    graphContainer.style("height", `${height}px`);
     svg.attr("width", width)
       .attr("height", height);
     
@@ -486,25 +479,25 @@ module.exports = function (){
       graph.setTouchDevice(false);
     }
     
-    d3.select("#loadingInfo-container").style("height", 0.5 * (height - 80) + "px");
+    d3.select("#loadingInfo-container").style("height", `${0.5 * (height - 80)}px`);
     loadingModule.checkForScreenSize();
     
     adjustSliderSize();
     // update also the padding options of loading and the logo positions;
-    var warningDiv = d3.select("#browserCheck");
+    const warningDiv = d3.select("#browserCheck");
     if ( warningDiv.classed("hidden") === false ) {
-      var offset = 10 + warningDiv.node().getBoundingClientRect().height;
-      d3.select("#logo").style("padding", offset + "px 10px");
+      const offset = 10 + warningDiv.node().getBoundingClientRect().height;
+      d3.select("#logo").style("padding", `${offset}px 10px`);
     } else {
       // remove the dynamic padding from the logo element;
       d3.select("#logo").style("padding", "10px");
     }
     
     // scrollbar tests;
-    var element = d3.select("#menuElementContainer").node();
-    var maxScrollLeft = element.scrollWidth - element.clientWidth;
-    var leftButton = d3.select("#scrollLeftButton");
-    var rightButton = d3.select("#scrollRightButton");
+    const element = d3.select("#menuElementContainer").node();
+    const maxScrollLeft = element.scrollWidth - element.clientWidth;
+    const leftButton = d3.select("#scrollLeftButton");
+    const rightButton = d3.select("#scrollRightButton");
     if ( maxScrollLeft > 0 ) {
       // show both and then check how far is bar;
       rightButton.classed("hidden", false);
@@ -520,18 +513,18 @@ module.exports = function (){
     editSidebar.updateElementWidth();
     
     
-    var hs = d3.select("#drag_msg").node().getBoundingClientRect().height;
-    var ws = d3.select("#drag_msg").node().getBoundingClientRect().width;
-    d3.select("#drag_icon_group").attr("transform", "translate ( " + 0.25 * ws + " " + 0.25 * hs + ")");
+    const hs = d3.select("#drag_msg").node().getBoundingClientRect().height;
+    const ws = d3.select("#drag_msg").node().getBoundingClientRect().width;
+    d3.select("#drag_icon_group").attr("transform", `translate ( ${0.25 * ws} ${0.25 * hs})`);
     
   }
   
   function adjustSliderSize(){
     // TODO: refactor and put this into the slider it self
-    var height = window.innerHeight - 40;
-    var fullHeight = height;
-    var zoomOutPos = height - 30;
-    var sliderHeight = 150;
+    const height = window.innerHeight - 40;
+    const fullHeight = height;
+    let zoomOutPos = height - 30;
+    const sliderHeight = 150;
     
     // assuming DOM elements are generated in the index.html
     // todo: refactor for independent usage of graph and app
@@ -548,25 +541,25 @@ module.exports = function (){
     d3.select("#zoomInButton").classed("hidden", false);
     d3.select("#centerGraphButton").classed("hidden", false);
     
-    var zoomInPos = zoomOutPos - 20;
-    var centerPos = zoomInPos - 20;
+    let zoomInPos = zoomOutPos - 20;
+    let centerPos = zoomInPos - 20;
     if ( fullHeight < 280 ) {
       // hide the slider button;
       d3.select("#zoomSliderParagraph").classed("hidden", true);//var sliderPos=zoomOutPos-sliderHeight;
-      d3.select("#zoomOutButton").style("top", zoomOutPos + "px");
-      d3.select("#zoomInButton").style("top", zoomInPos + "px");
-      d3.select("#centerGraphButton").style("top", centerPos + "px");
+      d3.select("#zoomOutButton").style("top", `${zoomOutPos}px`);
+      d3.select("#zoomInButton").style("top", `${zoomInPos}px`);
+      d3.select("#centerGraphButton").style("top", `${centerPos}px`);
       return;
     }
-    
-    var sliderPos = zoomOutPos - sliderHeight;
+
+    const sliderPos = zoomOutPos - sliderHeight;
     zoomInPos = sliderPos - 20;
     centerPos = zoomInPos - 20;
     d3.select("#zoomSliderParagraph").classed("hidden", false);
-    d3.select("#zoomOutButton").style("top", zoomOutPos + "px");
-    d3.select("#zoomInButton").style("top", zoomInPos + "px");
-    d3.select("#centerGraphButton").style("top", centerPos + "px");
-    d3.select("#zoomSliderParagraph").style("top", sliderPos + "px");
+    d3.select("#zoomOutButton").style("top", `${zoomOutPos}px`);
+    d3.select("#zoomInButton").style("top", `${zoomInPos}px`);
+    d3.select("#centerGraphButton").style("top", `${centerPos}px`);
+    d3.select("#zoomSliderParagraph").style("top", `${sliderPos}px`);
   }
   
   function isTouchDevice(){
@@ -580,18 +573,18 @@ module.exports = function (){
   
   
   function getInternetExplorerVersion(){
-    var ua,
-      re,
-      rv = -1;
-    
+    let ua;
+    let re;
+    let rv = -1;
+
     // check for edge
-    var isEdge = /(?:\b(MS)?IE\s+|\bTrident\/7\.0;.*\s+rv:|\bEdge\/)(\d+)/.test(navigator.userAgent);
+    const isEdge = /(?:\b(MS)?IE\s+|\bTrident\/7\.0;.*\s+rv:|\bEdge\/)(\d+)/.test(navigator.userAgent);
     if ( isEdge ) {
       rv = parseInt("12");
       return rv;
     }
     
-    var isIE11 = /Trident.*rv[ :]*11\./.test(navigator.userAgent);
+    const isIE11 = /Trident.*rv[ :]*11\./.test(navigator.userAgent);
     if ( isIE11 ) {
       rv = parseInt("11");
       return rv;

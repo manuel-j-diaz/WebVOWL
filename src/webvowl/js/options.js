@@ -1,6 +1,6 @@
 module.exports = function (){
-  var options = {},
-    data,
+  const options = {};
+  let data,
     graphContainerSelector,
     classDistance = 200,
     datatypeDistance = 120,
@@ -61,9 +61,9 @@ module.exports = function (){
     showInputModality = false,
     hideDebugOptions = true,
     nodeDegreeFilter,
-    debugMenu,
-    
-    supportedDatatypes = ["rdfs:Literal", "xsd:boolean", "xsd:double", "xsd:integer", "xsd:string", "undefined"],
+    debugMenu;
+
+  const supportedDatatypes = ["rdfs:Literal", "xsd:boolean", "xsd:double", "xsd:integer", "xsd:string", "undefined"],
     supportedClasses = ["owl:Thing", "owl:Class", "owl:DeprecatedClass"],
     supportedProperties = ["owl:objectProperty",
       "rdfs:subClassOf",
@@ -164,7 +164,7 @@ module.exports = function (){
   };
   
   function validURL( str ){
-    var urlregex = /^(https?|ftp):\/\/([a-zA-Z0-9.-]+(:[a-zA-Z0-9.&%$-]+)*@)*((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}|([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(:[0-9]+)*(\/($|[a-zA-Z0-9.,?'\\+&%$#=~_-]+))*$/;
+    const urlregex = /^(https?|ftp):\/\/([a-zA-Z0-9.-]+(:[a-zA-Z0-9.&%$-]+)*@)*((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}|([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(:[0-9]+)*(\/($|[a-zA-Z0-9.,?'\\+&%$#=~_-]+))*$/;
     return urlregex.test(str);
   }
   
@@ -189,7 +189,7 @@ module.exports = function (){
       // sanity check
       if ( prefixList.hasOwnProperty(newPrefix) ) {
         //  console.log("Already have this prefix!");
-        warningModule.showWarning("Prefix Already Exist", "Prefix: " + newPrefix + " is already defined", "You should use an other one", 1, false);
+        warningModule.showWarning("Prefix Already Exist", `Prefix: ${newPrefix} is already defined`, "You should use an other one", 1, false);
         return false;
       }
       options.removePrefix(oldPrefix);
@@ -328,7 +328,7 @@ module.exports = function (){
   };
   
   
-  var defaultOptionsConfig = {};
+  const defaultOptionsConfig = {};
   defaultOptionsConfig.sidebar = "1";
   defaultOptionsConfig.doc = -1;
   defaultOptionsConfig.cd = 200;
@@ -349,7 +349,7 @@ module.exports = function (){
   
   
   options.initialConfig = function (){
-    var initCfg = {};
+    const initCfg = {};
     initCfg.sidebar = "1";
     initCfg.doc = -1;
     initCfg.cd = 200;
@@ -410,7 +410,7 @@ module.exports = function (){
     if ( !arguments.length ) {
       return rectangularRep;
     } else {
-      var intVal = parseInt(val);
+      const intVal = parseInt(val);
       if ( intVal === 0 ) {
         rectangularRep = false;
       } else {
@@ -591,7 +591,7 @@ module.exports = function (){
     return options;
   };
 
-  var useCanvasRenderer = false;
+  let useCanvasRenderer = false;
   options.useCanvasRenderer = function ( p ){
     if ( !arguments.length ) return useCanvasRenderer;
     useCanvasRenderer = p;
@@ -632,13 +632,13 @@ module.exports = function (){
   options.setOptionsFromURL = function ( opts, changeEditFlag ){
     if ( opts.sidebar !== undefined ) sidebar.showSidebar(parseInt(opts.sidebar), true);
     if ( opts.doc ) {
-      var asInt = parseInt(opts.doc);
+      const asInt = parseInt(opts.doc);
       filterMenu.setDegreeSliderValue(asInt);
       graphObject.setGlobalDOF(asInt);
       // reset the value to be -1;
       defaultOptionsConfig.doc = -1;
     }
-    var settingFlag = false;
+    let settingFlag = false;
     if ( opts.editorMode ) {
       if ( opts.editorMode === "true" ) settingFlag = true;
       d3.select("#editorModeModuleCheckbox").node().checked = settingFlag;

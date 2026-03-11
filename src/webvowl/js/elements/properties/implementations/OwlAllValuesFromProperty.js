@@ -1,31 +1,31 @@
-var BaseProperty = require("../BaseProperty");
+const BaseProperty = require("../BaseProperty");
 
 module.exports = (function (){
-  
-  var o = function ( graph ){
+
+  const o = function ( graph ){
     BaseProperty.apply(this, arguments);
-    
-    var superGenerateCardinalityText = this.generateCardinalityText;
-    
+
+    const superGenerateCardinalityText = this.generateCardinalityText;
+
     this.linkType("values-from")
       .markerType("filled values-from")
       .styleClass("allvaluesfromproperty")
       .type("owl:allValuesFrom");
-    
+
     this.generateCardinalityText = function (){
-      var cardinalityText = "A";
-      
-      var superCardinalityText = superGenerateCardinalityText();
+      let cardinalityText = "A";
+
+      const superCardinalityText = superGenerateCardinalityText();
       if ( superCardinalityText ) {
-        cardinalityText += ", " + superCardinalityText;
+        cardinalityText += `, ${superCardinalityText}`;
       }
-      
+
       return cardinalityText;
     };
   };
   o.prototype = Object.create(BaseProperty.prototype);
   o.prototype.constructor = o;
-  
+
   return o;
 }());
 

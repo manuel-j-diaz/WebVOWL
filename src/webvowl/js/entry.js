@@ -1,10 +1,10 @@
 require("../css/vowl.css");
 
-var nodeMap = require("./elements/nodes/nodeMap")();
-var propertyMap = require("./elements/properties/propertyMap")();
+const nodeMap = require("./elements/nodes/nodeMap")();
+const propertyMap = require("./elements/properties/propertyMap")();
 
 
-var webvowl = {};
+const webvowl = {};
 webvowl.graph = require("./graph");
 webvowl.options = require("./options");
 webvowl.version = __WEBVOWL_VERSION__;
@@ -35,17 +35,17 @@ webvowl.modules.namespaceColorModule = require("./modules/namespaceColorModule")
 
 
 webvowl.nodes = {};
-nodeMap.forEach(function ( value, key ){
+nodeMap.forEach(( value, key ) => {
   mapEntryToIdentifier(webvowl.nodes, key, value);
 });
 
 webvowl.properties = {};
-propertyMap.forEach(function ( value, key ){
+propertyMap.forEach(( value, key ) => {
   mapEntryToIdentifier(webvowl.properties, key, value);
 });
 
 function mapEntryToIdentifier( map, key, value ){
-  var identifier = key.replace(":", "").toLowerCase();
+  const identifier = key.replace(":", "").toLowerCase();
   map[identifier] = value;
 }
 

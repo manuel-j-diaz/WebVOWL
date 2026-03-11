@@ -1,13 +1,13 @@
-var elementTools = require("../util/elementTools")();
+const elementTools = require("../util/elementTools")();
 
 module.exports = function (){
-  var pap = {},
-    enabled = false,
-    pinnedElements = [];
+  const pap = {};
+  let enabled = false;
+  const pinnedElements = [];
   
   pap.addPinnedElement = function ( element ){
     // check if element is already in list
-    var indexInArray = pinnedElements.indexOf(element);
+    const indexInArray = pinnedElements.indexOf(element);
     if ( indexInArray === -1 ) {
       pinnedElements.push(element);
     }
@@ -42,7 +42,7 @@ module.exports = function (){
   }
 
   function hasNoParallelProperties( property ){
-    return property.domain().links().filter(function( x ) { return property.range().links().indexOf(x) !== -1; }).length === 1;
+    return property.domain().links().filter(( x ) => property.range().links().indexOf(x) !== -1).length === 1;
   }
   
   pap.enabled = function ( p ){
@@ -52,7 +52,7 @@ module.exports = function (){
   };
   
   pap.reset = function (){
-    pinnedElements.forEach(function ( element ){
+    pinnedElements.forEach(( element ) => {
       element.removePin();
     });
     // Clear the array of stored nodes

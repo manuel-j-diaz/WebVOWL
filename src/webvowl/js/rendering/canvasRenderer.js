@@ -4,12 +4,12 @@
  * SVG elements remain in DOM for event handling but are hidden via .canvas-mode CSS.
  */
 module.exports = function () {
-  var renderer = {},
-    canvas, ctx, dpr,
+  const renderer = {};
+  let canvas, ctx, dpr,
     width, height,
     canvasCurveGen, canvasLoopGen;
 
-  var _collapsingModule = null;
+  let _collapsingModule = null;
   renderer.collapsingModule = function (m) {
     if (!arguments.length) return _collapsingModule;
     _collapsingModule = m;
@@ -17,13 +17,13 @@ module.exports = function () {
   };
 
   // Current frame render state, stored for viewport culling helpers
-  var _zoom = 1, _tx = 0, _ty = 0;
+  let _zoom = 1, _tx = 0, _ty = 0;
 
-  var CARDINALITY_HDISTANCE = 20,
+  const CARDINALITY_HDISTANCE = 20,
     CARDINALITY_VDISTANCE = 10;
 
   // Fill colors from vowl.css
-  var FILL_COLORS = {
+  const FILL_COLORS = {
     "class": "#acf",
     "object": "#acf",
     "disjoint": "#acf",
@@ -50,7 +50,7 @@ module.exports = function () {
   };
 
   // Special stroke colors from vowl.css
-  var STROKE_COLORS = {
+  const STROKE_COLORS = {
     "individual": "#b74",
     "rdftype": "#b74",
     "values-from": "#69c"
@@ -66,25 +66,25 @@ module.exports = function () {
     canvas.className = "vowlCanvas";
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
-    canvas.style.width = w + "px";
-    canvas.style.height = h + "px";
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
     ctx = canvas.getContext("2d");
 
-    var container = document.querySelector(containerSelector);
+    const container = document.querySelector(containerSelector);
     if (!container) return;
     // Insert before SVG so canvas is behind it
     container.insertBefore(canvas, container.firstChild);
 
     // D3 line generators bound to the canvas context
     canvasCurveGen = d3.line()
-      .x(function (d) { return d.x; })
-      .y(function (d) { return d.y; })
+      .x((d) => d.x)
+      .y((d) => d.y)
       .curve(d3.curveCardinal)
       .context(ctx);
 
     canvasLoopGen = d3.line()
-      .x(function (d) { return d.x; })
-      .y(function (d) { return d.y; })
+      .x((d) => d.x)
+      .y((d) => d.y)
       .curve(d3.curveCardinal.tension(-1))
       .context(ctx);
   };
@@ -97,8 +97,8 @@ module.exports = function () {
     height = h;
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
-    canvas.style.width = w + "px";
-    canvas.style.height = h + "px";
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
   };
 
 
@@ -150,9 +150,9 @@ module.exports = function () {
    * partially within the logical viewport.
    */
   function isInViewport(x, y, margin) {
-    var sx = x * _zoom + _tx;
-    var sy = y * _zoom + _ty;
-    var m = margin * _zoom;
+    const sx = x * _zoom + _tx;
+    const sy = y * _zoom + _ty;
+    const m = margin * _zoom;
     return sx + m > 0 && sx - m < width && sy + m > 0 && sy - m < height;
   }
 
@@ -160,12 +160,12 @@ module.exports = function () {
     if (element.backgroundColor && element.backgroundColor()) {
       return element.backgroundColor();
     }
-    var sc = element.styleClass ? element.styleClass() : null;
+    const sc = element.styleClass ? element.styleClass() : null;
     return (sc && FILL_COLORS[sc]) ? FILL_COLORS[sc] : "#acf";
   }
 
   function getStrokeColor(element) {
-    var sc = element.styleClass ? element.styleClass() : null;
+    const sc = element.styleClass ? element.styleClass() : null;
     return (sc && STROKE_COLORS[sc]) ? STROKE_COLORS[sc] : "#000";
   }
 
@@ -191,10 +191,11 @@ module.exports = function () {
     ctx.font = "12px Helvetica, Arial, sans-serif";
     if (!text) return [""];
     if (ctx.measureText(text).width <= maxWidth) return [text];
-    var words = text.split(/\s+/);
-    var lines = [], line = "";
-    for (var i = 0; i < words.length; i++) {
-      var test = line ? line + " " + words[i] : words[i];
+    const words = text.split(/\s+/);
+    const lines = [];
+    let line = "";
+    for (let i = 0; i < words.length; i++) {
+      const test = line ? `${line} ${words[i]}` : words[i];
       if (ctx.measureText(test).width > maxWidth && line) {
         lines.push(line);
         line = words[i];
@@ -204,18 +205,18 @@ module.exports = function () {
     }
     if (line) lines.push(line);
     // Truncate any line that's still too long (single long word)
-    return lines.map(function (l) {
+    return lines.map((l) => {
       if (ctx.measureText(l).width <= maxWidth) return l;
-      while (l.length > 0 && ctx.measureText(l + "\u2026").width > maxWidth) l = l.slice(0, -1);
-      return l + "\u2026";
+      while (l.length > 0 && ctx.measureText(`${l}\u2026`).width > maxWidth) l = l.slice(0, -1);
+      return `${l}\u2026`;
     });
   }
 
   // Draw lines centered at (0,0) with given line height.
   function drawWrappedText(lines, lineHeight) {
-    var lh = lineHeight || 14;
-    var startY = -((lines.length - 1) * lh) / 2;
-    for (var i = 0; i < lines.length; i++) {
+    const lh = lineHeight || 14;
+    const startY = -((lines.length - 1) * lh) / 2;
+    for (let i = 0; i < lines.length; i++) {
       ctx.fillText(lines[i], 0, startY + i * lh);
     }
   }
@@ -224,33 +225,33 @@ module.exports = function () {
   // ── Nodes ─────────────────────────────────────────────────────────────────
 
   function drawNodes(classNodes) {
-    for (var i = 0; i < classNodes.length; i++) {
-      drawNode(classNodes[i]);
+    for (const node of classNodes) {
+      drawNode(node);
     }
   }
 
   function drawNode(node) {
     if (node.x === undefined) return;
 
-    var r = node.actualRadius ? node.actualRadius() : 30;
-    var isRect = node.getRectangularRepresentation && node.getRectangularRepresentation();
+    const r = node.actualRadius ? node.actualRadius() : 30;
+    const isRect = node.getRectangularRepresentation && node.getRectangularRepresentation();
 
     // Viewport culling: skip nodes entirely outside the visible area
-    var cullMargin = isRect ? 50 : r + (node.collapsible && node.collapsible() ? 24 : 10);
+    const cullMargin = isRect ? 50 : r + (node.collapsible && node.collapsible() ? 24 : 10);
     if (!isInViewport(node.x, node.y, cullMargin)) return;
 
     ctx.save();
     ctx.translate(node.x, node.y);
 
-    var fill = getFillColor(node);
-    var stroke = getStrokeColor(node);
-    var attrs = node.attributes ? node.attributes() : [];
-    var isHovered = node.mouseEntered && node.mouseEntered();
-    var isFocused = node.focused && node.focused();
+    let fill = getFillColor(node);
+    const stroke = getStrokeColor(node);
+    const attrs = node.attributes ? node.attributes() : [];
+    const isHovered = node.mouseEntered && node.mouseEntered();
+    const isFocused = node.focused && node.focused();
 
     if (attrs.indexOf("deprecated") > -1) fill = "#ccc";
     if (isHovered) fill = "#f00";
-    var isCollapsed = _collapsingModule && _collapsingModule.isCollapsed(node.id());
+    const isCollapsed = _collapsingModule && _collapsingModule.isCollapsed(node.id());
     if (isFocused) {
       stroke = "#f00";
       ctx.lineWidth = 4;
@@ -276,12 +277,12 @@ module.exports = function () {
     if (isCollapsed) ctx.setLineDash([]);
 
     // Label text with word-wrap
-    var label = node.labelForCurrentLanguage ? node.labelForCurrentLanguage() : "";
+    const label = node.labelForCurrentLanguage ? node.labelForCurrentLanguage() : "";
     if (label) {
       ctx.fillStyle = "#000";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      var textMaxWidth = isRect ? 72 : r * 1.8;
+      const textMaxWidth = isRect ? 72 : r * 1.8;
       drawWrappedText(getWrappedLines(label, textMaxWidth));
     }
 
@@ -292,9 +293,9 @@ module.exports = function () {
   }
 
   function drawCollapseButton(node) {
-    var r = node.actualRadius ? node.actualRadius() : 30;
-    var isCollapsed = _collapsingModule && _collapsingModule.isCollapsed(node.id());
-    var isHovered = node._collapseHovered;
+    const r = node.actualRadius ? node.actualRadius() : 30;
+    const isCollapsed = _collapsingModule && _collapsingModule.isCollapsed(node.id());
+    const isHovered = node._collapseHovered;
 
     ctx.save();
     ctx.translate(0, r);
@@ -324,8 +325,8 @@ module.exports = function () {
   }
 
   function drawPinIndicator(node) {
-    var r = node.actualRadius ? node.actualRadius() : 30;
-    var dx = (-3.5 / 5) * r,
+    const r = node.actualRadius ? node.actualRadius() : 30;
+    const dx = (-3.5 / 5) * r,
       dy = (-7 / 10) * r;
     ctx.save();
     ctx.fillStyle = "#e33";
@@ -342,26 +343,26 @@ module.exports = function () {
   // ── Property Labels ───────────────────────────────────────────────────────
 
   function drawLabels(labelNodes) {
-    for (var i = 0; i < labelNodes.length; i++) {
-      drawLabel(labelNodes[i]);
+    for (const labelNode of labelNodes) {
+      drawLabel(labelNode);
     }
   }
 
   function drawLabel(labelNode) {
-    var prop = labelNode.property ? labelNode.property() : null;
+    const prop = labelNode.property ? labelNode.property() : null;
     if (!prop) return;
     if (!prop.labelVisible || !prop.labelVisible()) return;
     if (labelNode.x === undefined) return;
 
     // Viewport culling for labels
-    var w = prop.width ? prop.width() : 80;
-    var h = prop.height ? prop.height() : 28;
+    const w = prop.width ? prop.width() : 80;
+    const h = prop.height ? prop.height() : 28;
     if (!isInViewport(labelNode.x, labelNode.y, Math.max(w, h) / 2 + 10)) return;
 
     drawPropertyRect(prop, labelNode.x, labelNode.y);
 
     // Inverse label (drawn offset below the primary)
-    var inv = labelNode.inverse ? labelNode.inverse() : null;
+    const inv = labelNode.inverse ? labelNode.inverse() : null;
     if (inv && inv.labelVisible && inv.labelVisible()) {
       drawPropertyRect(inv, labelNode.x, labelNode.y + h / 2 + 1);
     }
@@ -371,11 +372,11 @@ module.exports = function () {
     ctx.save();
     ctx.translate(cx, cy);
 
-    var w = prop.width ? prop.width() : 80;
-    var h = prop.height ? prop.height() : 28;
+    const w = prop.width ? prop.width() : 80;
+    const h = prop.height ? prop.height() : 28;
 
-    var fill = getFillColor(prop);
-    var attrs = prop.attributes ? prop.attributes() : [];
+    let fill = getFillColor(prop);
+    const attrs = prop.attributes ? prop.attributes() : [];
     if (attrs.indexOf("deprecated") > -1) fill = "#ccc";
     ctx.fillStyle = prop.mouseEntered && prop.mouseEntered() ? "#f00" : fill;
     ctx.strokeStyle = prop.focused && prop.focused() ? "#f00" : "#000";
@@ -391,7 +392,7 @@ module.exports = function () {
     ctx.fillStyle = "#000";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    var propLabel = prop.labelForCurrentLanguage ? prop.labelForCurrentLanguage() : "";
+    const propLabel = prop.labelForCurrentLanguage ? prop.labelForCurrentLanguage() : "";
     drawWrappedText(getWrappedLines(propLabel, w - 8));
 
     ctx.restore();
@@ -401,14 +402,14 @@ module.exports = function () {
   // ── Links ─────────────────────────────────────────────────────────────────
 
   function drawLinks(links, math) {
-    for (var i = 0; i < links.length; i++) {
-      drawLink(links[i], math);
+    for (const link of links) {
+      drawLink(link, math);
     }
   }
 
   function drawLink(link, math) {
-    var prop = link.label().property();
-    var linkType = prop.linkType ? prop.linkType() : "normal";
+    const prop = link.label().property();
+    const linkType = prop.linkType ? prop.linkType() : "normal";
 
     ctx.save();
     ctx.strokeStyle = "#000";
@@ -429,24 +430,24 @@ module.exports = function () {
     }
 
     if (link.isLoop()) {
-      var loopPoints = math.calculateLoopPoints(link);
+      const loopPoints = math.calculateLoopPoints(link);
       canvasLoopGen(loopPoints);
       ctx.stroke();
     } else {
-      var curvePoint = link.label();
-      var pathStart = math.calculateIntersection(curvePoint, link.domain(), 1);
-      var pathEnd = math.calculateIntersection(curvePoint, link.range(), 1);
+      const curvePoint = link.label();
+      const pathStart = math.calculateIntersection(curvePoint, link.domain(), 1);
+      const pathEnd = math.calculateIntersection(curvePoint, link.range(), 1);
       canvasCurveGen([pathStart, curvePoint, pathEnd]);
       ctx.stroke();
 
       if (prop.linkHasMarker && prop.linkHasMarker()) {
         ctx.setLineDash([]);
         ctx.globalAlpha = 1;
-        var markerType = prop.markerType ? prop.markerType() : "filled";
+        const markerType = prop.markerType ? prop.markerType() : "filled";
         drawArrow(pathEnd, curvePoint, markerType);
-        var inv = link.inverse ? link.inverse() : null;
+        const inv = link.inverse ? link.inverse() : null;
         if (inv) {
-          var invMarkerType = inv.markerType ? inv.markerType() : "filled";
+          const invMarkerType = inv.markerType ? inv.markerType() : "filled";
           drawArrow(pathStart, curvePoint, invMarkerType);
         }
       }
@@ -461,7 +462,7 @@ module.exports = function () {
    * markerType: "filled" = black fill, "white" = white fill + black stroke, else outline only.
    */
   function drawArrow(tip, toward, markerType) {
-    var dx = tip.x - toward.x,
+    const dx = tip.x - toward.x,
       dy = tip.y - toward.y,
       angle = Math.atan2(dy, dx);
 
@@ -496,16 +497,15 @@ module.exports = function () {
   // ── Cardinalities ─────────────────────────────────────────────────────────
 
   function drawCardinalities(properties, math) {
-    for (var i = 0; i < properties.length; i++) {
-      var prop = properties[i];
+    for (const prop of properties) {
       if (!prop.generateCardinalityText) continue;
-      var cardText = prop.generateCardinalityText();
+      const cardText = prop.generateCardinalityText();
       if (!cardText) continue;
       if (!prop.link || !prop.link()) continue;
 
-      var label = prop.link().label();
-      var pos = math.calculateIntersection(label, prop.range(), CARDINALITY_HDISTANCE);
-      var normalV = math.calculateNormalVector(label, prop.range(), CARDINALITY_VDISTANCE);
+      const label = prop.link().label();
+      const pos = math.calculateIntersection(label, prop.range(), CARDINALITY_HDISTANCE);
+      const normalV = math.calculateNormalVector(label, prop.range(), CARDINALITY_VDISTANCE);
 
       ctx.save();
       ctx.font = "10px Helvetica, Arial, sans-serif";
@@ -521,14 +521,12 @@ module.exports = function () {
   // ── Halos (search highlight rings) ────────────────────────────────────────
 
   function drawHalos(classNodes, properties) {
-    for (var i = 0; i < classNodes.length; i++) {
-      var node = classNodes[i];
+    for (const node of classNodes) {
       if (node.halo && node.halo() && node.x !== undefined) {
         drawNodeHalo(node);
       }
     }
-    for (var j = 0; j < properties.length; j++) {
-      var prop = properties[j];
+    for (const prop of properties) {
       if (prop.halo && prop.halo() && prop.link && prop.link()) {
         drawPropertyHalo(prop);
       }
@@ -536,7 +534,7 @@ module.exports = function () {
   }
 
   function drawNodeHalo(node) {
-    var isRect = node.getRectangularRepresentation && node.getRectangularRepresentation();
+    const isRect = node.getRectangularRepresentation && node.getRectangularRepresentation();
     ctx.save();
     ctx.strokeStyle = "#f00";
     ctx.lineWidth = 5;
@@ -544,7 +542,7 @@ module.exports = function () {
       roundedRect(ctx, node.x - 45, node.y - 45, 90, 90, 6);
     } else {
       ctx.translate(node.x, node.y);
-      var r = (node.actualRadius ? node.actualRadius() : 30) + 8;
+      const r = (node.actualRadius ? node.actualRadius() : 30) + 8;
       ctx.beginPath();
       ctx.arc(0, 0, r, 0, 2 * Math.PI);
     }
@@ -553,10 +551,10 @@ module.exports = function () {
   }
 
   function drawPropertyHalo(prop) {
-    var label = prop.link().label();
+    const label = prop.link().label();
     if (label.x === undefined) return;
-    var w = (prop.width ? prop.width() : 80) + 16;
-    var h = (prop.height ? prop.height() : 28) + 16;
+    const w = (prop.width ? prop.width() : 80) + 16;
+    const h = (prop.height ? prop.height() : 28) + 16;
     ctx.save();
     ctx.translate(label.x, label.y);
     ctx.strokeStyle = "#f00";

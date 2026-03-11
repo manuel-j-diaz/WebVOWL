@@ -2,10 +2,10 @@
  * The base element for all visual elements of webvowl.
  */
 module.exports = (function (){
-  
-  var Base = function ( graph ){
+
+  const Base = function ( graph ){
     // Basic attributes
-    var equivalents = [],
+    let equivalents = [],
       id,
       label,
       type,
@@ -25,10 +25,10 @@ module.exports = (function (){
       mouseEntered = false,
       styleClass,
       visible = true,
-      
-      backupLabel,
+
+      backupLabel;
       // Other
-      languageTools = require("../util/languageTools")();
+    const languageTools = require("../util/languageTools")();
     
     
     this.backupLabel = function ( label ){
@@ -157,7 +157,7 @@ module.exports = (function (){
      * @returns {string} the css class of this node..
      */
     this.cssClassOfNode = function (){
-      return "node" + this.id();
+      return `node${this.id()}`;
     };
     
     this.descriptionForCurrentLanguage = function (){
@@ -173,19 +173,19 @@ module.exports = (function (){
     };
     
     this.labelForCurrentLanguage = function (){
-      var preferredLanguage = graph && graph.language ? graph.language() : null;
+      const preferredLanguage = graph && graph.language ? graph.language() : null;
       return languageTools.textInLanguage(this.label(), preferredLanguage);
     };
   };
-  
+
   Base.prototype.constructor = Base;
-  
+
   Base.prototype.equals = function ( other ){
     return other instanceof Base && this.id() === other.id();
   };
-  
+
   Base.prototype.toString = function (){
-    return this.labelForCurrentLanguage() + " (" + this.type() + ")";
+    return `${this.labelForCurrentLanguage()} (${this.type()})`;
   };
   
   

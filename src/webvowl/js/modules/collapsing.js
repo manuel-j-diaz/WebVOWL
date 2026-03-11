@@ -1,15 +1,15 @@
-var elementTools = require("../util/elementTools")();
-var filterTools = require("../util/filterTools")();
+const elementTools = require("../util/elementTools")();
+const filterTools = require("../util/filterTools")();
 
 module.exports = function (){
-  var collapsing = {},
-    enabled = false,
+  const collapsing = {};
+  let enabled = false,
     filteredNodes, filteredProperties;
 
-  var collapsedNodeIds = new Set();
-  var childrenIndex = {};
-  var descendantIndex = {};
-  var baseProperties = null;
+  const collapsedNodeIds = new Set();
+  let childrenIndex = {};
+  let descendantIndex = {};
+  let baseProperties = null;
 
   collapsing.setBaseProperties = function ( props ){
     baseProperties = props;
@@ -18,28 +18,28 @@ module.exports = function (){
   collapsing.filter = function ( nodes, properties ){
     // Filtered index: for collapsible flag (instanceof, no false-positive +/- buttons)
     childrenIndex = {};
-    properties.forEach(function ( p ){
+    properties.forEach(( p ) => {
       if ( !elementTools.isRdfsSubClassOf(p) ) return;
-      var parentId = p.range().id();
-      var childId = p.domain().id();
+      const parentId = p.range().id();
+      const childId = p.domain().id();
       if ( !childrenIndex[parentId] ) childrenIndex[parentId] = [];
       childrenIndex[parentId].push(childId);
     });
 
     // Descendant index: for recursive hiding (string check, full base hierarchy)
     descendantIndex = {};
-    var propsForDesc = baseProperties || properties;
-    propsForDesc.forEach(function ( p ){
+    const propsForDesc = baseProperties || properties;
+    propsForDesc.forEach(( p ) => {
       if ( !(p.type && p.type() === "rdfs:subClassOf") ) return;
       if ( !p.domain() || !p.range() ) return;
-      var parentId = p.range().id();
-      var childId = p.domain().id();
+      const parentId = p.range().id();
+      const childId = p.domain().id();
       if ( !descendantIndex[parentId] ) descendantIndex[parentId] = [];
       descendantIndex[parentId].push(childId);
     });
 
     // Mark collapsible: nodes that have children (only when feature is enabled)
-    nodes.forEach(function ( n ){
+    nodes.forEach(( n ) => {
       if ( !elementTools.isDatatype(n) ) {
         n.collapsible(enabled && (childrenIndex[n.id()] || []).length > 0);
       }
@@ -52,10 +52,10 @@ module.exports = function (){
     }
 
     // Collect all descendants of collapsed nodes
-    var toHide = new Set();
-    collapsedNodeIds.forEach(function ( id ){ collectDescendants(id, toHide); });
+    const toHide = new Set();
+    collapsedNodeIds.forEach(( id ) => { collectDescendants(id, toHide); });
 
-    var result = filterTools.filterNodesAndTidy(nodes, properties, function ( n ){
+    const result = filterTools.filterNodesAndTidy(nodes, properties, ( n ) => {
       return !toHide.has(n.id());
     });
     filteredNodes = result.nodes;
@@ -63,7 +63,7 @@ module.exports = function (){
   };
 
   function collectDescendants( id, result ){
-    (descendantIndex[id] || []).forEach(function ( childId ){
+    (descendantIndex[id] || []).forEach(( childId ) => {
       if ( !result.has(childId) ) {
         result.add(childId);
         collectDescendants(childId, result);

@@ -1,21 +1,20 @@
-var xhrRequest = require("../util/xhrHelper");
+const xhrRequest = require("../util/xhrHelper");
 
 module.exports = function ( graph ){
-  
-  var ontologyMenu = {},
-    loadingInfo = d3.select("#loading-info"),
-    loadingProgress = d3.select("#loading-progress"),
-    
-    ontologyMenuTimeout,
-    fileToLoad,
-    stopTimer = false,
-    loadingError = false,
-    loadingStatusTimer,
-    conversion_sessionId,
-    cachedConversions = {},
-    loadingModule,
-    loadOntologyFromText;
-  var currentLoadedOntologyName = "";
+
+  const ontologyMenu = {};
+  const loadingInfo = d3.select("#loading-info");
+  const loadingProgress = d3.select("#loading-progress");
+  let ontologyMenuTimeout;
+  let fileToLoad;
+  let stopTimer = false;
+  let loadingError = false;
+  let loadingStatusTimer;
+  let conversion_sessionId;
+  const cachedConversions = {};
+  let loadingModule;
+  let loadOntologyFromText;
+  let currentLoadedOntologyName = "";
   
   ontologyMenu.getLoadingFunction = function (){
     return loadOntologyFromText;
@@ -37,7 +36,7 @@ module.exports = function ( graph ){
   ontologyMenu.cachedOntology = function ( ontoName ){
     currentLoadedOntologyName = ontoName;
     if ( cachedConversions[ontoName] ) {
-      var locStr = String(location.hash);
+      const locStr = String(location.hash);
       d3.select("#reloadSvgIcon").node().disabled = false;
       graph.showReloadButtonAfterLayoutOptimization(true);
       if ( locStr.indexOf("#file") > -1 ) {
@@ -71,23 +70,23 @@ module.exports = function ( graph ){
   ontologyMenu.setup = function ( _loadOntologyFromText ){
     loadOntologyFromText = _loadOntologyFromText;
     loadingModule = graph.options().loadingModule();
-    var menuEntry = d3.select("#m_select");
-    menuEntry.on("mouseover", function (){
-      var searchMenu = graph.options().searchMenu();
+    const menuEntry = d3.select("#m_select");
+    menuEntry.on("mouseover", () => {
+      const searchMenu = graph.options().searchMenu();
       searchMenu.hideSearchEntries();
     });
     
     setupConverterButtons();
     setupUploadButton();
     
-    var descriptionButton = d3.select("#error-description-button").datum({ open: false });
+    const descriptionButton = d3.select("#error-description-button").datum({ open: false });
     descriptionButton.on("click", function ( data ){
-      var errorContainer = d3.select("#error-description-container");
-      var errorDetailsButton = d3.select(this);
+      const errorContainer = d3.select("#error-description-container");
+      const errorDetailsButton = d3.select(this);
       
       // toggle the state
       data.open = !data.open;
-      var descriptionVisible = data.open;
+      const descriptionVisible = data.open;
       if ( descriptionVisible ) {
         errorDetailsButton.text("Hide error details");
       } else {
@@ -103,8 +102,8 @@ module.exports = function ( graph ){
   
   function setupUriListener(){
     // reload ontology when hash parameter gets changed manually
-    d3.select(window).on("hashchange", function ( event ){
-      var oldURL = event.oldURL, newURL = event.newURL;
+    d3.select(window).on("hashchange", ( event ) => {
+      const oldURL = event.oldURL, newURL = event.newURL;
       if ( oldURL !== newURL ) {
         // don't reload when just the hash parameter gets appended
         if ( newURL === oldURL + "#" ) {
@@ -137,11 +136,11 @@ module.exports = function ( graph ){
   };
   
   ontologyMenu.clearDetailInformation = function (){
-    var bpContainer = d3.select("#bulletPoint_container");
-    var htmlCollection = bpContainer.node().children;
-    var numEntries = htmlCollection.length;
-    
-    for ( var i = 0; i < numEntries; i++ ) {
+    const bpContainer = d3.select("#bulletPoint_container");
+    const htmlCollection = bpContainer.node().children;
+    const numEntries = htmlCollection.length;
+
+    for ( let i = 0; i < numEntries; i++ ) {
       htmlCollection[0].remove();
     }
   };
@@ -150,8 +149,8 @@ module.exports = function ( graph ){
     append_message(msg);
   };
   function append_message( msg ){
-    var bpContainer = d3.select("#bulletPoint_container");
-    var div = bpContainer.append("div");
+    const bpContainer = d3.select("#bulletPoint_container");
+    const div = bpContainer.append("div");
     div.node().innerHTML = msg;
     loadingModule.scrollDownDetails();
   }
@@ -166,19 +165,19 @@ module.exports = function ( graph ){
     append_bulletPoint(msg);
   };
   function append_message_toLastBulletPoint( msg ){
-    var bpContainer = d3.select("#bulletPoint_container");
-    var htmlCollection = bpContainer.node().getElementsByTagName("LI");
-    var lastItem = htmlCollection.length - 1;
+    const bpContainer = d3.select("#bulletPoint_container");
+    const htmlCollection = bpContainer.node().getElementsByTagName("LI");
+    const lastItem = htmlCollection.length - 1;
     if ( lastItem >= 0 ) {
-      var oldText = htmlCollection[lastItem].innerHTML;
+      const oldText = htmlCollection[lastItem].innerHTML;
       htmlCollection[lastItem].innerHTML = oldText + msg;
     }
     loadingModule.scrollDownDetails();
   }
   
   function append_bulletPoint( msg ){
-    var bp_container = d3.select("#bulletPoint_container");
-    var bp = bp_container.append("li");
+    const bp_container = d3.select("#bulletPoint_container");
+    const bp = bp_container.append("li");
     bp.node().innerHTML = msg;
     d3.select("#currentLoadingStep").node().innerHTML = msg;
     loadingModule.scrollDownDetails();
@@ -186,23 +185,23 @@ module.exports = function ( graph ){
   
   
   function setupConverterButtons(){
-    var iriConverterButton = d3.select("#iri-converter-button");
-    var iriConverterInput = d3.select("#iri-converter-input");
-    
-    iriConverterInput.on("input", function (){
+    const iriConverterButton = d3.select("#iri-converter-button");
+    const iriConverterInput = d3.select("#iri-converter-input");
+
+    iriConverterInput.on("input", () => {
       keepOntologySelectionOpenShortly();
       
-      var inputIsEmpty = iriConverterInput.property("value") === "";
+      const inputIsEmpty = iriConverterInput.property("value") === "";
       iriConverterButton.attr("disabled", inputIsEmpty || undefined);
-    }).on("click", function (){
+    }).on("click", () => {
       keepOntologySelectionOpenShortly();
     });
-    
-    d3.select("#iri-converter-form").on("submit", function ( event ){
-      var inputName = iriConverterInput.property("value");
-      
+
+    d3.select("#iri-converter-form").on("submit", ( event ) => {
+      let inputName = iriConverterInput.property("value");
+
       // remove first spaces
-      var clearedName = inputName.replace(/%20/g, " ");
+      let clearedName = inputName.replace(/%20/g, " ");
       while ( clearedName.startsWith(" ") ) {
         clearedName = clearedName.substr(1, clearedName.length);
       }
@@ -213,7 +212,7 @@ module.exports = function ( graph ){
       // check if iri is actually an url for a json file (ends with .json)
       // create lowercase filenames;
       inputName = clearedName;
-      var lc_iri = inputName.toLowerCase();
+      const lc_iri = inputName.toLowerCase();
       if ( lc_iri.endsWith(".json") ) {
         location.hash = "url=" + inputName;
         iriConverterInput.property("value", "");
@@ -229,12 +228,12 @@ module.exports = function ( graph ){
   }
 
   function setupUploadButton(){
-    var input = d3.select("#file-converter-input"),
-      inputLabel = d3.select("#file-converter-label"),
-      uploadButton = d3.select("#file-converter-button");
-    
-    input.on("change", function (){
-      var selectedFiles = input.property("files");
+    const input = d3.select("#file-converter-input");
+    const inputLabel = d3.select("#file-converter-label");
+    const uploadButton = d3.select("#file-converter-button");
+
+    input.on("change", () => {
+      const selectedFiles = input.property("files");
       if ( selectedFiles.length <= 0 ) {
         inputLabel.text("Select ontology file");
         uploadButton.property("disabled", true);
@@ -248,14 +247,14 @@ module.exports = function ( graph ){
       }
     });
     
-    uploadButton.on("click", function (){
-      var selectedFile = input.property("files")[0];
+    uploadButton.on("click", () => {
+      const selectedFile = input.property("files")[0];
       if ( !selectedFile ) {
         return false;
       }
-      var newHashParameter = "file=" + selectedFile.name;
+      const newHashParameter = `file=${selectedFile.name}`;
       // Trigger the reupload manually, because the iri is not changing
-      if ( location.hash === "#" + newHashParameter ) {
+      if ( location.hash === `#${newHashParameter}` ) {
         loadingModule.parseUrlAndLoadOntology();
       } else {
         location.hash = newHashParameter;
@@ -265,25 +264,25 @@ module.exports = function ( graph ){
   
   function setLoadingStatusInfo( message ){
     // check if there is a owl2vowl li item;
-    var o2vConverterContainer = d3.select("#o2vConverterContainer");
+    let o2vConverterContainer = d3.select("#o2vConverterContainer");
     if ( !o2vConverterContainer.node() ) {
-      var bp_container = d3.select("#bulletPoint_container");
-      var div = bp_container.append("div");
+      const bp_container = d3.select("#bulletPoint_container");
+      const div = bp_container.append("div");
       o2vConverterContainer = div.append("ul");
       o2vConverterContainer.attr("id", "o2vConverterContainer");
       o2vConverterContainer.style("margin-left", "-25px");
     }
     // clear o2vConverterContainer;
-    var htmlCollection = o2vConverterContainer.node().children;
-    var numEntries = htmlCollection.length;
-    for ( var i = 0; i < numEntries; i++ ) {
+    const htmlCollection = o2vConverterContainer.node().children;
+    const numEntries = htmlCollection.length;
+    for ( let i = 0; i < numEntries; i++ ) {
       htmlCollection[0].remove();
     }
     // split tokens provided by o2v messages
-    var tokens = message.split("* ");
-    var liForToken;
-    for ( var t = 0; t < tokens.length; t++ ) {
-      var tokenMessage = tokens[t];
+    const tokens = message.split("* ");
+    let liForToken;
+    for ( let t = 0; t < tokens.length; t++ ) {
+      const tokenMessage = tokens[t];
       // create li for tokens;
       if ( tokenMessage.length > 0 ) {
         liForToken = o2vConverterContainer.append("li");
@@ -303,7 +302,7 @@ module.exports = function ( graph ){
   };
   
   function getLoadingStatusOnceCallBacked( callback, parameter ){
-    xhrRequest("loadingStatus?sessionId=" + conversion_sessionId, "application/text", function ( error, request ){
+    xhrRequest(`loadingStatus?sessionId=${conversion_sessionId}`, "application/text", ( error, request ) => {
       if ( error ) {
         console.log("ontologyMenu getLoadingStatusOnceCallBacked throws error");
         console.log("---------Error -----------");
@@ -317,7 +316,7 @@ module.exports = function ( graph ){
   }
   
   function getLoadingStatusTimeLooped(){
-    xhrRequest("loadingStatus?sessionId=" + conversion_sessionId, "application/text", function ( error, request ){
+    xhrRequest(`loadingStatus?sessionId=${conversion_sessionId}`, "application/text", ( error, request ) => {
       if ( error ) {
         console.log("ontologyMenu getLoadingStatusTimeLooped throws error");
         console.log("---------Error -----------");
@@ -335,16 +334,16 @@ module.exports = function ( graph ){
   function timedLoadingStatusLogger(){
     clearTimeout(loadingStatusTimer);
     if ( stopTimer === false ) {
-      loadingStatusTimer = setTimeout(function (){
+      loadingStatusTimer = setTimeout(() => {
         getLoadingStatusTimeLooped();
       }, 1000);
     }
   }
   
   function callbackUpdateLoadingMessage( msg ){
-    xhrRequest("loadingStatus", "application/text", function ( error, request ){
+    xhrRequest("loadingStatus", "application/text", ( error, request ) => {
       if ( request !== undefined ) {
-        setLoadingStatusInfo(request.responseText + "<br>" + msg);
+        setLoadingStatusInfo(`${request.responseText}<br>${msg}`);
       } else {
         append_message(msg);
       }
@@ -356,20 +355,20 @@ module.exports = function ( graph ){
   };
   
   ontologyMenu.callbackLoad_Ontology_FromIRI = function ( parameter ){
-    var relativePath = parameter[0];
-    var ontoName = parameter[1];
-    var localThreadId = parameter[2];
+    const relativePath = parameter[0];
+    const ontoName = parameter[1];
+    const localThreadId = parameter[2];
     stopTimer = false;
     timedLoadingStatusLogger();
-    xhrRequest(relativePath, "application/json", function ( error, request ){
-      var loadingSuccessful = !error;
+    xhrRequest(relativePath, "application/json", ( error, request ) => {
+      const loadingSuccessful = !error;
       // check if error occurred or responseText is empty
       if ( (error !== null && error.status === 500) || (request && request.responseText.length === 0) ) {
         clearTimeout(loadingStatusTimer);
         stopTimer = true;
         getLoadingStatusOnceCallBacked(callbackFromIRI_URL_ERROR, [error, request, localThreadId]);
       }
-      var jsonText;
+      let jsonText;
       if ( loadingSuccessful ) {
         clearTimeout(loadingStatusTimer);
         stopTimer = true;
@@ -381,18 +380,18 @@ module.exports = function ( graph ){
   
   
   ontologyMenu.callbackLoad_Ontology_From_DirectInput = function ( text, parameter ){
-    var input = text;
-    var sessionId = parameter[1];
+    const input = text;
+    const sessionId = parameter[1];
     stopTimer = false;
     timedLoadingStatusLogger();
     
-    var formData = new FormData();
+    const formData = new FormData();
     formData.append("input", input);
     formData.append("sessionId", sessionId);
-    var xhr = new XMLHttpRequest();
-    
+    const xhr = new XMLHttpRequest();
+
     xhr.open("POST", "directInput", true);
-    xhr.onload = function (){
+    xhr.onload = () => {
       clearTimeout(loadingStatusTimer);
       stopTimer = true;
       getLoadingStatusOnceCallBacked(callbackForConvert, [xhr, input, sessionId]);
@@ -402,9 +401,9 @@ module.exports = function ( graph ){
     
   };
   function callbackFromIRI_Success( parameter ){
-    var local_conversionId = parameter[2];
+    const local_conversionId = parameter[2];
     if ( local_conversionId !== conversion_sessionId ) {
-      console.log("The conversion process for file:" + parameter[1] + " has been canceled!");
+      console.log(`The conversion process for file:${parameter[1]} has been canceled!`);
       ontologyMenu.conversionFinished(local_conversionId);
       return;
     }
@@ -414,13 +413,13 @@ module.exports = function ( graph ){
   }
   
   function callbackFromDirectInput_Success( parameter ){
-    var local_conversionId = parameter[1];
+    const local_conversionId = parameter[1];
     if ( local_conversionId !== conversion_sessionId ) {
-      console.log("The conversion process for file:" + parameter[1] + " has been canceled!");
+      console.log(`The conversion process for file:${parameter[1]} has been canceled!`);
       ontologyMenu.conversionFinished(local_conversionId);
       return;
     }
-    loadingModule.loadFromOWL2VOWL(parameter[0], "DirectInputConversionID" + local_conversionId);
+    loadingModule.loadFromOWL2VOWL(parameter[0], `DirectInputConversionID${local_conversionId}`);
     ontologyMenu.conversionFinished();
     
   }
@@ -430,13 +429,13 @@ module.exports = function ( graph ){
   };
   
   ontologyMenu.callbackLoad_JSON_FromURL = function ( parameter ){
-    var relativePath = parameter[0];
-    var ontoName = parameter[1];
-    var local_conversionId = parameter[2];
+    const relativePath = parameter[0];
+    const ontoName = parameter[1];
+    const local_conversionId = parameter[2];
     stopTimer = false;
     timedLoadingStatusLogger();
-    xhrRequest(relativePath, "application/json", function ( error, request ){
-      var loadingSuccessful = !error;
+    xhrRequest(relativePath, "application/json", ( error, request ) => {
+      let loadingSuccessful = !error;
       // check if error occurred or responseText is empty
       if ( (error !== null && error.status === 500) || (request && request.responseText.length === 0) ) {
         clearTimeout(loadingStatusTimer);
@@ -449,25 +448,25 @@ module.exports = function ( graph ){
       if ( loadingSuccessful ) {
         clearTimeout(loadingStatusTimer);
         stopTimer = true;
-        var jsonText = request.responseText;
+        const jsonText = request.responseText;
         getLoadingStatusOnceCallBacked(callbackFromJSON_Success, [jsonText, ontoName, local_conversionId]);
       }
     });
   };
   
   function callbackFromJSON_Success( parameter ){
-    var local_conversionId = parameter[2];
+    const local_conversionId = parameter[2];
     if ( local_conversionId !== conversion_sessionId ) {
-      console.log("The conversion process for file:" + parameter[1] + " has been canceled!");
+      console.log(`The conversion process for file:${parameter[1]} has been canceled!`);
       return;
     }
     loadingModule.loadFromOWL2VOWL(parameter[0], parameter[1]);
   }
   
   function callbackFromJSON_URL_ERROR( parameter ){
-    var error = parameter[0];
-    var request = parameter[1];
-    var local_conversionId = parameter[2];
+    const error = parameter[0];
+    const request = parameter[1];
+    const local_conversionId = parameter[2];
     if ( local_conversionId !== conversion_sessionId ) {
       console.log("This thread has been canceled!!");
       ontologyMenu.conversionFinished(local_conversionId);
@@ -489,9 +488,9 @@ module.exports = function ( graph ){
   
   
   function callbackFromIRI_URL_ERROR( parameter ){
-    var error = parameter[0];
-    var request = parameter[1];
-    var local_conversionId = parameter[2];
+    const error = parameter[0];
+    const request = parameter[1];
+    const local_conversionId = parameter[2];
     if ( local_conversionId !== conversion_sessionId ) {
       console.log("This thread has been canceled!!");
       ontologyMenu.conversionFinished(local_conversionId);
@@ -512,10 +511,10 @@ module.exports = function ( graph ){
   }
   
   function callbackFromDirectInput_ERROR( parameter ){
-    
-    var error = parameter[0];
-    var request = parameter[1];
-    var local_conversionId = parameter[2];
+
+    const error = parameter[0];
+    const request = parameter[1];
+    const local_conversionId = parameter[2];
     if ( local_conversionId !== conversion_sessionId ) {
       console.log("The loading process for direct input has been canceled!");
       return;
@@ -541,14 +540,14 @@ module.exports = function ( graph ){
   function callbackLoadFromOntology( selectedFile, filename, local_threadId ){
     stopTimer = false;
     timedLoadingStatusLogger();
-    
-    var formData = new FormData();
+
+    const formData = new FormData();
     formData.append("ontology", selectedFile);
     formData.append("sessionId", local_threadId);
-    var xhr = new XMLHttpRequest();
-    
+    const xhr = new XMLHttpRequest();
+
     xhr.open("POST", "convert", true);
-    xhr.onload = function (){
+    xhr.onload = () => {
       clearTimeout(loadingStatusTimer);
       stopTimer = true;
       console.log(xhr);
@@ -559,11 +558,11 @@ module.exports = function ( graph ){
   }
   
   function callbackForConvert( parameter ){
-    var xhr = parameter[0];
-    var filename = parameter[1];
-    var local_threadId = parameter[2];
+    const xhr = parameter[0];
+    const filename = parameter[1];
+    const local_threadId = parameter[2];
     if ( local_threadId !== conversion_sessionId ) {
-      console.log("The conversion process for file:" + filename + " has been canceled!");
+      console.log(`The conversion process for file:${filename} has been canceled!`);
       ontologyMenu.conversionFinished(local_threadId);
       return;
     }
@@ -571,9 +570,9 @@ module.exports = function ( graph ){
       loadingModule.loadFromOWL2VOWL(xhr.responseText, filename);
       ontologyMenu.conversionFinished();
     } else {
-      var uglyJson=xhr.responseText;
-      var jsonResut=JSON.parse(uglyJson);
-      var niceJSON=JSON.stringify(jsonResut, 'null', '  ');
+      const uglyJson=xhr.responseText;
+      const jsonResut=JSON.parse(uglyJson);
+      let niceJSON=JSON.stringify(jsonResut, 'null', '  ');
       niceJSON= niceJSON.replace(/\r?\n/g, '<br />');
       callbackUpdateLoadingMessage("Failed to convert the file. " +
           "<br />Server answer: <br />"+
@@ -587,11 +586,11 @@ module.exports = function ( graph ){
   }
   
   ontologyMenu.conversionFinished = function ( id ){
-    var local_id = conversion_sessionId;
+    let local_id = conversion_sessionId;
     if ( id ) {
       local_id = id;
     }
-    xhrRequest("conversionDone?sessionId=" + local_id, "application/text", function ( error, request ){
+    xhrRequest(`conversionDone?sessionId=${local_id}`, "application/text", ( error, request ) => {
       if ( error ) {
         console.log("ontologyMenu conversionFinished throws error");
         console.log("---------Error -----------");
@@ -604,10 +603,10 @@ module.exports = function ( graph ){
   
   function keepOntologySelectionOpenShortly(){
     // Events in the menu should not be considered
-    var ontologySelection = d3.select("#select .toolTipMenu");
-    ontologySelection.on("click", function ( event ){
+    const ontologySelection = d3.select("#select .toolTipMenu");
+    ontologySelection.on("click", ( event ) => {
       event.stopPropagation();
-    }).on("keydown", function ( event ){
+    }).on("keydown", ( event ) => {
       event.stopPropagation();
     });
     
@@ -623,18 +622,18 @@ module.exports = function ( graph ){
     
     // Clear the timeout to handle fast calls of this function
     clearTimeout(ontologyMenuTimeout);
-    ontologyMenuTimeout = setTimeout(function (){
+    ontologyMenuTimeout = setTimeout(() => {
       disableKeepingOpen();
     }, 3000);
-    
+
     // Disable forced open selection on interaction
-    d3.select(window).on("click", function (){
+    d3.select(window).on("click", () => {
       disableKeepingOpen();
-    }).on("keydown", function (){
+    }).on("keydown", () => {
       disableKeepingOpen();
     });
-    
-    ontologySelection.on("mouseover", function (){
+
+    ontologySelection.on("mouseover", () => {
       disableKeepingOpen();
     });
   }
