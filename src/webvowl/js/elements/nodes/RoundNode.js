@@ -138,47 +138,93 @@ module.exports = (function (){
     };
     
     /**
-     * Removes the pin and refreshs the graph to update the force layout.
+     * Removes the pin and refreshes the graph to update the force layout.
      */
     this.removePin = function (){
       that.pinned(false);
       if ( pinGroupElement ) {
         pinGroupElement.remove();
       }
-      graph.updateStyle();
+      var pap = graph.options().pickAndPinModule();
+      if ( pap && pap.enabled() ) {
+        graph.update(undefined, 0.1);   // re-render to show grey button
+      } else {
+        graph.updateStyle();
+      }
     };
     
     this.drawCollapsingButton = function (){
-      
+      var collapsingMod = graph.options().collapsingModule();
+      var isCollapsed   = collapsingMod && collapsingMod.isCollapsed(that.id());
+
       collapsingGroupElement = that.nodeElement()
         .append("g")
         .classed("hidden-in-export", true)
-        .attr("transform", function (){
-          var dx = (-2 / 5) * that.actualRadius(),
-            dy = (1 / 2) * that.actualRadius();
-          return "translate(" + dx + "," + dy + ")";
-        });
-      
-      collapsingGroupElement.append("rect")
-        .classed("class pin feature", true)
-        .attr("x", 0)
-        .attr("y", 0)
-        .attr("width", 40)
-        .attr("height", 24);
-      
+        .attr("transform", "translate(0," + that.actualRadius() + ")");
+
+      collapsingGroupElement.append("circle")
+        .classed("collapsing-feature", true)
+        .attr("r", 12);
+
+      // Horizontal bar (always — the "minus")
       collapsingGroupElement.append("line")
-        .attr("x1", 13)
-        .attr("y1", 12)
-        .attr("x2", 27)
-        .attr("y2", 12);
-      
-      collapsingGroupElement.append("line")
-        .attr("x1", 20)
-        .attr("y1", 6)
-        .attr("x2", 20)
-        .attr("y2", 18);
+        .attr("x1", -8).attr("y1", 0).attr("x2", 8).attr("y2", 0);
+
+      // Vertical bar only when collapsed — makes it "+"
+      if ( isCollapsed ) {
+        collapsingGroupElement.append("line")
+          .attr("x1", 0).attr("y1", -8).attr("x2", 0).attr("y2", 8);
+      }
+
+      collapsingGroupElement.on("click", function ( event ){
+        event.stopPropagation();
+        if ( collapsingMod ) {
+          collapsingMod.toggleCollapsed(that.id());
+          graph.update(undefined, 0);
+        }
+      }).on("mouseover", function () {
+        that._collapseHovered = true;
+        if (graph.options().useCanvasRenderer()) graph.requestCanvasRender();
+      }).on("mouseout", function () {
+        that._collapseHovered = false;
+        if (graph.options().useCanvasRenderer()) graph.requestCanvasRender();
+      });
     };
     
+    this.drawPinToggleButton = function (){
+      var isPinned = that.pinned();
+      var dx = (-3.5 / 5) * that.actualRadius();
+      var dy = (-7 / 10)  * that.actualRadius();
+
+      pinGroupElement = that.nodeElement()
+        .append("g")
+        .classed("hidden-in-export", true)
+        .attr("transform", "translate(" + dx + "," + dy + ")");
+
+      pinGroupElement.append("circle")
+        .classed("feature", isPinned)
+        .classed("pin-toggle-off", !isPinned)
+        .attr("r", 12);
+
+      // Pin shaft line
+      pinGroupElement.append("line")
+        .attr("x1", 0).attr("y1", -8).attr("x2", 0).attr("y2", 4);
+
+      pinGroupElement.on("click", function ( event ){
+        event.stopPropagation();
+        if ( isPinned ) {
+          that.removePin();
+        } else {
+          that.pinned(true);
+          that.nodeElement().datum().fx = that.nodeElement().datum().x;
+          that.nodeElement().datum().fy = that.nodeElement().datum().y;
+          var papMod = graph.options().pickAndPinModule();
+          if ( papMod ) papMod.addPinnedElement(that);
+          graph.update(undefined, 0.1);
+        }
+      });
+    };
+
     /**
      * Draws a circular node.
      * @param parentElement the element to which this node will be appended
@@ -201,6 +247,10 @@ module.exports = (function (){
       } else {
         renderingElement = drawTools.appendCircularClass(parentElement, that.actualRadius(), cssClasses, that.labelForCurrentLanguage(), bgColor);
       }
+      var collapsingMod = graph.options().collapsingModule();
+      if ( collapsingMod && collapsingMod.isCollapsed(that.id()) ) {
+        renderingElement.select("circle, rect").classed("collapsed", true);
+      }
       that.postDrawActions(parentElement);
     };
     
@@ -219,6 +269,10 @@ module.exports = (function (){
       } else {
         renderingElement = drawTools.appendCircularClass(that.nodeElement(), that.actualRadius(), cssClasses, that.labelForCurrentLanguage(), bgColor);
       }
+      var collapsingMod = graph.options().collapsingModule();
+      if ( collapsingMod && collapsingMod.isCollapsed(that.id()) ) {
+        renderingElement.select("circle, rect").classed("collapsed", true);
+      }
       that.postDrawActions(that.nodeElement());
     };
     /**
@@ -226,9 +280,12 @@ module.exports = (function (){
      */
     this.postDrawActions = function (){
       that.textBlock(createTextBlock());
-      
+
       that.addMouseListeners();
-      if ( that.pinned() ) {
+      var pap = graph.options().pickAndPinModule();
+      if ( pap && pap.enabled() ) {
+        that.drawPinToggleButton();
+      } else if ( that.pinned() ) {
         that.drawPin();
       }
       if ( that.halo() ) {

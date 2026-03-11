@@ -15,6 +15,7 @@ webvowl.util.languageTools = require("./util/languageTools");
 webvowl.util.elementTools = require("./util/elementTools");
 webvowl.util.prefixTools = require("./util/prefixRepresentationModule");
 webvowl.modules = {};
+webvowl.modules.collapsing = require("./modules/collapsing");
 webvowl.modules.colorExternalsSwitch = require("./modules/colorExternalsSwitch");
 webvowl.modules.compactNotationSwitch = require("./modules/compactNotationSwitch");
 webvowl.modules.datatypeFilter = require("./modules/datatypeFilter");

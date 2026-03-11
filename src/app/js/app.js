@@ -45,6 +45,7 @@ module.exports = function (){
     statistics = webvowl.modules.statistics(),
     subclassFilter = webvowl.modules.subclassFilter(),
     setOperatorFilter = webvowl.modules.setOperatorFilter(),
+    collapsing = webvowl.modules.collapsing(),
     individualsFilter = webvowl.modules.individualsFilter(graph),
     namespaceColorModule = webvowl.modules.namespaceColorModule(),
     hierarchyLayout = require("../../webvowl/js/layout/hierarchyLayout")(graph);
@@ -197,13 +198,13 @@ module.exports = function (){
     options.filterModules().push(emptyLiteralFilter);
     options.filterModules().push(statistics);
     options.filterModules().push(individualsFilter);
-
     options.filterModules().push(nodeDegreeFilter);
     options.filterModules().push(datatypeFilter);
     options.filterModules().push(objectPropertyFilter);
     options.filterModules().push(subclassFilter);
     options.filterModules().push(disjointFilter);
     options.filterModules().push(setOperatorFilter);
+    options.filterModules().push(collapsing);
     options.filterModules().push(nodeScalingSwitch);
     options.filterModules().push(compactNotationSwitch);
     options.filterModules().push(colorExternalsSwitch);
@@ -214,7 +215,7 @@ module.exports = function (){
     exportMenu.setup();
     gravityMenu.setup(hierarchyLayout);
     graph.setHierarchyLayout(hierarchyLayout);
-    filterMenu.setup(datatypeFilter, objectPropertyFilter, subclassFilter, disjointFilter, setOperatorFilter, nodeDegreeFilter, individualsFilter);
+    filterMenu.setup(datatypeFilter, objectPropertyFilter, subclassFilter, disjointFilter, setOperatorFilter, nodeDegreeFilter, individualsFilter, collapsing);
     modeMenu.setup(pickAndPin, nodeScalingSwitch, compactNotationSwitch, colorExternalsSwitch, namespaceColorModule);
     pauseMenu.setup();
     sidebar.setup();
@@ -254,6 +255,7 @@ module.exports = function (){
       options.gravityMenu(gravityMenu);
       options.pausedMenu(pauseMenu);
       options.pickAndPinModule(pickAndPin);
+      options.collapsingModule(collapsing);
       options.resetMenu(resetMenu);
       options.searchMenu(searchMenu);
       options.ontologyMenu(ontologyMenu);

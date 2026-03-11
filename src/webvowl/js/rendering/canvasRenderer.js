@@ -9,6 +9,13 @@ module.exports = function () {
     width, height,
     canvasCurveGen, canvasLoopGen;
 
+  var _collapsingModule = null;
+  renderer.collapsingModule = function (m) {
+    if (!arguments.length) return _collapsingModule;
+    _collapsingModule = m;
+    return renderer;
+  };
+
   // Current frame render state, stored for viewport culling helpers
   var _zoom = 1, _tx = 0, _ty = 0;
 
@@ -229,7 +236,7 @@ module.exports = function () {
     var isRect = node.getRectangularRepresentation && node.getRectangularRepresentation();
 
     // Viewport culling: skip nodes entirely outside the visible area
-    var cullMargin = isRect ? 50 : r + 10;
+    var cullMargin = isRect ? 50 : r + (node.collapsible && node.collapsible() ? 24 : 10);
     if (!isInViewport(node.x, node.y, cullMargin)) return;
 
     ctx.save();
@@ -243,14 +250,19 @@ module.exports = function () {
 
     if (attrs.indexOf("deprecated") > -1) fill = "#ccc";
     if (isHovered) fill = "#f00";
+    var isCollapsed = _collapsingModule && _collapsingModule.isCollapsed(node.id());
     if (isFocused) {
       stroke = "#f00";
       ctx.lineWidth = 4;
+    } else if (isCollapsed) {
+      ctx.lineWidth = 3;
     } else {
       ctx.lineWidth = 2;
     }
     ctx.strokeStyle = stroke;
     ctx.fillStyle = fill;
+
+    if (isCollapsed) ctx.setLineDash([8, 4]);
 
     if (isRect) {
       roundedRect(ctx, -40, -40, 80, 80, 4);
@@ -260,6 +272,8 @@ module.exports = function () {
     }
     ctx.fill();
     ctx.stroke();
+
+    if (isCollapsed) ctx.setLineDash([]);
 
     // Label text with word-wrap
     var label = node.labelForCurrentLanguage ? node.labelForCurrentLanguage() : "";
@@ -272,6 +286,39 @@ module.exports = function () {
     }
 
     if (node.pinned && node.pinned()) drawPinIndicator(node);
+    if (node.collapsible && node.collapsible()) drawCollapseButton(node);
+
+    ctx.restore();
+  }
+
+  function drawCollapseButton(node) {
+    var r = node.actualRadius ? node.actualRadius() : 30;
+    var isCollapsed = _collapsingModule && _collapsingModule.isCollapsed(node.id());
+    var isHovered = node._collapseHovered;
+
+    ctx.save();
+    ctx.translate(0, r);
+
+    // Button circle
+    ctx.fillStyle = isHovered ? "#29f" : "#f00";
+    ctx.beginPath();
+    ctx.arc(0, 0, 12, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // +/- lines
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-8, 0);
+    ctx.lineTo(8, 0);
+    ctx.stroke();
+
+    if (isCollapsed) {
+      ctx.beginPath();
+      ctx.moveTo(0, -8);
+      ctx.lineTo(0, 8);
+      ctx.stroke();
+    }
 
     ctx.restore();
   }

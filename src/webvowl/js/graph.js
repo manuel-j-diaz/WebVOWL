@@ -574,9 +574,14 @@ module.exports = function ( graphContainerSelector ){
     // add switch for edit mode to make this faster;
     if ( !editMode ) {
       if ( options.useCanvasRenderer() ) {
-        // Canvas mode: skip all SVG DOM writes. Only compute label midpoints for
-        // single-layer links — the canvas renderer reads label.x/y directly and
-        // recalculates intersection points itself.
+        // Canvas mode: skip most SVG DOM writes. Keep node transforms so
+        // invisible SVG elements (collapse/pin buttons) track their nodes
+        // and continue to receive pointer events at the correct position.
+        nodeElements.attr("transform", function ( node ){
+          return "translate(" + node.x + "," + node.y + ")";
+        });
+        // Compute label midpoints for single-layer links — the canvas renderer
+        // reads label.x/y directly and recalculates intersection points itself.
         labelGroupElements.each(function ( label ){
           var link = label.link();
           if ( link.layers().length === 1 && !link.loops() ) {
@@ -885,6 +890,9 @@ module.exports = function ( graphContainerSelector ){
 
     if ( options.useCanvasRenderer() ) {
       canvasRenderer.setup(options.graphContainerSelector(), options.width(), options.height());
+      if (options.collapsingModule()) {
+        canvasRenderer.collapsingModule(options.collapsingModule());
+      }
     }
     // add touch and double click functions
     
@@ -1281,6 +1289,9 @@ module.exports = function ( graphContainerSelector ){
   
   graph.load = function (){
     force.stop();
+    if ( options.collapsingModule() ) {
+      options.collapsingModule().reset();
+    }
     loadGraphData();
     refreshGraphData();
     for ( var i = 0; i < labelNodes.length; i++ ) {
@@ -1362,7 +1373,7 @@ module.exports = function ( graphContainerSelector ){
   }
   
   // Updates the graphs displayed data and style.
-  graph.update = function ( init ){
+  graph.update = function ( init, alpha ){
     var validOntology = graph.options().loadingModule().successfullyLoadedOntology();
     if ( validOntology === false && (init && init === true) ) {
       graph.options().loadingModule().collapseDetails();
@@ -1394,12 +1405,12 @@ module.exports = function ( graphContainerSelector ){
     // update node map
     updateNodeMap();
 
-    force.alpha(1).restart();
+    force.alpha(alpha !== undefined ? alpha : 1).restart();
 
-    // DEBUG: snapshot fixed counts after force.alpha(1).restart()
+    // DEBUG: snapshot fixed counts after force.alpha restart
     if ( hierarchyLayout && hierarchyLayout.enabled() ) {
       var afterStart = force.nodes().filter(function(n){ return n.fx != null; }).length;
-      console.log("[graph.update] after force.alpha(1).restart(): fixed nodes =", afterStart, "/ total =", force.nodes().length);
+      console.log("[graph.update] after force restart: fixed nodes =", afterStart, "/ total =", force.nodes().length);
     }
 
     redrawContent();

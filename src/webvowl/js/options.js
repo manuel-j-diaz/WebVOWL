@@ -27,6 +27,7 @@ module.exports = function (){
     modeMenu,
     pausedMenu,
     pickAndPinModule,
+    collapsingModule,
     resetMenu,
     searchMenu,
     ontologyMenu,
@@ -466,6 +467,12 @@ module.exports = function (){
   options.pickAndPinModule = function ( m ){
     if ( !arguments.length ) return pickAndPinModule;
     pickAndPinModule = m;
+    return options;
+  };
+
+  options.collapsingModule = function ( m ){
+    if ( !arguments.length ) return collapsingModule;
+    collapsingModule = m;
     return options;
   };
   

@@ -239,6 +239,31 @@ rect.focused, circle.focused {
     stroke-width: 4px;
 }
 
+.collapsed {
+    stroke-dasharray: 8, 4;
+    stroke-width: 3px;
+}
+
+.collapsing-feature {
+    fill: #f00;
+    cursor: pointer;
+    stroke: none;
+}
+.collapsing-feature:hover {
+    fill: #29f;
+    cursor: pointer;
+}
+
+.pin-toggle-off {
+    fill: #bbb;
+    stroke: #888;
+    cursor: pointer;
+}
+.pin-toggle-off:hover {
+    fill: #f90;
+    cursor: pointer;
+}
+
 .nostroke {
     stroke: none;
 }
@@ -327,7 +352,8 @@ canvas.vowlCanvas {
 .canvas-mode text.node,
 .canvas-mode .node circle,
 .canvas-mode .node rect,
-.canvas-mode .node text {
+.canvas-mode .node text,
+.canvas-mode .node line {
     fill: transparent !important;
     stroke: transparent !important;
 }
@@ -335,4 +361,11 @@ canvas.vowlCanvas {
 .canvas-mode .link-path {
     marker-end: none !important;
     marker-start: none !important;
+}
+
+.canvas-mode .node .collapsing-feature,
+.canvas-mode .node .pin-toggle-off,
+.canvas-mode .node .feature {
+    pointer-events: all;
+    cursor: pointer;
 }

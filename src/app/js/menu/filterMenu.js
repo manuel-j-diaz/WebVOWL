@@ -42,7 +42,7 @@ module.exports = function ( graph ){
    * @param setOperatorFilter filter for all set operators with properties
    * @param nodeDegreeFilter filters nodes by their degree
    */
-  filterMenu.setup = function ( datatypeFilter, objectPropertyFilter, subclassFilter, disjointFilter, setOperatorFilter, nodeDegreeFilter, individualsFilter ){
+  filterMenu.setup = function ( datatypeFilter, objectPropertyFilter, subclassFilter, disjointFilter, setOperatorFilter, nodeDegreeFilter, individualsFilter, collapsingFilter ){
     // TODO: is this here really necessarry? << new menu visualization style?
     menuControl.on("mouseover", function (){
       var searchMenu = graph.options().searchMenu();
@@ -61,6 +61,7 @@ module.exports = function ( graph ){
     addNodeDegreeFilter(nodeDegreeFilter, nodeDegreeContainer);
     addFilterItem(individualsFilter, "individuals", "Individuals (ABox)", "#individualsFilteringOption");
     addCollapseThresholdSlider(individualsFilter, d3.select("#individualsCollapseOption"));
+    addFilterItem(collapsingFilter, "collapsing", "Subclass collapsing", "#collapsingFilteringOption");
     addAnimationFinishedListener();
   };
   
