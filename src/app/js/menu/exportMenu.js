@@ -6,6 +6,7 @@ module.exports = function ( graph ){
   
   var exportMenu = {},
     exportSvgButton,
+    exportPngButton,
     exportFilename,
     exportJsonButton,
     exportTurtleButton,
@@ -28,6 +29,8 @@ module.exports = function ( graph ){
   exportMenu.setup = function (){
     exportSvgButton = d3.select("#exportSvg")
       .on("click", exportSvg);
+    exportPngButton = d3.select("#exportPng")
+      .on("click", exportPng);
     exportJsonButton = d3.select("#exportJson")
       .on("click", exportJson);
     
@@ -253,7 +256,22 @@ module.exports = function ( graph ){
     }
     graph.lazyRefresh();
   }
-  
+
+  function exportPng(){
+    var srcCanvas = graph.canvasElement ? graph.canvasElement() : null;
+    if ( !srcCanvas ) return;
+    // Composite onto a white-background canvas so the PNG isn't transparent
+    var tmp = document.createElement("canvas");
+    tmp.width = srcCanvas.width;
+    tmp.height = srcCanvas.height;
+    var tmpCtx = tmp.getContext("2d");
+    tmpCtx.fillStyle = "#ecf0f1";
+    tmpCtx.fillRect(0, 0, tmp.width, tmp.height);
+    tmpCtx.drawImage(srcCanvas, 0, 0);
+    exportPngButton.attr("href", tmp.toDataURL("image/png"))
+      .attr("download", exportFilename + ".png");
+  }
+
   function escapeUnicodeCharacters( text ){
     var textSnippets = [],
       i, textLength = text.length,

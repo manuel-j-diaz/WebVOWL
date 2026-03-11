@@ -265,9 +265,7 @@ module.exports = function ( graphContainerSelector ){
           domainDragger.mouseButtonPressed = true;
           rangeDragger.updateElement();
           rangeDragger.mouseButtonPressed = true;
-          //  shadowClone.setPosition(d.x, d.y);
-          
-          
+
         } else if ( d.type && d.type() === "Domain_dragger" ) {
           graph.ignoreOtherHoverEvents(true);
           clearTimeout(delayedHider);
@@ -558,14 +556,33 @@ module.exports = function ( graphContainerSelector ){
     
     // add switch for edit mode to make this faster;
     if ( !editMode ) {
+      if ( options.useCanvasRenderer() ) {
+        // Canvas mode: skip all SVG DOM writes. Only compute label midpoints for
+        // single-layer links — the canvas renderer reads label.x/y directly and
+        // recalculates intersection points itself.
+        labelGroupElements.each(function ( label ){
+          var link = label.link();
+          if ( link.layers().length === 1 && !link.loops() ) {
+            var di = math.calculateIntersection(link.range(), link.domain(), 0);
+            var ri = math.calculateIntersection(link.domain(), link.range(), 0);
+            var pos = math.calculateCenter(di, ri);
+            label.x = pos.x;
+            label.y = pos.y;
+          }
+        });
+        updateHaloRadius();
+        graph.requestCanvasRender();
+        return;
+      }
+
       nodeElements.attr("transform", function ( node ){
         return "translate(" + node.x + "," + node.y + ")";
       });
-      
+
       // Set label group positions
       labelGroupElements.attr("transform", function ( label ){
         var position;
-        
+
         // force centered positions on single-layered links
         var link = label.link();
         if ( link.layers().length === 1 && !link.loops() ) {
@@ -585,10 +602,10 @@ module.exports = function ( graphContainerSelector ){
         var curvePoint = l.label();
         var pathStart = math.calculateIntersection(curvePoint, l.domain(), 1);
         var pathEnd = math.calculateIntersection(curvePoint, l.range(), 1);
-        
+
         return curveFunction([pathStart, curvePoint, pathEnd]);
       });
-      
+
       // Set cardinality positions
       cardinalityElements.attr("transform", function ( property ){
         if ( !property.link() ) {
@@ -604,9 +621,6 @@ module.exports = function ( graphContainerSelector ){
 
 
       updateHaloRadius();
-      if ( options.useCanvasRenderer() ) {
-        graph.requestCanvasRender();
-      }
       return;
     }
 
@@ -757,46 +771,6 @@ module.exports = function ( graphContainerSelector ){
           clickedProperty.raiseDoubleClickEdit(defaultIriValue(clickedProperty));
         }
       }
-      
-      // currently removed the selection of an element to invoke the dragger
-      // if (editMode===true && clickedProperty.editingTextElement!==true) {
-      //     return;
-      //      // We say that Datatype properties are not allowed to have domain range draggers
-      //      if (clickedProperty.focused() && clickedProperty.type() !== "owl:DatatypeProperty") {
-      //          shadowClone.setParentProperty(clickedProperty);
-      //          rangeDragger.setParentProperty(clickedProperty);
-      //          rangeDragger.hideDragger(false);
-      //          rangeDragger.addMouseEvents();
-      //          domainDragger.setParentProperty(clickedProperty);
-      //          domainDragger.hideDragger(false);
-      //          domainDragger.addMouseEvents();
-      //
-      //          if (clickedProperty.domain()===clickedProperty.range()){
-      //              clickedProperty.labelObject().increasedLoopAngle=true;
-      //              recalculatePositions();
-      //
-      //          }
-      //
-      //      } else if (clickedProperty.focused() && clickedProperty.type() === "owl:DatatypeProperty") {
-      //          shadowClone.setParentProperty(clickedProperty);
-      //          rangeDragger.setParentProperty(clickedProperty);
-      //          rangeDragger.hideDragger(true);
-      //          rangeDragger.addMouseEvents();
-      //          domainDragger.setParentProperty(clickedProperty);
-      //          domainDragger.hideDragger(false);
-      //          domainDragger.addMouseEvents();
-      //
-      //      }
-      //      else {
-      //          rangeDragger.hideDragger(true);
-      //          domainDragger.hideDragger(true);
-      //          if (clickedProperty.domain()===clickedProperty.range()){
-      //              clickedProperty.labelObject().increasedLoopAngle=false;
-      //              recalculatePositions();
-      //
-      //          }
-      //      }
-      //  }
     });
     labelGroupElements.selectAll(".label").on("dblclick", function ( event, clickedProperty ){
       event.stopPropagation();
@@ -1167,25 +1141,33 @@ module.exports = function ( graphContainerSelector ){
       .data(properties).enter()
       .append("g")
       .classed("cardinality", true);
-    
-    cardinalityElements.each(function ( property ){
-      var success = property.drawCardinality(d3.select(this));
-      
-      // Remove empty groups without a label.
-      if ( !success ) {
-        d3.select(this).remove();
-      }
-    });
+
+    // Canvas renderer draws cardinalities itself; skip SVG element creation.
+    if ( !options.useCanvasRenderer() ) {
+      cardinalityElements.each(function ( property ){
+        var success = property.drawCardinality(d3.select(this));
+
+        // Remove empty groups without a label.
+        if ( !success ) {
+          d3.select(this).remove();
+        }
+      });
+    }
+
     // Draw links
     if ( links === undefined ) links = [];
     linkGroups = linkContainer.selectAll(".link")
       .data(links).enter()
       .append("g")
       .classed("link", true);
-    
-    linkGroups.each(function ( link ){
-      link.draw(d3.select(this), markerContainer);
-    });
+
+    // Canvas renderer draws links itself; skip SVG path + marker creation.
+    // Link groups still exist as structural placeholders (linkPathElements will be empty).
+    if ( !options.useCanvasRenderer() ) {
+      linkGroups.each(function ( link ){
+        link.draw(d3.select(this), markerContainer);
+      });
+    }
     linkPathElements = linkGroups.selectAll("path");
     // Select the path for direct access to receive a better performance
     addClickEvents();
@@ -1226,6 +1208,11 @@ module.exports = function ( graphContainerSelector ){
         canvasRenderer.render(classNodes, labelNodes, links, properties, zoomFactor, graphTranslation, math);
       }
     });
+  };
+
+  /** Returns the canvas element when canvas mode is active, null otherwise. */
+  graph.canvasElement = function (){
+    return options.useCanvasRenderer() ? canvasRenderer.canvas() : null;
   };
   
   // Loads all settings, removes the old graph (if it exists) and draws a new one.

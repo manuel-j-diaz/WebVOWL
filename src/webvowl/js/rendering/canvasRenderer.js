@@ -9,6 +9,12 @@ module.exports = function () {
     width, height,
     canvasCurveGen, canvasLoopGen;
 
+  // Current frame render state, stored for viewport culling helpers
+  var _zoom = 1, _tx = 0, _ty = 0;
+
+  // Offscreen bitmap cache for node backgrounds: key → { canvas, cx }
+  var nodeCache = {};
+
   var CARDINALITY_HDISTANCE = 20,
     CARDINALITY_VDISTANCE = 10;
 
@@ -95,6 +101,11 @@ module.exports = function () {
   renderer.render = function (classNodes, labelNodes, links, properties, zoomFactor, graphTranslation, math) {
     if (!ctx) return;
 
+    // Store frame state for viewport culling
+    _zoom = zoomFactor;
+    _tx = graphTranslation[0];
+    _ty = graphTranslation[1];
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
     ctx.setTransform(
@@ -128,7 +139,24 @@ module.exports = function () {
   };
 
 
+  /** Invalidate the offscreen node shape cache (call after color theme changes). */
+  renderer.clearNodeCache = function () {
+    nodeCache = {};
+  };
+
+
   // ── Helpers ──────────────────────────────────────────────────────────────
+
+  /**
+   * Returns true if the bounding circle at (x, y) with given margin is at least
+   * partially within the logical viewport.
+   */
+  function isInViewport(x, y, margin) {
+    var sx = x * _zoom + _tx;
+    var sy = y * _zoom + _ty;
+    var m = margin * _zoom;
+    return sx + m > 0 && sx - m < width && sy + m > 0 && sy - m < height;
+  }
 
   function getFillColor(element) {
     if (element.backgroundColor && element.backgroundColor()) {
@@ -143,18 +171,55 @@ module.exports = function () {
     return (sc && STROKE_COLORS[sc]) ? STROKE_COLORS[sc] : "#000";
   }
 
-  function roundedRect(x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.arcTo(x + w, y, x + w, y + r, r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-    ctx.lineTo(x + r, y + h);
-    ctx.arcTo(x, y + h, x, y + h - r, r);
-    ctx.lineTo(x, y + r);
-    ctx.arcTo(x, y, x + r, y, r);
-    ctx.closePath();
+  /**
+   * Draws a rounded rectangle path on context `c`.
+   */
+  function roundedRect(c, x, y, w, h, r) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.arcTo(x + w, y, x + w, y + r, r);
+    c.lineTo(x + w, y + h - r);
+    c.arcTo(x + w, y + h, x + w - r, y + h, r);
+    c.lineTo(x + r, y + h);
+    c.arcTo(x, y + h, x, y + h - r, r);
+    c.lineTo(x, y + r);
+    c.arcTo(x, y, x + r, y, r);
+    c.closePath();
+  }
+
+  /**
+   * Returns (or creates) an offscreen canvas bitmap for a node's background shape.
+   * Only used for non-interactive (non-hovered, non-focused) nodes.
+   * @param {string} sc   styleClass
+   * @param {number} r    radius (ignored for rect nodes)
+   * @param {string} fill fill color
+   * @param {string} stroke stroke color
+   * @param {boolean} isRect rectangular representation
+   */
+  function getNodeBitmap(sc, r, fill, stroke, isRect) {
+    var key = sc + "_" + r + "_" + fill + "_" + stroke + "_" + isRect;
+    if (!nodeCache[key]) {
+      var margin = 4;
+      var sz = isRect ? 92 : (r + margin) * 2;
+      var off = document.createElement("canvas");
+      off.width = off.height = sz;
+      var c = off.getContext("2d");
+      var cx = sz / 2;
+      c.fillStyle = fill;
+      c.strokeStyle = stroke;
+      c.lineWidth = 2;
+      if (isRect) {
+        roundedRect(c, cx - 40, cx - 40, 80, 80, 4);
+      } else {
+        c.beginPath();
+        c.arc(cx, cx, r, 0, 2 * Math.PI);
+      }
+      c.fill();
+      c.stroke();
+      nodeCache[key] = { canvas: off, cx: cx };
+    }
+    return nodeCache[key];
   }
 
   // Word-wrap text to fit within maxWidth. Returns array of lines.
@@ -203,16 +268,25 @@ module.exports = function () {
   function drawNode(node) {
     if (node.x === undefined) return;
 
+    var r = node.actualRadius ? node.actualRadius() : 30;
+    var isRect = node.getRectangularRepresentation && node.getRectangularRepresentation();
+
+    // Viewport culling: skip nodes entirely outside the visible area
+    var cullMargin = isRect ? 50 : r + 10;
+    if (!isInViewport(node.x, node.y, cullMargin)) return;
+
     ctx.save();
     ctx.translate(node.x, node.y);
 
     var fill = getFillColor(node);
     var stroke = getStrokeColor(node);
     var attrs = node.attributes ? node.attributes() : [];
+    var isHovered = node.mouseEntered && node.mouseEntered();
+    var isFocused = node.focused && node.focused();
 
     if (attrs.indexOf("deprecated") > -1) fill = "#ccc";
-    if (node.mouseEntered && node.mouseEntered()) fill = "#f00";
-    if (node.focused && node.focused()) {
+    if (isHovered) fill = "#f00";
+    if (isFocused) {
       stroke = "#f00";
       ctx.lineWidth = 4;
     } else {
@@ -221,16 +295,22 @@ module.exports = function () {
     ctx.strokeStyle = stroke;
     ctx.fillStyle = fill;
 
-    var isRect = node.getRectangularRepresentation && node.getRectangularRepresentation();
-    var r = node.actualRadius ? node.actualRadius() : 30;
-    if (isRect) {
-      roundedRect(-40, -40, 80, 80, 4);
+    if (!isHovered && !isFocused) {
+      // Use offscreen bitmap cache for normal-state nodes
+      var sc = node.styleClass ? node.styleClass() : "class";
+      var cached = getNodeBitmap(sc, r, fill, stroke, isRect);
+      ctx.drawImage(cached.canvas, -cached.cx, -cached.cx);
     } else {
-      ctx.beginPath();
-      ctx.arc(0, 0, r, 0, 2 * Math.PI);
+      // Draw directly for interactive state (hovered / focused)
+      if (isRect) {
+        roundedRect(ctx, -40, -40, 80, 80, 4);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, 2 * Math.PI);
+      }
+      ctx.fill();
+      ctx.stroke();
     }
-    ctx.fill();
-    ctx.stroke();
 
     // Label text with word-wrap
     var label = node.labelForCurrentLanguage ? node.labelForCurrentLanguage() : "";
@@ -277,12 +357,16 @@ module.exports = function () {
     if (!prop.labelVisible || !prop.labelVisible()) return;
     if (labelNode.x === undefined) return;
 
+    // Viewport culling for labels
+    var w = prop.width ? prop.width() : 80;
+    var h = prop.height ? prop.height() : 28;
+    if (!isInViewport(labelNode.x, labelNode.y, Math.max(w, h) / 2 + 10)) return;
+
     drawPropertyRect(prop, labelNode.x, labelNode.y);
 
     // Inverse label (drawn offset below the primary)
     var inv = labelNode.inverse ? labelNode.inverse() : null;
     if (inv && inv.labelVisible && inv.labelVisible()) {
-      var h = prop.height ? prop.height() : 28;
       drawPropertyRect(inv, labelNode.x, labelNode.y + h / 2 + 1);
     }
   }
@@ -301,7 +385,7 @@ module.exports = function () {
     ctx.strokeStyle = prop.focused && prop.focused() ? "#f00" : "#000";
     ctx.lineWidth = prop.focused && prop.focused() ? 4 : 2;
 
-    roundedRect(-w / 2, -h / 2, w, h, 4);
+    roundedRect(ctx, -w / 2, -h / 2, w, h, 4);
     ctx.fill();
     // Skip border for background-blending labels (e.g. subclass: fill matches graph bg)
     if (fill !== "#ecf0f1") {
@@ -461,7 +545,7 @@ module.exports = function () {
     ctx.strokeStyle = "#f00";
     ctx.lineWidth = 5;
     if (isRect) {
-      roundedRect(node.x - 45, node.y - 45, 90, 90, 6);
+      roundedRect(ctx, node.x - 45, node.y - 45, 90, 90, 6);
     } else {
       ctx.translate(node.x, node.y);
       var r = (node.actualRadius ? node.actualRadius() : 30) + 8;
@@ -481,7 +565,7 @@ module.exports = function () {
     ctx.translate(label.x, label.y);
     ctx.strokeStyle = "#f00";
     ctx.lineWidth = 5;
-    roundedRect(-w / 2, -h / 2, w, h, 6);
+    roundedRect(ctx, -w / 2, -h / 2, w, h, 6);
     ctx.stroke();
     ctx.restore();
   }
