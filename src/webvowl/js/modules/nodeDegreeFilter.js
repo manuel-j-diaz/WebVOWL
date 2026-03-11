@@ -134,6 +134,10 @@ module.exports = function ( menu ){
   filter.setDegreeSetter = function ( _degreeSetter ){
     degreeSetter = _degreeSetter;
   };
+
+  filter.getCurrentDegree = function() {
+    return degreeGetter instanceof Function ? degreeGetter() : 0;
+  };
   
   filter.enabled = function ( p ){
     if ( !arguments.length ) return enabled;

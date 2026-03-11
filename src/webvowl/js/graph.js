@@ -1872,7 +1872,19 @@ module.exports = function ( graphContainerSelector ){
     options.literalFilter().enabled(shouldExecuteEmptyFilter);
     
     var preprocessedData = Object.assign({}, unfilteredData);
-    
+
+    // Configure subclassFilter with unfiltered data and current degree so it
+    // doesn't remove nodes whose own properties are hidden by earlier filters,
+    // and respects degree=0 as "show everything."
+    var currentDegree = 0;
+    options.filterModules().forEach(function(m) {
+      if (m.getCurrentDegree) currentDegree = m.getCurrentDegree();
+    });
+    options.filterModules().forEach(function(m) {
+      if (m.setBaseProperties) m.setBaseProperties(unfilteredData.properties);
+      if (m.setShowAll) m.setShowAll(currentDegree === 0);
+    });
+
     // Filter the data
     options.filterModules().forEach(function ( module ){
       preprocessedData = filterFunction(module, preprocessedData);

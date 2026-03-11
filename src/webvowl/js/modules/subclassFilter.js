@@ -7,7 +7,9 @@ module.exports = function (){
     properties,
     enabled = false,
     filteredNodes,
-    filteredProperties;
+    filteredProperties,
+    nodesWithOwnProperties = null,
+    showAll = false;
   
   
   /**
@@ -15,6 +17,20 @@ module.exports = function (){
    * @param untouchedNodes
    * @param untouchedProperties
    */
+  filter.setBaseProperties = function(baseProperties) {
+    nodesWithOwnProperties = new Set();
+    baseProperties.forEach(function(p) {
+      if (!elementTools.isRdfsSubClassOf(p)) {
+        if (p.domain()) nodesWithOwnProperties.add(p.domain().id());
+        if (p.range()) nodesWithOwnProperties.add(p.range().id());
+      }
+    });
+  };
+
+  filter.setShowAll = function(val) {
+    showAll = val;
+  };
+
   filter.filter = function ( untouchedNodes, untouchedProperties ){
     nodes = untouchedNodes;
     properties = untouchedProperties;
@@ -27,7 +43,19 @@ module.exports = function (){
     filteredProperties = properties;
   };
   
+  function subtreeHasOwnPropertiesInBase(connectedProperties) {
+    if (!nodesWithOwnProperties) return false;
+    for (var i = 0; i < connectedProperties.length; i++) {
+      var p = connectedProperties[i];
+      if (p.domain() && nodesWithOwnProperties.has(p.domain().id())) return true;
+      if (p.range() && nodesWithOwnProperties.has(p.range().id())) return true;
+    }
+    return false;
+  }
+
   function hideSubclassesWithoutOwnProperties(){
+    if (showAll) return;   // degree=0: show everything
+
     var unneededProperties = [],
       unneededClasses = [],
       subclasses = [],
@@ -36,28 +64,29 @@ module.exports = function (){
       property,
       i, // index,
       l; // length
-    
-    
+
+
     for ( i = 0, l = properties.length; i < l; i++ ) {
       property = properties[i];
       if ( elementTools.isRdfsSubClassOf(property) ) {
         subclasses.push(property.domain());
       }
     }
-    
+
     for ( i = 0, l = subclasses.length; i < l; i++ ) {
       subclass = subclasses[i];
       connectedProperties = findRelevantConnectedProperties(subclass, properties);
-      
+
       // Only remove the node and its properties, if they're all subclassOf properties
       if ( areOnlySubclassProperties(connectedProperties) &&
+        !subtreeHasOwnPropertiesInBase(connectedProperties) &&
         doesNotInheritFromMultipleClasses(subclass, connectedProperties) ) {
-        
+
         unneededProperties = unneededProperties.concat(connectedProperties);
         unneededClasses.push(subclass);
       }
     }
-    
+
     nodes = removeUnneededElements(nodes, unneededClasses);
     properties = removeUnneededElements(properties, unneededProperties);
   }
