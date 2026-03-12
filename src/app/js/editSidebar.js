@@ -396,31 +396,17 @@ module.exports = function ( graph ){
         
         deleteButton.selectAll("g").on("mouseover", function (){
           const selector = this;
-          const enable = true;
           const f_deletePath = d3.select(`#del_pathFor_${selector.selectorName}`);
           const f_deleteRect = d3.select(`#del_rectFor_${selector.selectorName}`);
-          
-          if ( enable === false ) {
-            f_deletePath.node().style = "stroke: #f00;";
-            f_deleteRect.style("cursor", "auto");
-          } else {
-            f_deletePath.node().style = "stroke: #ff972d;";
-            f_deleteRect.style("cursor", "pointer");
-          }
+          f_deletePath.node().style = "stroke: #ff972d;";
+          f_deleteRect.style("cursor", "pointer");
         });
         deleteButton.selectAll("g").on("mouseout", function (){
           const selector = this;
-          const enable = false;
           const f_deletePath = d3.select(`#del_pathFor_${selector.selectorName}`);
           const f_deleteRect = d3.select(`#del_rectFor_${selector.selectorName}`);
-          
-          if ( enable === false ) {
-            f_deletePath.node().style = "stroke: #f00;";
-            f_deleteRect.style("cursor", "auto");
-          } else {
-            f_deletePath.node().style = "stroke: #ff972d;";
-            f_deleteRect.style("cursor", "pointer");
-          }
+          f_deletePath.node().style = "stroke: #f00;";
+          f_deleteRect.style("cursor", "auto");
         });
         
         

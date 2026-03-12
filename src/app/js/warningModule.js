@@ -68,9 +68,7 @@ module.exports = function ( graph ){
       _messageContext[tokens] = null;
       _messageContainers[tokens] = null;
     }
-    // remove event listener
     const c = d3.select(this);
-    // c.node().removeEventListener("animationend",_msgContainer_animationEnd);
   }
 
   warningModule.createMessageContext = function ( id ){

@@ -13,6 +13,7 @@ const editValidation = require("./graph/editValidation");
 const editCRUD = require("./graph/editCRUD");
 const touchBehavior = require("./graph/touchBehavior");
 const searchHighlight = require("./graph/searchHighlight");
+const hoverUI = require("./graph/hoverUI");
 
 
 module.exports = function ( graphContainerSelector ){
@@ -59,15 +60,10 @@ module.exports = function ( graphContainerSelector ){
     originalD3_touchZoomFunction = null,
 
     // editing elements
-    deleteGroupElement,
-    addDataPropertyGroupElement,
     editContainer,
     draggerLayer = null,
     draggerObjectsArray = [],
-    delayedHider,
-    hoveredNodeElement = null,
     currentlySelectedNode = null,
-    hoveredPropertyElement = null,
     draggingStarted = false,
     frozenDomainForPropertyDragger,
     frozenRangeForPropertyDragger,
@@ -76,7 +72,6 @@ module.exports = function ( graphContainerSelector ){
     debugContainer = d3.select("#FPS_Statistics"),
     finishedLoadingSequence = false,
 
-    ignoreOtherHoverEvents = false,
     now, then, // used for fps computation
     showFPS = false,
     seenEditorHint = false,
@@ -123,6 +118,18 @@ module.exports = function ( graphContainerSelector ){
     zoomFactor:         { get: () => zoomFactor, enumerable: true },
     transformAnimation: { get: () => transformAnimation, enumerable: true },
     targetLocationZoom: { value: ( node ) => { targetLocationZoom(node); }, enumerable: true },
+  });
+
+  // Context object passed to hoverUI — uses getters for values that get reassigned
+  const hoverCtx = Object.defineProperties({
+    graph, classDragger, rangeDragger, domainDragger, shadowClone, shared,
+  }, {
+    editMode:        { get: () => editMode, enumerable: true },
+    editContainer:   { get: () => editContainer, enumerable: true },
+    draggerLayer:    { get: () => draggerLayer, enumerable: true },
+    nodeContainer:   { get: () => nodeContainer, enumerable: true },
+    labelContainer:  { get: () => labelContainer, enumerable: true },
+    recalculatePositions: { value: () => { recalculatePositions(); }, enumerable: true },
   });
 
   graph.math = function (){
@@ -270,24 +277,24 @@ module.exports = function ( graphContainerSelector ){
       })
       .on("start", function ( event, d ){
         event.sourceEvent.stopPropagation(); // Prevent panning
-        graph.ignoreOtherHoverEvents(true);
+        hoverUI.ignoreOtherHoverEvents(true);
         if ( d.type && d.type() === "Class_dragger" ) {
           classDragger.mouseButtonPressed = true;
-          clearTimeout(delayedHider);
+          clearTimeout(hoverUI.hoverState.delayedHider);
           classDragger.selectedViaTouch(true);
           d.parentNode().locked(true);
           draggingStarted = true;
         } else if ( d.type && d.type() === "Range_dragger" ) {
-          graph.ignoreOtherHoverEvents(true);
-          clearTimeout(delayedHider);
+          hoverUI.ignoreOtherHoverEvents(true);
+          clearTimeout(hoverUI.hoverState.delayedHider);
           frozenDomainForPropertyDragger = shadowClone.parentNode().domain();
           frozenRangeForPropertyDragger = shadowClone.parentNode().range();
           shadowClone.setInitialPosition();
           shadowClone.hideClone(false);
           shadowClone.hideParentProperty(true);
           shadowClone.updateElement();
-          deleteGroupElement.classed("hidden", true);
-          addDataPropertyGroupElement.classed("hidden", true);
+          hoverUI.hoverState.deleteGroupElement.classed("hidden", true);
+          hoverUI.hoverState.addDataPropertyGroupElement.classed("hidden", true);
           frozenDomainForPropertyDragger.frozen(true);
           frozenDomainForPropertyDragger.locked(true);
           frozenRangeForPropertyDragger.frozen(true);
@@ -298,17 +305,17 @@ module.exports = function ( graphContainerSelector ){
           rangeDragger.mouseButtonPressed = true;
 
         } else if ( d.type && d.type() === "Domain_dragger" ) {
-          graph.ignoreOtherHoverEvents(true);
-          clearTimeout(delayedHider);
+          hoverUI.ignoreOtherHoverEvents(true);
+          clearTimeout(hoverUI.hoverState.delayedHider);
           frozenDomainForPropertyDragger = shadowClone.parentNode().domain();
           frozenRangeForPropertyDragger = shadowClone.parentNode().range();
           shadowClone.setInitialPosition();
           shadowClone.hideClone(false);
           shadowClone.hideParentProperty(true);
           shadowClone.updateElement();
-          deleteGroupElement.classed("hidden", true);
-          addDataPropertyGroupElement.classed("hidden", true);
-          
+          hoverUI.hoverState.deleteGroupElement.classed("hidden", true);
+          hoverUI.hoverState.addDataPropertyGroupElement.classed("hidden", true);
+
           frozenDomainForPropertyDragger.frozen(true);
           frozenDomainForPropertyDragger.locked(true);
           frozenRangeForPropertyDragger.frozen(true);
@@ -326,16 +333,16 @@ module.exports = function ( graphContainerSelector ){
       .on("drag", function ( event, d ){
 
         if ( d.type && d.type() === "Class_dragger" ) {
-          clearTimeout(delayedHider);
+          clearTimeout(hoverUI.hoverState.delayedHider);
           classDragger.setPosition(event.x, event.y);
         } else if ( d.type && d.type() === "Range_dragger" ) {
-          clearTimeout(delayedHider);
+          clearTimeout(hoverUI.hoverState.delayedHider);
           rangeDragger.setPosition(event.x, event.y);
           shadowClone.setPosition(event.x, event.y);
           domainDragger.updateElementViaRangeDragger(event.x, event.y);
         }
         else if ( d.type && d.type() === "Domain_dragger" ) {
-          clearTimeout(delayedHider);
+          clearTimeout(hoverUI.hoverState.delayedHider);
           domainDragger.setPosition(event.x, event.y);
           shadowClone.setPositionDomain(event.x, event.y);
           rangeDragger.updateElementViaDomainDragger(event.x, event.y);
@@ -358,11 +365,11 @@ module.exports = function ( graphContainerSelector ){
         }
       })
       .on("end", function ( event, d ){
-        graph.ignoreOtherHoverEvents(false);
+        hoverUI.ignoreOtherHoverEvents(false);
         if ( d.type && d.type() === "Class_dragger" ) {
           const nX = classDragger.x;
           const nY = classDragger.y;
-          clearTimeout(delayedHider);
+          clearTimeout(hoverUI.hoverState.delayedHider);
           classDragger.mouseButtonPressed = false;
           classDragger.selectedViaTouch(false);
           d.setParentNode(d.parentNode());
@@ -373,11 +380,11 @@ module.exports = function ( graphContainerSelector ){
             createNewObjectProperty(d.parentNode(), targetNode, draggerEndPos);
           }
           if ( touchBehavior.isTouchDevice() === false ) {
-            editElementHoverOut();
+            hoverUI.editElementHoverOut(hoverCtx);
           }
           draggingStarted = false;
         } else if ( d.type && d.type() === "Range_dragger" ) {
-          graph.ignoreOtherHoverEvents(false);
+          hoverUI.ignoreOtherHoverEvents(false);
           frozenDomainForPropertyDragger.frozen(false);
           frozenDomainForPropertyDragger.locked(false);
           frozenRangeForPropertyDragger.frozen(false);
@@ -406,7 +413,7 @@ module.exports = function ( graphContainerSelector ){
             shadowClone.hideParentProperty(false);
           }
         } else if ( d.type && d.type() === "Domain_dragger" ) {
-          graph.ignoreOtherHoverEvents(false);
+          hoverUI.ignoreOtherHoverEvents(false);
           frozenDomainForPropertyDragger.frozen(false);
           frozenDomainForPropertyDragger.locked(false);
           frozenRangeForPropertyDragger.frozen(false);
@@ -695,14 +702,14 @@ module.exports = function ( graphContainerSelector ){
         label.y = position.y;
         label.linkRangeIntersection = linkRangeIntersection;
         label.linkDomainIntersection = linkDomainIntersection;
-        if ( link.property().focused() === true || hoveredPropertyElement !== undefined ) {
+        if ( link.property().focused() === true || hoverUI.hoverState.hoveredPropertyElement !== undefined ) {
           rangeDragger.updateElement();
           domainDragger.updateElement();
         }
       } else {
         label.linkDomainIntersection = math.calculateIntersection(link.label(), link.domain(), 0);
         label.linkRangeIntersection = math.calculateIntersection(link.label(), link.range(), 0);
-        if ( link.property().focused() === true || hoveredPropertyElement !== undefined ) {
+        if ( link.property().focused() === true || hoverUI.hoverState.hoveredPropertyElement !== undefined ) {
           rangeDragger.updateElement();
           domainDragger.updateElement();
         }
@@ -718,7 +725,7 @@ module.exports = function ( graphContainerSelector ){
         l.label().linkRangeIntersection = ptrAr[1];
         l.label().linkDomainIntersection = ptrAr[0];
 
-        if ( l.property().focused() === true || hoveredPropertyElement !== undefined ) {
+        if ( l.property().focused() === true || hoverUI.hoverState.hoveredPropertyElement !== undefined ) {
           rangeDragger.updateElement();
           domainDragger.updateElement();
         }
@@ -729,7 +736,7 @@ module.exports = function ( graphContainerSelector ){
       const pathEnd = math.calculateIntersection(curvePoint, l.range(), 1);
       l.linkRangeIntersection = pathStart;
       l.linkDomainIntersection = pathEnd;
-      if ( l.property().focused() === true || hoveredPropertyElement !== undefined ) {
+      if ( l.property().focused() === true || hoverUI.hoverState.hoveredPropertyElement !== undefined ) {
         domainDragger.updateElement();
         rangeDragger.updateElement();
       }
@@ -746,15 +753,15 @@ module.exports = function ( graphContainerSelector ){
       return `translate(${pos.x + normalV.x},${pos.y + normalV.y})`;
     });
 
-    if ( hoveredNodeElement ) {
-      setDeleteHoverElementPosition(hoveredNodeElement);
-      setAddDataPropertyHoverElementPosition(hoveredNodeElement);
+    if ( hoverUI.hoverState.hoveredNodeElement ) {
+      hoverUI.setDeleteHoverElementPosition(hoverUI.hoverState.hoveredNodeElement);
+      hoverUI.setAddDataPropertyHoverElementPosition(hoverUI.hoverState.hoveredNodeElement);
       if ( draggingStarted === false ) {
-        classDragger.setParentNode(hoveredNodeElement);
+        classDragger.setParentNode(hoverUI.hoverState.hoveredNodeElement);
       }
     }
-    if ( hoveredPropertyElement ) {
-      setDeleteHoverElementPositionProperty(hoveredPropertyElement);
+    if ( hoverUI.hoverState.hoveredPropertyElement ) {
+      hoverUI.setDeleteHoverElementPositionProperty(hoverUI.hoverState.hoveredPropertyElement);
     }
 
     updateHaloRadius();
@@ -932,86 +939,6 @@ module.exports = function ( graphContainerSelector ){
     
   }
   
-  function generateEditElements(){
-    addDataPropertyGroupElement = editContainer.append('g')
-      .classed("hidden-in-export", true)
-      .classed("hidden", true)
-      .classed("addDataPropertyElement", true)
-      .attr("transform", `translate(${0},${0})`);
-
-
-    addDataPropertyGroupElement.append("circle")
-    // .classed("deleteElement", true)
-      .attr("r", 12)
-      .attr("cx", 0)
-      .attr("cy", 0)
-      .append("title").text("Add Datatype Property");
-    
-    addDataPropertyGroupElement.append("line")
-    // .classed("deleteElementIcon ",true)
-      .attr("x1", -8)
-      .attr("y1", 0)
-      .attr("x2", 8)
-      .attr("y2", 0)
-      .append("title").text("Add Datatype Property");
-    
-    addDataPropertyGroupElement.append("line")
-    // .classed("deleteElementIcon",true)
-      .attr("x1", 0)
-      .attr("y1", -8)
-      .attr("x2", 0)
-      .attr("y2", 8)
-      .append("title").text("Add Datatype Property");
-    
-    if ( graph.options().useAccuracyHelper() ) {
-      addDataPropertyGroupElement.append("circle")
-        .attr("r", 15)
-        .attr("cx", -7)
-        .attr("cy", 7)
-        .classed("superHiddenElement", true)
-        .classed("superOpacityElement", !graph.options().showDraggerObject());
-    }
-    
-    
-    deleteGroupElement = editContainer.append('g')
-      .classed("hidden-in-export", true)
-      .classed("hidden", true)
-      .classed("deleteParentElement", true)
-      .attr("transform", `translate(${0},${0})`);
-
-    deleteGroupElement.append("circle")
-      .attr("r", 12)
-      .attr("cx", 0)
-      .attr("cy", 0)
-      .append("title").text("Delete This Node");
-    
-    const crossLen = 5;
-    deleteGroupElement.append("line")
-      .attr("x1", -crossLen)
-      .attr("y1", -crossLen)
-      .attr("x2", crossLen)
-      .attr("y2", crossLen)
-      .append("title").text("Delete This Node");
-    
-    deleteGroupElement.append("line")
-      .attr("x1", crossLen)
-      .attr("y1", -crossLen)
-      .attr("x2", -crossLen)
-      .attr("y2", crossLen)
-      .append("title").text("Delete This Node");
-    
-    if ( graph.options().useAccuracyHelper() ) {
-      deleteGroupElement.append("circle")
-        .attr("r", 15)
-        .attr("cx", 7)
-        .attr("cy", -7)
-        .classed("superHiddenElement", true)
-        .classed("superOpacityElement", !graph.options().showDraggerObject());
-    }
-    
-    
-  }
-  
   graph.getUnfilteredData = function (){
     return unfilteredData;
   };
@@ -1109,7 +1036,7 @@ module.exports = function ( graphContainerSelector ){
         node.hideDragger(true);
       }
     });
-    generateEditElements();
+    hoverUI.generateEditElements(hoverCtx);
     
     
     // Add an extra container for all markers
@@ -2309,22 +2236,22 @@ module.exports = function ( graphContainerSelector ){
     shadowClone.hideClone(true);
     
     classDragger.hideDragger(true);
-    if ( addDataPropertyGroupElement )
-      addDataPropertyGroupElement.classed("hidden", true);
-    if ( deleteGroupElement )
-      deleteGroupElement.classed("hidden", true);
-    
-    
-    if ( hoveredNodeElement ) {
-      if ( hoveredNodeElement.pinned() === false ) {
-        hoveredNodeElement.locked(graph.paused());
-        hoveredNodeElement.frozen(graph.paused());
+    if ( hoverUI.hoverState.addDataPropertyGroupElement )
+      hoverUI.hoverState.addDataPropertyGroupElement.classed("hidden", true);
+    if ( hoverUI.hoverState.deleteGroupElement )
+      hoverUI.hoverState.deleteGroupElement.classed("hidden", true);
+
+
+    if ( hoverUI.hoverState.hoveredNodeElement ) {
+      if ( hoverUI.hoverState.hoveredNodeElement.pinned() === false ) {
+        hoverUI.hoverState.hoveredNodeElement.locked(graph.paused());
+        hoverUI.hoverState.hoveredNodeElement.frozen(graph.paused());
       }
     }
-    if ( hoveredPropertyElement ) {
-      if ( hoveredPropertyElement.pinned() === false ) {
-        hoveredPropertyElement.locked(graph.paused());
-        hoveredPropertyElement.frozen(graph.paused());
+    if ( hoverUI.hoverState.hoveredPropertyElement ) {
+      if ( hoverUI.hoverState.hoveredPropertyElement.pinned() === false ) {
+        hoverUI.hoverState.hoveredPropertyElement.locked(graph.paused());
+        hoverUI.hoverState.hoveredPropertyElement.frozen(graph.paused());
       }
     }
     
@@ -2456,13 +2383,13 @@ module.exports = function ( graphContainerSelector ){
     const tN = shared.nodeQuadtree.find(dx, dy);
     if ( !tN ) return null;
     const minDist = Math.sqrt((tN.x - dx) * (tN.x - dx) + (tN.y - dy) * (tN.y - dy));
-    if ( hoveredNodeElement ) {
-      const offsetDist = hoveredNodeElement.actualRadius() + 30;
+    if ( hoverUI.hoverState.hoveredNodeElement ) {
+      const offsetDist = hoverUI.hoverState.hoveredNodeElement.actualRadius() + 30;
       if ( minDist > offsetDist ) return null;
       if ( tN.renderType() === "rect" ) return null;
-      if ( tN === hoveredNodeElement && minDist <= hoveredNodeElement.actualRadius() ) {
+      if ( tN === hoverUI.hoverState.hoveredNodeElement && minDist <= hoverUI.hoverState.hoveredNodeElement.actualRadius() ) {
         return tN;
-      } else if ( tN === hoveredNodeElement && minDist > hoveredNodeElement.actualRadius() ) {
+      } else if ( tN === hoverUI.hoverState.hoveredNodeElement && minDist > hoverUI.hoverState.hoveredNodeElement.actualRadius() ) {
         return null;
       }
       return tN;
@@ -2514,7 +2441,7 @@ module.exports = function ( graphContainerSelector ){
 
   graph.removePropertyViaEditor = function ( property ){
     editCRUD.removePropertyViaEditor(editCtx, property);
-    hoveredPropertyElement = undefined;
+    hoverUI.hoverState.hoveredPropertyElement = undefined;
   };
   
   graph.setHierarchyLayout = function ( layout ){
@@ -2576,353 +2503,31 @@ module.exports = function ( graphContainerSelector ){
   };
 
   /** --------------------------------------------------------- **/
-  /** -- Hover and Selection functions, adding edit elements --  **/
+  /** -- Hover and Selection functions (delegated to hoverUI.js) **/
   /** --------------------------------------------------------- **/
-  
+
   graph.ignoreOtherHoverEvents = function ( val ){
-    if ( !arguments.length ) {
-      return ignoreOtherHoverEvents;
-    }
-    else  ignoreOtherHoverEvents = val;
+    return hoverUI.ignoreOtherHoverEvents(val);
   };
-  
-  function delayedHiddingHoverElements( tbh ){
-    if ( tbh === true ) return;
-    if ( hoveredNodeElement ) {
-      if ( hoveredNodeElement.editingTextElement === true ) return;
-      delayedHider = setTimeout(() => {
-        deleteGroupElement.classed("hidden", true);
-        addDataPropertyGroupElement.classed("hidden", true);
-        classDragger.hideDragger(true);
-        if ( hoveredNodeElement && hoveredNodeElement.pinned() === false && graph.paused() === false && hoveredNodeElement.editingTextElement === false ) {
-          hoveredNodeElement.frozen(false);
-          hoveredNodeElement.locked(false);
-        }
-      }, 1000);
-    }
-    if ( hoveredPropertyElement ) {
-      if ( hoveredPropertyElement.editingTextElement === true ) return;
-      clearTimeout(delayedHider);
-      delayedHider = setTimeout(() => {
-        deleteGroupElement.classed("hidden", true);
-        addDataPropertyGroupElement.classed("hidden", true);
-        classDragger.hideDragger(true);
-        rangeDragger.hideDragger(true);
-        domainDragger.hideDragger(true);
-        shadowClone.hideClone(true);
-        if ( hoveredPropertyElement && hoveredPropertyElement.focused() === true && graph.options().drawPropertyDraggerOnHover() === true ) {
-          hoveredPropertyElement.labelObject().increasedLoopAngle = false;
-          // lazy update
-          recalculatePositions();
-        }
-
-        if ( hoveredPropertyElement && hoveredPropertyElement.pinned() === false && graph.paused() === false && hoveredPropertyElement.editingTextElement === false ) {
-          hoveredPropertyElement.frozen(false);
-          hoveredPropertyElement.locked(false);
-        }
-      }, 1000);
-    }
-
-  }
-  
-  
-  // TODO : experimental code for updating dynamic label with and its hover element
   graph.hideHoverPropertyElementsForAnimation = function (){
-    deleteGroupElement.classed("hidden", true);
+    hoverUI.hideHoverPropertyElementsForAnimation();
   };
   graph.showHoverElementsAfterAnimation = function ( property, inversed ){
-    setDeleteHoverElementPositionProperty(property, inversed);
-    deleteGroupElement.classed("hidden", false);
-    
+    hoverUI.showHoverElementsAfterAnimation(property, inversed);
   };
-  
-  function editElementHoverOnHidden(){
-    classDragger.nodeElement.classed("classDraggerNodeHovered", true);
-    classDragger.nodeElement.classed("classDraggerNode", false);
-    editElementHoverOn();
-  }
-  
-  function editElementHoverOutHidden(){
-    classDragger.nodeElement.classed("classDraggerNodeHovered", false);
-    classDragger.nodeElement.classed("classDraggerNode", true);
-    editElementHoverOut();
-  }
-  
-  function editElementHoverOn( touch ){
-    if ( touch === true ) return;
-    clearTimeout(delayedHider); // ignore touch behaviour
-    
-  }
-  
   graph.killDelayedTimer = function (){
-    clearTimeout(delayedHider);
-    clearTimeout(shared.nodeFreezer);
+    hoverUI.killDelayedTimer(hoverCtx);
   };
-  
-  
-  function editElementHoverOut( tbh ){
-    if ( hoveredNodeElement ) {
-      if ( graph.ignoreOtherHoverEvents() === true || tbh === true || hoveredNodeElement.editingTextElement === true ) return;
-      delayedHider = setTimeout(() => {
-        if ( graph.isADraggerActive() === true ) return;
-        deleteGroupElement.classed("hidden", true);
-        addDataPropertyGroupElement.classed("hidden", true);
-        classDragger.hideDragger(true);
-        if ( hoveredNodeElement && hoveredNodeElement.pinned() === false && graph.paused() === false ) {
-          hoveredNodeElement.frozen(false);
-          hoveredNodeElement.locked(false);
-        }
-
-      }, 1000);
-    }
-    if ( hoveredPropertyElement ) {
-      if ( graph.ignoreOtherHoverEvents() === true || tbh === true || hoveredPropertyElement.editingTextElement === true ) return;
-      clearTimeout(delayedHider);
-      delayedHider = setTimeout(() => {
-        if ( graph.isADraggerActive() === true ) return;
-        deleteGroupElement.classed("hidden", true);
-        addDataPropertyGroupElement.classed("hidden", true);
-        classDragger.hideDragger(true);
-        if ( hoveredPropertyElement && hoveredPropertyElement.pinned() === false && graph.paused() === false ) {
-          hoveredPropertyElement.frozen(false);
-          hoveredPropertyElement.locked(false);
-        }
-
-      }, 1000);
-    }
-  }
-  
   graph.activateHoverElementsForProperties = function ( val, property, inversed, touchBehaviour ){
-    if ( editMode === false ) return; // nothing to do;
-    
-    if ( touchBehaviour === undefined )
-      touchBehaviour = false;
-    
-    if ( val === true ) {
-      clearTimeout(delayedHider);
-      if ( hoveredPropertyElement ) {
-        if ( hoveredPropertyElement.domain() === hoveredPropertyElement.range() ) {
-          hoveredPropertyElement.labelObject().increasedLoopAngle = false;
-          recalculatePositions();
-        }
-      }
-      
-      hoveredPropertyElement = property;
-      if ( graph.options().drawPropertyDraggerOnHover() === true ) {
-        
-        
-        if ( property.type() !== "owl:DatatypeProperty" ) {
-          if ( property.domain() === property.range() ) {
-            property.labelObject().increasedLoopAngle = true;
-            recalculatePositions();
-          }
-          shadowClone.setParentProperty(property, inversed);
-          rangeDragger.setParentProperty(property, inversed);
-          rangeDragger.hideDragger(false);
-          rangeDragger.addMouseEvents();
-          domainDragger.setParentProperty(property, inversed);
-          domainDragger.hideDragger(false);
-          domainDragger.addMouseEvents();
-          
-          
-        } else if ( property.type() === "owl:DatatypeProperty" ) {
-          shadowClone.setParentProperty(property, inversed);
-          rangeDragger.setParentProperty(property, inversed);
-          rangeDragger.hideDragger(true);
-          rangeDragger.addMouseEvents();
-          domainDragger.setParentProperty(property, inversed);
-          domainDragger.hideDragger(false);
-          domainDragger.addMouseEvents();
-        }
-      }
-      else { // hide when we dont want that option
-        if ( graph.options().drawPropertyDraggerOnHover() === true ) {
-          rangeDragger.hideDragger(true);
-          domainDragger.hideDragger(true);
-          shadowClone.hideClone(true);
-          if ( property.domain() === property.range() ) {
-            property.labelObject().increasedLoopAngle = false;
-            recalculatePositions();
-          }
-        }
-      }
-      
-      if ( hoveredNodeElement ) {
-        if ( hoveredNodeElement && hoveredNodeElement.pinned() === false && graph.paused() === false ) {
-          hoveredNodeElement.frozen(false);
-          hoveredNodeElement.locked(false);
-        }
-      }
-      hoveredNodeElement = undefined;
-      deleteGroupElement.classed("hidden", false);
-      setDeleteHoverElementPositionProperty(property, inversed);
-      deleteGroupElement.selectAll("*").on("click", function ( event ){
-        if ( touchBehaviour && property.focused() === false ) {
-          graph.options().focuserModule().handle(property);
-          return;
-        }
-        graph.removePropertyViaEditor(property);
-        event.stopPropagation();
-      });
-      classDragger.hideDragger(true);
-      addDataPropertyGroupElement.classed("hidden", true);
-    } else {
-      delayedHiddingHoverElements();
-    }
+    hoverUI.activateHoverElementsForProperties(hoverCtx, val, property, inversed, touchBehaviour);
   };
-  
   graph.updateDraggerElements = function (){
-    
-    // set opacity style for all elements
-    
-    rangeDragger.draggerObject.classed("superOpacityElement", !graph.options().showDraggerObject());
-    domainDragger.draggerObject.classed("superOpacityElement", !graph.options().showDraggerObject());
-    classDragger.draggerObject.classed("superOpacityElement", !graph.options().showDraggerObject());
-    
-    nodeContainer.selectAll(".superHiddenElement").classed("superOpacityElement", !graph.options().showDraggerObject());
-    labelContainer.selectAll(".superHiddenElement").classed("superOpacityElement", !graph.options().showDraggerObject());
-    
-    deleteGroupElement.selectAll(".superHiddenElement").classed("superOpacityElement", !graph.options().showDraggerObject());
-    addDataPropertyGroupElement.selectAll(".superHiddenElement").classed("superOpacityElement", !graph.options().showDraggerObject());
-    
-    
+    hoverUI.updateDraggerElements(hoverCtx);
   };
-  
-  function setAddDataPropertyHoverElementPosition( node ){
-    let delX, delY = 0;
-    if ( node.renderType() === "round" ) {
-      const scale = 0.5 * Math.sqrt(2.0);
-      const oX = scale * node.actualRadius();
-      const oY = scale * node.actualRadius();
-      delX = node.x - oX;
-      delY = node.y + oY;
-      addDataPropertyGroupElement.attr("transform", `translate(${delX},${delY})`);
-    }
-  }
-  
-  function setDeleteHoverElementPosition( node ){
-    let delX, delY = 0;
-    if ( node.renderType() === "round" ) {
-      const scale = 0.5 * Math.sqrt(2.0);
-      const oX = scale * node.actualRadius();
-      const oY = scale * node.actualRadius();
-      delX = node.x + oX;
-      delY = node.y - oY;
-    } else {
-      delX = node.x + 0.5 * node.width() + 6;
-      delY = node.y - 0.5 * node.height() - 6;
-    }
-    deleteGroupElement.attr("transform", `translate(${delX},${delY})`);
-  }
-
-  function setDeleteHoverElementPositionProperty( property, inversed ){
-    if ( property && property.labelElement() ) {
-      const pos = [property.labelObject().x, property.labelObject().y];
-      const widthElement = parseFloat(property.getShapeElement().attr("width"));
-      const heightElement = parseFloat(property.getShapeElement().attr("height"));
-      let delX = pos[0] + 0.5 * widthElement + 6;
-      let delY = pos[1] - 0.5 * heightElement - 6;
-      // this is the lower element
-      if ( property.labelElement().attr("transform") === "translate(0,15)" )
-        delY += 15;
-      // this is upper element
-      if ( property.labelElement().attr("transform") === "translate(0,-15)" )
-        delY -= 15;
-      deleteGroupElement.attr("transform", `translate(${delX},${delY})`);
-    } else {
-      deleteGroupElement.classed("hidden", true);// hide when there is no property
-    }
-    
-    
-  }
-  
   graph.activateHoverElements = function ( val, node, touchBehaviour ){
-    if ( editMode === false ) {
-      return; // nothing to do;
-    }
-    if ( touchBehaviour === undefined ) touchBehaviour = false;
-    if ( val === true ) {
-      if ( graph.options().drawPropertyDraggerOnHover() === true ) {
-        rangeDragger.hideDragger(true);
-        domainDragger.hideDragger(true);
-        shadowClone.hideClone(true);
-      }
-      // make them visible
-      clearTimeout(delayedHider);
-      clearTimeout(shared.nodeFreezer);
-      if ( hoveredNodeElement && node.pinned() === false && graph.paused() === false ) {
-        hoveredNodeElement.frozen(false);
-        hoveredNodeElement.locked(false);
-      }
-      hoveredNodeElement = node;
-      if ( node && node.frozen() === false && node.pinned() === false ) {
-        node.frozen(true);
-        node.locked(false);
-      }
-      if ( hoveredPropertyElement && hoveredPropertyElement.focused() === false ) {
-        hoveredPropertyElement.labelObject().increasedLoopAngle = false;
-        recalculatePositions();
-        // update the loopAngles;
-        
-      }
-      hoveredPropertyElement = undefined;
-      deleteGroupElement.classed("hidden", false);
-      setDeleteHoverElementPosition(node);
-      
-      
-      deleteGroupElement.selectAll("*").on("click", function ( event ){
-        if ( touchBehaviour && node.focused() === false ) {
-          graph.options().focuserModule().handle(node);
-          return;
-        }
-        graph.removeNodeViaEditor(node);
-        event.stopPropagation();
-      })
-        .on("mouseover", function (){
-          editElementHoverOn(node, touchBehaviour);
-        })
-        .on("mouseout", function (){
-          editElementHoverOut(node, touchBehaviour);
-        });
-      
-      addDataPropertyGroupElement.classed("hidden", true);
-      classDragger.nodeElement.on("mouseover", editElementHoverOn)
-        .on("mouseout", editElementHoverOut);
-      classDragger.draggerObject.on("mouseover", editElementHoverOnHidden)
-        .on("mouseout", editElementHoverOutHidden);
-      
-      // add the dragger element;
-      if ( node.renderType() === "round" ) {
-        classDragger.svgRoot(draggerLayer);
-        classDragger.setParentNode(node);
-        classDragger.hideDragger(false);
-        addDataPropertyGroupElement.classed("hidden", false);
-        setAddDataPropertyHoverElementPosition(node);
-        addDataPropertyGroupElement.selectAll("*").on("click", function ( event ){
-          if ( touchBehaviour && node.focused() === false ) {
-            graph.options().focuserModule().handle(node);
-            return;
-          }
-          graph.createDataTypeProperty(node);
-          event.stopPropagation();
-        })
-          .on("mouseover", function (){
-            editElementHoverOn(node, touchBehaviour);
-          })
-          .on("mouseout", function (){
-            editElementHoverOut(node, touchBehaviour);
-          });
-      } else {
-        classDragger.hideDragger(true);
-        
-      }
-      
-    } else {
-      delayedHiddingHoverElements(node, touchBehaviour);
-      
-    }
+    hoverUI.activateHoverElements(hoverCtx, val, node, touchBehaviour);
   };
-  
-  
+
+
   return graph;
 };
