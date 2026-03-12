@@ -1,10 +1,9 @@
 const BaseElement = require("../BaseElement");
 const forceLayoutNodeFunctions = require("../forceLayoutNodeFunctions")();
 
-module.exports = (function (){
-  
-  const Base = function ( graph ){
-    BaseElement.apply(this, arguments);
+class BaseNode extends BaseElement {
+  constructor( graph ){
+    super(graph);
 
     const that = this;
     // Basic attributes
@@ -27,7 +26,7 @@ module.exports = (function (){
     // array to store my properties; // we will need this also later for semantic zooming stuff
     let assignedProperties = [];
     that.editingTextElement = false;
-    
+
     this.isPropertyAssignedToThisElement = function ( property ){
       // this goes via IRIS
       console.log(`Element IRI :${property.iri()}`);
@@ -45,8 +44,8 @@ module.exports = (function (){
         }
       return false;
     };
-    
-    
+
+
     this.existingPropertyIRI = function ( url ){
       // this goes via IRIS
       for ( const prop of assignedProperties ) {
@@ -57,18 +56,17 @@ module.exports = (function (){
       }
       return false;
     };
-    
+
     this.addProperty = function ( property ){
-      if ( assignedProperties.indexOf(property) === -1 ) {
+      if ( !assignedProperties.includes(property) ) {
         assignedProperties.push(property);
       }
     };
-    
+
     this.removePropertyElement = function ( property ){
-      // console.log("Calling removing old property!"+ property.iri());
-      if ( assignedProperties.indexOf(property) !== -1 ) {
-        // console.log("Found it!");
-        assignedProperties.splice(assignedProperties.indexOf(property), 1);
+      const idx = assignedProperties.indexOf(property);
+      if ( idx !== -1 ) {
+        assignedProperties.splice(idx, 1);
       }
     };
     this.getMyProperties = function (){
@@ -77,7 +75,7 @@ module.exports = (function (){
     this.copyOtherProperties = function ( otherProperties ){
       assignedProperties = otherProperties;
     };
-    
+
     this.copyInformation = function ( other ){
       console.log(other.labelForCurrentLanguage());
       if ( other.type() !== "owl:Thing" )
@@ -88,19 +86,18 @@ module.exports = (function (){
       that.baseIri(other.baseIri());
       if ( other.type() === "owl:Class" ) {
         that.backupLabel(other.label());
-        // console.log("copied backup label"+that.backupLabel());
       }
       if ( other.backupLabel() !== undefined ) {
         that.backupLabel(other.backupLabel());
       }
     };
-    
+
     this.enableEditing = function ( autoEditing ){
       if ( autoEditing === false )
         return;
       that.raiseDoubleClickEdit(true);
     };
-    
+
     this.raiseDoubleClickEdit = function ( forceIRISync ){
       d3.selectAll(".foreignelements").remove();
       if ( nodeElement === undefined || this.type() === "owl:Thing" || this.type() === "rdfs:Literal" ) {
@@ -110,7 +107,7 @@ module.exports = (function (){
       if ( fobj !== undefined ) {
         nodeElement.selectAll(".foreignelements").remove();
       }
-      
+
       backupFullIri = undefined;
       graph.options().focuserModule().handle(undefined);
       graph.options().focuserModule().handle(that);
@@ -156,7 +153,6 @@ module.exports = (function (){
       that.frozen(true); // << releases the not after selection
       that.locked(true);
 
-      // ignoreNodeHoverEvent=true;
       // // add some events that relate to this object
       editText.on("click", ( event ) => {
         event.stopPropagation();
@@ -197,20 +193,17 @@ module.exports = (function (){
           that.nodeElement().selectAll("circle").classed("hoveredForEditing", false);
           const newLabel = editText.node().value;
           nodeElement.selectAll(".foreignelements").remove();
-          // that.setLabelForCurrentLanguage(classNameConvention(editText.node().value));
           that.label(newLabel);
           that.backupLabel(newLabel);
           that.redrawLabelText();
           that.frozen(graph.paused());
           that.locked(graph.paused());
           graph.ignoreOtherHoverEvents(false);
-          // console.log("Calling blur on Node!");
           if ( backupFullIri ) {
             const sanityCheckResult = graph.checkIfIriClassAlreadyExist(backupFullIri);
             if ( sanityCheckResult === false ) {
               that.iri(backupFullIri);
             } else {
-              // throw warnign
               graph.options().warningModule().showWarning("Already seen this class",
                 `Input IRI: ${backupFullIri} for element: ${that.labelForCurrentLanguage()} already been set`,
                 `Restoring previous IRI for Element : ${that.iri()}`, 2, false, sanityCheckResult);
@@ -223,8 +216,8 @@ module.exports = (function (){
           }
         });	// add a foreiner element to this thing;
     };
-    
-    
+
+
     this.renderType = function ( t ){
       if ( !arguments.length ) return rendertype;
       rendertype = t;
@@ -236,56 +229,56 @@ module.exports = (function (){
       complement = p;
       return this;
     };
-    
+
     this.disjointUnion = function ( p ){
       if ( !arguments.length ) return disjointUnion;
       disjointUnion = p;
       return this;
     };
-    
+
     this.disjointWith = function ( p ){
       if ( !arguments.length ) return disjointWith;
       disjointWith = p;
       return this;
     };
-    
+
     this.individuals = function ( p ){
       if ( !arguments.length ) return individuals;
       individuals = p || [];
       return this;
     };
-    
+
     this.intersection = function ( p ){
       if ( !arguments.length ) return intersection;
       intersection = p;
       return this;
     };
-    
+
     this.links = function ( p ){
       if ( !arguments.length ) return links;
       links = p;
       return this;
     };
-    
+
     this.maxIndividualCount = function ( p ){
       if ( !arguments.length ) return maxIndividualCount;
       maxIndividualCount = p;
       return this;
     };
-    
+
     this.nodeElement = function ( p ){
       if ( !arguments.length ) return nodeElement;
       nodeElement = p;
       return this;
     };
-    
+
     this.union = function ( p ){
       if ( !arguments.length ) return union;
       union = p;
       return this;
     };
-    
-    
+
+
     /**
      * Returns css classes generated from the data of this object.
      * @returns {Array}
@@ -301,8 +294,8 @@ module.exports = (function (){
 
       return cssClasses;
     };
-    
-    
+
+
     // Reused functions TODO refactor
     this.addMouseListeners = function (){
       // Empty node
@@ -310,12 +303,12 @@ module.exports = (function (){
         console.warn(this);
         return;
       }
-      
+
       that.nodeElement().selectAll("*")
         .on("mouseover", onMouseOver)
         .on("mouseout", onMouseOut);
     };
-    
+
     this.animationProcess = function (){
       let animRuns = false;
       if ( that.getHalos() ) {
@@ -333,7 +326,7 @@ module.exports = (function (){
       }
       return animRuns;
     };
-    
+
     this.foreground = function (){
       const selectedNode = that.nodeElement().node(),
         nodeContainer = selectedNode.parentNode;
@@ -342,9 +335,9 @@ module.exports = (function (){
         // Append hovered element as last child to the container list.
         nodeContainer.appendChild(selectedNode);
       }
-      
+
     };
-    
+
     function onMouseOver(){
       if ( that.mouseEntered() || ignoreLocalHoverEvents === true ) {
         return;
@@ -352,7 +345,7 @@ module.exports = (function (){
 
       const selectedNode = that.nodeElement().node(),
         nodeContainer = selectedNode.parentNode;
-      
+
       // Append hovered element as last child to the container list.
       if ( that.animationProcess() === false ) {
         nodeContainer.appendChild(selectedNode);
@@ -367,12 +360,12 @@ module.exports = (function (){
         if ( graph.editorMode() === true && graph.ignoreOtherHoverEvents() === false ) {
           graph.activateHoverElements(true, that, true);
         }
-        
+
       }
-      
-      
+
+
     }
-    
+
     function onMouseOut(){
       that.setHoverHighlighting(false);
       that.mouseEntered(false);
@@ -380,14 +373,10 @@ module.exports = (function (){
         graph.activateHoverElements(false);
       }
     }
-    
-    
+
+
     forceLayoutNodeFunctions.addTo(this);
-  };
-  
-  Base.prototype = Object.create(BaseElement.prototype);
-  Base.prototype.constructor = Base;
-  
-  
-  return Base;
-}());
+  }
+}
+
+module.exports = BaseNode;

@@ -1,4 +1,4 @@
-const xhrRequest = require("./util/xhrHelper");
+const { fetchGet, fetchPost } = require("./util/xhrHelper");
 
 module.exports = function ( graph ){
   /** some constants **/
@@ -270,25 +270,22 @@ module.exports = function ( graph ){
   };
   
   function requestServerTimeStampForJSON_URL( callback, parameter ){
-    xhrRequest("serverTimeStamp", "application/text", ( error, request ) => {
-      if ( error ) {
-        // could not get server timestamp -> no connection to owl2vowl
+    fetchGet("serverTimeStamp", "application/text").then(( response ) => {
+      if ( !response.ok ) {
         ontologyMenu.append_bulletPoint("Could not establish connection to OWL2VOWL service");
         fallbackForJSON_URL(callback, parameter);
       } else {
-        conversion_sessionId = request.responseText;
+        conversion_sessionId = response.responseText;
         ontologyMenu.setConversionID(conversion_sessionId);
         parameter.push(conversion_sessionId);
         callback(parameter);
       }
     });
-    
   }
   
   loadingModule.requestServerTimeStampForDirectInput = function ( callback, text ){
-    xhrRequest("serverTimeStamp", "application/text", ( error, request ) => {
-      if ( error ) {
-        // could not get server timestamp -> no connection to owl2vowl
+    fetchGet("serverTimeStamp", "application/text").then(( response ) => {
+      if ( !response.ok ) {
         ontologyMenu.append_bulletPoint("Could not establish connection to OWL2VOWL service");
         loadingModule.setErrorMode();
         ontologyMenu.append_message_toLastBulletPoint("<br><span style='color:red'>Could not connect to OWL2VOWL service </span>");
@@ -296,9 +293,8 @@ module.exports = function ( graph ){
         d3.select("#progressBarValue").style("width", "0%");
         d3.select("#progressBarValue").classed("busyProgressBar", false);
         d3.select("#progressBarValue").text("0%");
-        
       } else {
-        conversion_sessionId = request.responseText;
+        conversion_sessionId = response.responseText;
         ontologyMenu.setConversionID(conversion_sessionId);
         callback(text, [`conversionID${conversion_sessionId}`, conversion_sessionId]);
       }
@@ -412,47 +408,35 @@ module.exports = function ( graph ){
     const formData = new FormData();
     formData.append("ontology", file);
 
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", "convert", true);
-    let ontologyContent = "";
-    xhr.onload = () => {
-      if ( xhr.status === 200 ) {
-        ontologyContent = xhr.responseText;
-        ontologyMenu.setCachedOntology(name, ontologyContent);
+    fetchPost("convert", formData).then(( response ) => {
+      if ( response.status === 200 ) {
+        ontologyMenu.setCachedOntology(name, response.responseText);
         ontologyIdentifierFromURL = name;
-        missingImportsWarning = true; // using this variable for warnings
+        missingImportsWarning = true;
         ontologyMenu.append_message_toLastBulletPoint("<br>Success, <span style='color:yellow'>but you are using a deprecated OWL2VOWL service!<span>");
-        parseOntologyContent(ontologyContent);
-      }
-    };
-    
-    // check what this thing is doing;
-    xhr.onreadystatechange = () => {
-      if ( xhr.readyState === 4 && xhr.status === 0 ) {
+        parseOntologyContent(response.responseText);
+      } else if ( response.status === 0 ) {
         ontologyMenu.append_message_toLastBulletPoint("<br>Old protocol also failed to establish connection to OWL2VOWL service!");
         loadingModule.setErrorMode();
         ontologyMenu.append_bulletPoint("Failed to load ontology");
         ontologyMenu.append_message_toLastBulletPoint("<br><span style='color:red'>Could not connect to OWL2VOWL service </span>");
         loadingModule.showErrorDetailsMessage();
       }
-    };
-    xhr.send(formData);
+    });
   }
   
   function requestServerTimeStampForIRI_Converte( callback, parameterArray ){
-    xhrRequest("serverTimeStamp", "application/text", ( error, request ) => {
+    fetchGet("serverTimeStamp", "application/text").then(( response ) => {
       loadingModule.setBusyMode();
-      if ( error ) {
-        // could not get server timestamp -> no connection to owl2vowl
+      if ( !response.ok ) {
         ontologyMenu.append_bulletPoint("Could not establish connection to OWL2VOWL service");
         loadingModule.setErrorMode();
         ontologyMenu.append_bulletPoint("Failed to load ontology");
         ontologyMenu.append_message_toLastBulletPoint("<br><span style='color:red'>Could not connect to OWL2VOWL service </span>");
         loadingModule.showErrorDetailsMessage();
       } else {
-        conversion_sessionId = request.responseText;
+        conversion_sessionId = response.responseText;
         ontologyMenu.setConversionID(conversion_sessionId);
-        // update paramater for new communication paradigm
         parameterArray[0] = `${parameterArray[0]}&sessionId=${conversion_sessionId}`;
         parameterArray.push(conversion_sessionId);
         callback(parameterArray);
@@ -461,15 +445,13 @@ module.exports = function ( graph ){
   }
   
   function requestServerTimeStamp( callback, parameterArray ){
-    xhrRequest("serverTimeStamp", "application/text", ( error, request ) => {
-      if ( error ) {
-        // could not get server timestamp -> no connection to owl2vowl
+    fetchGet("serverTimeStamp", "application/text").then(( response ) => {
+      if ( !response.ok ) {
         ontologyMenu.append_bulletPoint("Could not establish connection to OWL2VOWL service");
-        fallbackConversion(parameterArray); // tries o2v version0.3.4 communication
+        fallbackConversion(parameterArray);
       } else {
-        conversion_sessionId = request.responseText;
+        conversion_sessionId = response.responseText;
         ontologyMenu.setConversionID(conversion_sessionId);
-        console.log(`Request Session ID:${conversion_sessionId}`);
         callback(parameterArray[0], parameterArray[1], conversion_sessionId);
       }
     });
@@ -529,64 +511,45 @@ module.exports = function ( graph ){
         fileToRead = f2r;
       } // overwrite the newOntology Index
       // read file
-      xhrRequest(fileToRead, "application/json", ( error, request ) => {
-        const loadingSuccessful = !error;
-        if ( loadingSuccessful ) {
-          ontologyContent = request.responseText;
+      fetchGet(fileToRead, "application/json").then(( response ) => {
+        if ( response.ok ) {
+          ontologyContent = response.responseText;
           parseOntologyContent(ontologyContent);
         } else {
-
-          if (loadingNewOntologyForEditor){
+          if ( loadingNewOntologyForEditor ) {
             ontologyContent = `{
   "_comment": "Empty ontology for WebVOWL Editor",
   "header": {
-    "languages": [
-      "en"
-    ],
-    "baseIris": [
-      "http://www.w3.org/2000/01/rdf-schema"
-    ],
+    "languages": ["en"],
+    "baseIris": ["http://www.w3.org/2000/01/rdf-schema"],
     "iri": "http://visualdataweb.org/newOntology/",
-    "title": {
-      "en": "New ontology"
-    },
-    "description": {
-      "en": "New ontology description"
-    }
+    "title": { "en": "New ontology" },
+    "description": { "en": "New ontology description" }
   },
   "namespace": [],
   "metrics": {
-    "classCount": 0,
-    "datatypeCount": 0,
-    "objectPropertyCount": 0,
-    "datatypePropertyCount": 0,
-    "propertyCount": 0,
-    "nodeCount": 0,
-    "individualCount": 0
+    "classCount": 0, "datatypeCount": 0,
+    "objectPropertyCount": 0, "datatypePropertyCount": 0,
+    "propertyCount": 0, "nodeCount": 0, "individualCount": 0
   }
-}
-`;
+}`;
             parseOntologyContent(ontologyContent);
-          }else{
-          // some error occurred
-          ontologyMenu.append_bulletPoint(`Failed to load: ${ontology}`);
-          if (error.status===0){ // assumption this is CORS error when running locally (error status == 0)
-            ontologyMenu.append_message_toLastBulletPoint(` <span style='color: red'>ERROR STATUS:</span> ${error.status}`);
-            if (window.location.toString().startsWith("file:/")){
-              ontologyMenu.append_message_toLastBulletPoint("<br><p>WebVOWL runs in a local instance.</p>");
-              ontologyMenu.append_message_toLastBulletPoint("<p>CORS prevents to automatically load files on host system.</p>");
-              ontologyMenu.append_message_toLastBulletPoint("<p>You can load preprocessed ontologies (i.e. VOWL-JSON files) using the upload feature in the ontology menu or by dragging the files and dropping them on the canvas.</p>");
-              ontologyMenu.append_message_toLastBulletPoint("<p><i>Hint: </i>Note that the conversion of ontologies into the VOWL-JSON format is not part of WebVOWL but requires an additional converter such as OWL2VOWL.</p>");
-              ontologyMenu.append_message_toLastBulletPoint("<p>Ontologies can be created using the editor mode (i.e. activate editing mode in <b>Modes</b> menu and create a new ontology using the <b>Ontology</b> menu.</p>");
+          } else {
+            ontologyMenu.append_bulletPoint(`Failed to load: ${ontology}`);
+            if ( response.status === 0 ) {
+              ontologyMenu.append_message_toLastBulletPoint(` <span style='color: red'>ERROR STATUS:</span> ${response.status}`);
+              if ( window.location.toString().startsWith("file:/") ) {
+                ontologyMenu.append_message_toLastBulletPoint("<br><p>WebVOWL runs in a local instance.</p>");
+                ontologyMenu.append_message_toLastBulletPoint("<p>CORS prevents to automatically load files on host system.</p>");
+                ontologyMenu.append_message_toLastBulletPoint("<p>You can load preprocessed ontologies (i.e. VOWL-JSON files) using the upload feature in the ontology menu or by dragging the files and dropping them on the canvas.</p>");
+                ontologyMenu.append_message_toLastBulletPoint("<p><i>Hint: </i>Note that the conversion of ontologies into the VOWL-JSON format is not part of WebVOWL but requires an additional converter such as OWL2VOWL.</p>");
+                ontologyMenu.append_message_toLastBulletPoint("<p>Ontologies can be created using the editor mode (i.e. activate editing mode in <b>Modes</b> menu and create a new ontology using the <b>Ontology</b> menu.</p>");
+              }
+            } else {
+              ontologyMenu.append_message_toLastBulletPoint(` <span style='color: red'>ERROR STATUS:</span> ${response.status}`);
             }
-          }else {
-            ontologyMenu.append_message_toLastBulletPoint(` <span style='color: red'>ERROR STATUS:</span> ${error.status}`);
-          }
-
-
-
-          graph.handleOnLoadingError();
-          loadingModule.setErrorMode();
+            graph.handleOnLoadingError();
+            loadingModule.setErrorMode();
           }
         }
       });

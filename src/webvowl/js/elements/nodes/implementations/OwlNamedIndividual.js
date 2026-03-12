@@ -1,9 +1,8 @@
 const RoundNode = require("../RoundNode");
 
-module.exports = (function (){
-
-  const o = function ( graph ){
-    RoundNode.apply(this, arguments);
+class OwlNamedIndividual extends RoundNode {
+  constructor( graph ){
+    super(graph);
 
     const that = this,
       superDraw = that.draw;
@@ -17,10 +16,6 @@ module.exports = (function (){
     this.draw = ( parentElement ) => {
       return superDraw.call(that, parentElement, ["individual", "abox"]);
     };
-  };
-
-  o.prototype = Object.create(RoundNode.prototype);
-  o.prototype.constructor = o;
-
-  return o;
-}());
+  }
+}
+module.exports = OwlNamedIndividual;

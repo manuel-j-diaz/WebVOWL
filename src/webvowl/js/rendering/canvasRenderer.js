@@ -3,6 +3,8 @@
  * Draws all visual elements to a <canvas> placed behind the SVG.
  * SVG elements remain in DOM for event handling but are hidden via .canvas-mode CSS.
  */
+const theme = require("./vowlTheme");
+
 module.exports = function () {
   const renderer = {};
   let canvas, ctx, dpr,
@@ -21,40 +23,6 @@ module.exports = function () {
 
   const CARDINALITY_HDISTANCE = 20,
     CARDINALITY_VDISTANCE = 10;
-
-  // Fill colors from vowl.css
-  const FILL_COLORS = {
-    "class": "#acf",
-    "object": "#acf",
-    "disjoint": "#acf",
-    "objectproperty": "#acf",
-    "disjointwith": "#acf",
-    "equivalentproperty": "#acf",
-    "transitiveproperty": "#acf",
-    "functionalproperty": "#acf",
-    "inversefunctionalproperty": "#acf",
-    "symmetricproperty": "#acf",
-    "allvaluesfromproperty": "#acf",
-    "somevaluesfromproperty": "#acf",
-    "datatypeproperty": "#9c6",
-    "rdf": "#c9c",
-    "rdfproperty": "#c9c",
-    "literal": "#fc3",
-    "datatype": "#fc3",
-    "deprecated": "#ccc",
-    "deprecatedproperty": "#ccc",
-    "individual": "#fca",
-    "subclass": "#ecf0f1",
-    "subclassproperty": "#ecf0f1",
-    "symbol": "#69c"
-  };
-
-  // Special stroke colors from vowl.css
-  const STROKE_COLORS = {
-    "individual": "#b74",
-    "rdftype": "#b74",
-    "values-from": "#69c"
-  };
 
 
   renderer.setup = function (containerSelector, w, h) {
@@ -161,12 +129,12 @@ module.exports = function () {
       return element.backgroundColor();
     }
     const sc = element.styleClass ? element.styleClass() : null;
-    return (sc && FILL_COLORS[sc]) ? FILL_COLORS[sc] : "#acf";
+    return (sc && theme.FILL[sc]) ? theme.FILL[sc] : theme.FILL_DEFAULT;
   }
 
   function getStrokeColor(element) {
     const sc = element.styleClass ? element.styleClass() : null;
-    return (sc && STROKE_COLORS[sc]) ? STROKE_COLORS[sc] : "#000";
+    return (sc && theme.STROKE[sc]) ? theme.STROKE[sc] : theme.STROKE_DEFAULT;
   }
 
   /**
@@ -244,16 +212,16 @@ module.exports = function () {
     ctx.translate(node.x, node.y);
 
     let fill = getFillColor(node);
-    const stroke = getStrokeColor(node);
+    let stroke = getStrokeColor(node);
     const attrs = node.attributes ? node.attributes() : [];
     const isHovered = node.mouseEntered && node.mouseEntered();
     const isFocused = node.focused && node.focused();
 
-    if (attrs.indexOf("deprecated") > -1) fill = "#ccc";
-    if (isHovered) fill = "#f00";
+    if (attrs.includes("deprecated")) fill = theme.FILL.deprecated;
+    if (isHovered) fill = theme.HOVERED;
     const isCollapsed = _collapsingModule && _collapsingModule.isCollapsed(node.id());
     if (isFocused) {
-      stroke = "#f00";
+      stroke = theme.FOCUSED_STROKE;
       ctx.lineWidth = 4;
     } else if (isCollapsed) {
       ctx.lineWidth = 3;
@@ -279,7 +247,7 @@ module.exports = function () {
     // Label text with word-wrap
     const label = node.labelForCurrentLanguage ? node.labelForCurrentLanguage() : "";
     if (label) {
-      ctx.fillStyle = "#000";
+      ctx.fillStyle = theme.TEXT;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       const textMaxWidth = isRect ? 72 : r * 1.8;
@@ -301,13 +269,13 @@ module.exports = function () {
     ctx.translate(0, r);
 
     // Button circle
-    ctx.fillStyle = isHovered ? "#29f" : "#f00";
+    ctx.fillStyle = isHovered ? theme.COLLAPSE_HOVER : theme.COLLAPSE_BTN;
     ctx.beginPath();
     ctx.arc(0, 0, 12, 0, 2 * Math.PI);
     ctx.fill();
 
     // +/- lines
-    ctx.strokeStyle = "#000";
+    ctx.strokeStyle = theme.STROKE_DEFAULT;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(-8, 0);
@@ -329,8 +297,8 @@ module.exports = function () {
     const dx = (-3.5 / 5) * r,
       dy = (-7 / 10) * r;
     ctx.save();
-    ctx.fillStyle = "#e33";
-    ctx.strokeStyle = "#fff";
+    ctx.fillStyle = theme.PIN;
+    ctx.strokeStyle = theme.PIN_STROKE;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.arc(dx, dy, 7, 0, 2 * Math.PI);
@@ -377,19 +345,19 @@ module.exports = function () {
 
     let fill = getFillColor(prop);
     const attrs = prop.attributes ? prop.attributes() : [];
-    if (attrs.indexOf("deprecated") > -1) fill = "#ccc";
-    ctx.fillStyle = prop.mouseEntered && prop.mouseEntered() ? "#f00" : fill;
-    ctx.strokeStyle = prop.focused && prop.focused() ? "#f00" : "#000";
+    if (attrs.includes("deprecated")) fill = theme.FILL.deprecated;
+    ctx.fillStyle = prop.mouseEntered && prop.mouseEntered() ? theme.HOVERED : fill;
+    ctx.strokeStyle = prop.focused && prop.focused() ? theme.FOCUSED_STROKE : theme.STROKE_DEFAULT;
     ctx.lineWidth = prop.focused && prop.focused() ? 4 : 2;
 
     roundedRect(ctx, -w / 2, -h / 2, w, h, 4);
     ctx.fill();
     // Skip border for background-blending labels (e.g. subclass: fill matches graph bg)
-    if (fill !== "#ecf0f1") {
+    if (fill !== theme.SUBCLASS_BG) {
       ctx.stroke();
     }
 
-    ctx.fillStyle = "#000";
+    ctx.fillStyle = theme.TEXT;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     const propLabel = prop.labelForCurrentLanguage ? prop.labelForCurrentLanguage() : "";
@@ -412,16 +380,16 @@ module.exports = function () {
     const linkType = prop.linkType ? prop.linkType() : "normal";
 
     ctx.save();
-    ctx.strokeStyle = "#000";
+    ctx.strokeStyle = theme.LINK_DEFAULT;
     ctx.lineWidth = 2;
     ctx.setLineDash([]);
     ctx.globalAlpha = 1;
 
     if (prop.mouseEntered && prop.mouseEntered()) {
-      ctx.strokeStyle = "#f00";
+      ctx.strokeStyle = theme.HOVERED;
     } else if (linkType === "rdftype") {
-      ctx.strokeStyle = "#b74";
-      ctx.globalAlpha = 0.6;
+      ctx.strokeStyle = theme.LINK_RDFTYPE;
+      ctx.globalAlpha = theme.RDFTYPE_ALPHA;
     }
     if (linkType === "dashed" || linkType === "anonymous") {
       ctx.setLineDash([8, 8]);
@@ -458,7 +426,7 @@ module.exports = function () {
 
   /**
    * Draws an arrowhead at `tip` pointing away from `toward`.
-   * Shape matches the SVG marker: tip at (0,0), base at (-12,±8).
+   * Shape matches the SVG marker: tip at (0,0), base at (-12,+-8).
    * markerType: "filled" = black fill, "white" = white fill + black stroke, else outline only.
    */
   function drawArrow(tip, toward, markerType) {
@@ -477,16 +445,16 @@ module.exports = function () {
     ctx.closePath();
 
     if (markerType === "filled") {
-      ctx.fillStyle = "#000";
+      ctx.fillStyle = theme.ARROW_FILLED;
       ctx.fill();
     } else if (markerType === "white") {
-      ctx.fillStyle = "#ecf0f1";
+      ctx.fillStyle = theme.ARROW_WHITE;
       ctx.fill();
-      ctx.strokeStyle = "#000";
+      ctx.strokeStyle = theme.STROKE_DEFAULT;
       ctx.lineWidth = 1.5;
       ctx.stroke();
     } else {
-      ctx.strokeStyle = "#000";
+      ctx.strokeStyle = theme.STROKE_DEFAULT;
       ctx.lineWidth = 2;
       ctx.stroke();
     }
@@ -511,7 +479,7 @@ module.exports = function () {
       ctx.font = "10px Helvetica, Arial, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillStyle = prop.mouseEntered && prop.mouseEntered() ? "#f00" : "#000";
+      ctx.fillStyle = prop.mouseEntered && prop.mouseEntered() ? theme.HOVERED : theme.TEXT;
       ctx.fillText(cardText, pos.x + normalV.x, pos.y + normalV.y);
       ctx.restore();
     }
@@ -536,7 +504,7 @@ module.exports = function () {
   function drawNodeHalo(node) {
     const isRect = node.getRectangularRepresentation && node.getRectangularRepresentation();
     ctx.save();
-    ctx.strokeStyle = "#f00";
+    ctx.strokeStyle = theme.HALO;
     ctx.lineWidth = 5;
     if (isRect) {
       roundedRect(ctx, node.x - 45, node.y - 45, 90, 90, 6);
@@ -557,7 +525,7 @@ module.exports = function () {
     const h = (prop.height ? prop.height() : 28) + 16;
     ctx.save();
     ctx.translate(label.x, label.y);
-    ctx.strokeStyle = "#f00";
+    ctx.strokeStyle = theme.HALO;
     ctx.lineWidth = 5;
     roundedRect(ctx, -w / 2, -h / 2, w, h, 6);
     ctx.stroke();

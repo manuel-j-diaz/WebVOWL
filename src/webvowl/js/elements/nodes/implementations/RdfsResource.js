@@ -1,9 +1,8 @@
 const RoundNode = require("../RoundNode");
 
-module.exports = (function (){
-
-  const o = function ( graph ){
-    RoundNode.apply(this, arguments);
+class RdfsResource extends RoundNode {
+  constructor( graph ){
+    super(graph);
 
     const superDrawFunction = this.draw;
 
@@ -16,9 +15,6 @@ module.exports = (function (){
     this.draw = ( element ) => {
       superDrawFunction(element, ["rdf", "dashed"]);
     };
-  };
-  o.prototype = Object.create(RoundNode.prototype);
-  o.prototype.constructor = o;
-  
-  return o;
-}());
+  }
+}
+module.exports = RdfsResource;

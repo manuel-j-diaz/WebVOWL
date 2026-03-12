@@ -7,6 +7,9 @@ const propertyPrototypeMap = require("./elements/properties/propertyMap")();
 const RdfsSubClassOf = require("./elements/properties/implementations/RdfsSubClassOf");
 const curveFunction = require("./util/lineGenerators").curveFunction;
 const CanvasRenderer = require("./rendering/canvasRenderer");
+const { getWorldPosFromScreen, getScreenCoords, getClickedScreenCoords } = require("./graph/coordinateUtils");
+const { storeLinksOnNodes, setPositionOfOldLabelsOnNewLabels, createLowerCasePrototypeMap } = require("./graph/dataUtils");
+const editValidation = require("./graph/editValidation");
 
 
 module.exports = function ( graphContainerSelector ){
@@ -1642,7 +1645,7 @@ module.exports = function ( graphContainerSelector ){
     // using the ids of elements if to ensure that loaded elements will not get the same id;
     for ( let p = 0; p < unfilteredData.properties.length; p++ ) {
       const currentId = unfilteredData.properties[p].id();
-      if ( currentId.indexOf('objectProperty') !== -1 ) {
+      if ( currentId.includes('objectProperty') ) {
         // could be ours;
         const idStr = currentId.split('objectProperty');
         if ( idStr[0].length === 0 ) {
@@ -1656,7 +1659,7 @@ module.exports = function ( graphContainerSelector ){
     // using the ids of elements if to ensure that loaded elements will not get the same id;
     for ( let n = 0; n < unfilteredData.nodes.length; n++ ) {
       const currentId_Nodes = unfilteredData.nodes[n].id();
-      if ( currentId_Nodes.indexOf('Class') !== -1 ) {
+      if ( currentId_Nodes.includes('Class') ) {
         // could be ours;
         const idStr_Nodes = currentId_Nodes.split('Class');
         if ( idStr_Nodes[0].length === 0 ) {
@@ -1918,25 +1921,6 @@ module.exports = function ( graphContainerSelector ){
   /** --------------------------------------------------------- **/
   /** -- force-layout related functions                      -- **/
   /** --------------------------------------------------------- **/
-  function storeLinksOnNodes( nodes, links ){
-    // Single pass: build a map from node → connected links
-    const linkMap = new Map();
-    for ( let j = 0, linksLength = links.length; j < linksLength; j++ ) {
-      const link = links[j];
-      const domain = link.domain();
-      const range = link.range();
-      if ( !linkMap.has(domain) ) linkMap.set(domain, []);
-      linkMap.get(domain).push(link);
-      if ( range !== domain ) {
-        if ( !linkMap.has(range) ) linkMap.set(range, []);
-        linkMap.get(range).push(link);
-      }
-    }
-    for ( let i = 0, nodesLength = nodes.length; i < nodesLength; i++ ) {
-      nodes[i].links(linkMap.get(nodes[i]) || []);
-    }
-  }
-  
   function setForceLayoutData( classNodes, labelNodes, links ){
     let d3Links = [];
     links.forEach(( link ) => {
@@ -1948,21 +1932,6 @@ module.exports = function ( graphContainerSelector ){
     
     force.nodes(d3Nodes);
     force.force("link").links(d3Links);
-  }
-  
-  // The label nodes are positioned randomly, because they are created from scratch if the data changes and lose
-  // their position information. With this hack the position of old labels is copied to the new labels.
-  function setPositionOfOldLabelsOnNewLabels( oldLabelNodes, labelNodes ){
-    labelNodes.forEach(( labelNode ) => {
-      for ( let i = 0; i < oldLabelNodes.length; i++ ) {
-        const oldNode = oldLabelNodes[i];
-        if ( oldNode.equals(labelNode) ) {
-          labelNode.x = oldNode.x;
-          labelNode.y = oldNode.y;
-          break;
-        }
-      }
-    });
   }
   
   // Applies all options that don't change the graph data.
@@ -2080,19 +2049,6 @@ module.exports = function ( graphContainerSelector ){
       }
     }
   }
-  
-  function getScreenCoords( x, y, translate, scale ){
-    const xn = translate[0] + x * scale;
-    const yn = translate[1] + y * scale;
-    return { x: xn, y: yn };
-  }
-  
-  function getClickedScreenCoords( x, y, translate, scale ){
-    const xn = (x - translate[0]) / scale;
-    const yn = (y - translate[1]) / scale;
-    return { x: xn, y: yn };
-  }
-  
   
   function computeDistanceToCenter( node, inverse ){
     let container = node;
@@ -2348,19 +2304,6 @@ module.exports = function ( graphContainerSelector ){
       });
   }
   
-  function getWorldPosFromScreen( x, y, translate, scale ){
-    const temp = scale[0];
-    let xn, yn;
-    if ( temp ) {
-      xn = (x - translate[0]) / temp;
-      yn = (y - translate[1]) / temp;
-    } else {
-      xn = (x - translate[0]) / scale;
-      yn = (y - translate[1]) / scale;
-    }
-    return { x: xn, y: yn };
-  }
-  
   graph.locateSearchResult = function (){
     if ( pulseNodeIds && pulseNodeIds.length > 0 ) {
       // move the center of the viewport to this location
@@ -2403,12 +2346,12 @@ module.exports = function ( graphContainerSelector ){
       if ( forceId !== undefined ) {
         const le_node = force.nodes()[forceId];
         if ( le_node.id ) {
-          if ( pulseNodeIds.indexOf(forceId) === -1 ) {
+          if ( !pulseNodeIds.includes(forceId) ) {
             pulseNodeIds.push(forceId);
           }
         }
         if ( le_node.property ) {
-          if ( pulseNodeIds.indexOf(forceId) === -1 ) {
+          if ( !pulseNodeIds.includes(forceId) ) {
             pulseNodeIds.push(forceId);
           }
         }
@@ -2441,14 +2384,14 @@ module.exports = function ( graphContainerSelector ){
       if ( forceId !== undefined ) {
         const le_node = force.nodes()[forceId];
         if ( le_node.id ) {
-          if ( pulseNodeIds.indexOf(forceId) === -1 ) {
+          if ( !pulseNodeIds.includes(forceId) ) {
             pulseNodeIds.push(forceId);
             le_node.foreground();
             le_node.drawHalo();
           }
         }
         if ( le_node.property ) {
-          if ( pulseNodeIds.indexOf(forceId) === -1 ) {
+          if ( !pulseNodeIds.includes(forceId) ) {
             pulseNodeIds.push(forceId);
             le_node.property().foreground();
             le_node.property().drawHalo();
@@ -2867,12 +2810,12 @@ module.exports = function ( graphContainerSelector ){
     
     // add this to the data;
     unfilteredData.properties.push(aProp);
-    if ( properties.indexOf(aProp) === -1 )
+    if ( !properties.includes(aProp) )
       properties.push(aProp);
     let remId = unfilteredData.properties.indexOf(element);
     if ( remId !== -1 )
       unfilteredData.properties.splice(remId, 1);
-    if ( properties.indexOf(aProp) === -1 )
+    if ( !properties.includes(aProp) )
       properties.push(aProp);
     remId = properties.indexOf(element);
     if ( remId !== -1 )
@@ -3030,14 +2973,6 @@ module.exports = function ( graphContainerSelector ){
     
   };
   
-  function createLowerCasePrototypeMap( prototypeMap ){
-    const newMap = new Map();
-    prototypeMap.forEach(( Prototype ) => {
-      newMap.set(new Prototype().type().toLowerCase(), Prototype);
-    });
-    return newMap;
-  }
-  
   function createNewNodeAtPosition( pos ){
     let aNode, prototype;
     const forceUpdate = true;
@@ -3072,7 +3007,7 @@ module.exports = function ( graphContainerSelector ){
   function addNewNodeElement( element ){
     nodeQuadtree = null;
     unfilteredData.nodes.push(element);
-    if ( classNodes.indexOf(element) === -1 )
+    if ( !classNodes.includes(element) )
       classNodes.push(element);
     
     generateDictionary(unfilteredData);
@@ -3116,205 +3051,23 @@ module.exports = function ( graphContainerSelector ){
   };
   
   graph.genericPropertySanityCheck = function ( domain, range, typeString, header, action ){
-    if ( domain === range && typeString === "rdfs:subClassOf" ) {
-      graph.options().warningModule().showWarning(header,
-        "rdfs:subClassOf can not be created as loops (domain == range)",
-        action, 1, false);
-      return false;
-    }
-    if ( domain === range && typeString === "owl:disjointWith" ) {
-      graph.options().warningModule().showWarning(header,
-        "owl:disjointWith  can not be created as loops (domain == range)",
-        action, 1, false);
-      return false;
-    }
-    // allProps[i].type()==="owl:allValuesFrom"  ||
-    // allProps[i].type()==="owl:someValuesFrom"
-    if ( domain.type() === "owl:Thing" && typeString === "owl:allValuesFrom" ) {
-      graph.options().warningModule().showWarning(header,
-        "owl:allValuesFrom can not originate from owl:Thing",
-        action, 1, false);
-      return false;
-    }
-    if ( domain.type() === "owl:Thing" && typeString === "owl:someValuesFrom" ) {
-      graph.options().warningModule().showWarning(header,
-        "owl:someValuesFrom can not originate from owl:Thing",
-        action, 1, false);
-      return false;
-    }
-    
-    if ( range.type() === "owl:Thing" && typeString === "owl:allValuesFrom" ) {
-      graph.options().warningModule().showWarning(header,
-        "owl:allValuesFrom can not be connected to owl:Thing",
-        action, 1, false);
-      return false;
-    }
-    if ( range.type() === "owl:Thing" && typeString === "owl:someValuesFrom" ) {
-      graph.options().warningModule().showWarning(header,
-        "owl:someValuesFrom can not be connected to owl:Thing",
-        action, 1, false);
-      return false;
-    }
-    
-    return true; // we can Change the domain or range
+    return editValidation.genericPropertySanityCheck(graph, domain, range, typeString, header, action);
   };
   
   graph.checkIfIriClassAlreadyExist = function ( url ){
-    // search for a class node with this url
-    const allNodes = unfilteredData.nodes;
-    for ( let i = 0; i < allNodes.length; i++ ) {
-      if ( elementTools.isDatatype(allNodes[i]) === true || allNodes[i].type() === "owl:Thing" )
-        continue;
-      
-      // now we are a real class;
-      //get class IRI
-      const classIRI = allNodes[i].iri();
-      
-      // this gives me the node for halo
-      if ( url === classIRI ) {
-        return allNodes[i];
-      }
-    }
-    return false;
+    return editValidation.checkIfIriClassAlreadyExist(graph, unfilteredData, url);
   };
   
   graph.classesSanityCheck = function ( classElement, targetType ){
-    // this is added due to someValuesFrom properties
-    // we should not be able to change a classElement to a owl:Thing
-    // when it has a property attached to it that uses these restrictions
-    //
-    
-    if ( targetType === "owl:Class" ) return true;
-    
-    else {
-      // collect all properties which have that one as a domain or range
-      const allProps = unfilteredData.properties;
-      for ( let i = 0; i < allProps.length; i++ ) {
-        if ( allProps[i].range() === classElement || allProps[i].domain() === classElement ) {
-          // check for the type of that property
-          if ( allProps[i].type() === "owl:someValuesFrom" ) {
-            graph.options().warningModule().showWarning("Can not change class type",
-              "The element has a property that is of type owl:someValuesFrom",
-              "Element type not changed!", 1, true);
-            return false;
-          }
-          if ( allProps[i].type() === "owl:allValuesFrom" ) {
-            graph.options().warningModule().showWarning("Can not change class type",
-              "The element has a property that is of type owl:allValuesFrom",
-              "Element type not changed!", 1, true);
-            return false;
-          }
-        }
-      }
-      
-      
-    }
-    return true;
+    return editValidation.classesSanityCheck(graph, unfilteredData, classElement, targetType);
   };
   
   graph.propertyCheckExistenceChecker = function ( property, domain, range ){
-    const allProps = unfilteredData.properties;
-    let i;
-    if ( property.type() === "rdfs:subClassOf" || property.type() === "owl:disjointWith" ) {
-
-      for ( i = 0; i < allProps.length; i++ ) {
-        if ( allProps[i] === property ) continue;
-        if ( allProps[i].domain() === domain && allProps[i].range() === range && allProps[i].type() === property.type() ) {
-          graph.options().warningModule().showWarning("Warning",
-            "This triple already exist!",
-            "Element not created!", 1, false);
-          return false;
-        }
-        if ( allProps[i].domain() === range && allProps[i].range() === domain && allProps[i].type() === property.type() ) {
-          graph.options().warningModule().showWarning("Warning",
-            "Inverse assignment already exist! ",
-            "Element not created!", 1, false);
-          return false;
-        }
-      }
-      return true;
-    }
-    return true;
+    return editValidation.propertyCheckExistenceChecker(graph, unfilteredData, property, domain, range);
   };
   
-  // graph.checkForTripleDuplicate=function(property){
-  //     var domain=property.domain();
-  //     var range=property.range();
-  //     console.log("checking for duplicates");
-  //     var b1= domain.isPropertyAssignedToThisElement(property);
-  //     var b2= range.isPropertyAssignedToThisElement(property);
-  //
-  //     console.log("test domain results in "+ b1);
-  //     console.log("test range results in "+ b1);
-  //
-  //     if (b1  && b2 ){
-  //         graph.options().warningModule().showWarning("Warning",
-  //             "This triple already exist!",
-  //             "Element not created!",1,false);
-  //         return false;
-  //     }
-  //     return true;
-  // };
-  
   graph.sanityCheckProperty = function ( domain, range, typeString ){
-    
-    // check for duplicate triple in the element;
-    
-    
-    if ( typeString === "owl:objectProperty" && graph.options().objectPropertyFilter().enabled() === false ) {
-      graph.options().warningModule().showWarning("Warning",
-        "Object properties are filtered out in the visualization!",
-        "Element not created!", 1, false);
-      return false;
-    }
-    
-    if ( typeString === "owl:disjointWith" && graph.options().disjointPropertyFilter().enabled() === false ) {
-      graph.options().warningModule().showWarning("Warning",
-        "owl:disjointWith properties are filtered out in the visualization!",
-        "Element not created!", 1, false);
-      return false;
-    }
-    
-    
-    if ( domain === range && typeString === "rdfs:subClassOf" ) {
-      graph.options().warningModule().showWarning("Warning",
-        "rdfs:subClassOf can not be created as loops (domain == range)",
-        "Element not created!", 1, false);
-      return false;
-    }
-    if ( domain === range && typeString === "owl:disjointWith" ) {
-      graph.options().warningModule().showWarning("Warning",
-        "owl:disjointWith  can not be created as loops (domain == range)",
-        "Element not created!", 1, false);
-      return false;
-    }
-    
-    if ( domain.type() === "owl:Thing" && typeString === "owl:someValuesFrom" ) {
-      graph.options().warningModule().showWarning("Warning",
-        "owl:someValuesFrom can not originate from owl:Thing",
-        "Element not created!", 1, false);
-      return false;
-    }
-    if ( domain.type() === "owl:Thing" && typeString === "owl:allValuesFrom" ) {
-      graph.options().warningModule().showWarning("Warning",
-        "owl:allValuesFrom can not originate from owl:Thing",
-        "Element not created!", 1, false);
-      return false;
-    }
-    
-    if ( range.type() === "owl:Thing" && typeString === "owl:allValuesFrom" ) {
-      graph.options().warningModule().showWarning("Warning",
-        "owl:allValuesFrom can not be connected to owl:Thing",
-        "Element not created!", 1, false);
-      return false;
-    }
-    if ( range.type() === "owl:Thing" && typeString === "owl:someValuesFrom" ) {
-      graph.options().warningModule().showWarning("Warning",
-        "owl:someValuesFrom can not be connected to owl:Thing",
-        "Element not created!", 1, false);
-      return false;
-    }
-    return true; // we can create a property
+    return editValidation.sanityCheckProperty(graph, domain, range, typeString);
   };
   
   function createNewObjectProperty( domain, range, draggerEndposition ){
@@ -3379,7 +3132,7 @@ module.exports = function ( graphContainerSelector ){
     
     // add this to the data;
     unfilteredData.properties.push(aProp);
-    if ( properties.indexOf(aProp) === -1 )
+    if ( !properties.includes(aProp) )
       properties.push(aProp);
     graph.fastUpdate();
     aProp.labelObject().x = pX;
@@ -3458,7 +3211,7 @@ module.exports = function ( graphContainerSelector ){
     aNode.id(`NodeId${eN++}`);
     // add this property to the nodes;
     unfilteredData.nodes.push(aNode);
-    if ( classNodes.indexOf(aNode) === -1 )
+    if ( !classNodes.includes(aNode) )
       classNodes.push(aNode);
     
     
@@ -3479,7 +3232,7 @@ module.exports = function ( graphContainerSelector ){
     aProp.iri(ontoIri + aProp.id());
     // add this to the data;
     unfilteredData.properties.push(aProp);
-    if ( properties.indexOf(aProp) === -1 )
+    if ( !properties.includes(aProp) )
       properties.push(aProp);
     graph.fastUpdate();
     generateDictionary(unfilteredData);

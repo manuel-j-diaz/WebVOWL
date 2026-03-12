@@ -3,10 +3,9 @@ const CenteringTextElement = require("../../util/CenteringTextElement");
 const drawTools = require("../drawTools")();
 const rectangularElementTools = require("../rectangularElementTools")();
 
-module.exports = (function (){
-
-  const o = function ( graph ){
-    BaseNode.apply(this, arguments);
+class RectangularNode extends BaseNode {
+  constructor( graph ){
+    super(graph);
 
     const that = this;
     let height = 20,
@@ -260,9 +259,6 @@ module.exports = (function (){
     };
 
 
-  };
-  o.prototype = Object.create(BaseNode.prototype);
-  o.prototype.constructor = o;
-
-  return o;
-}());
+  }
+}
+module.exports = RectangularNode;

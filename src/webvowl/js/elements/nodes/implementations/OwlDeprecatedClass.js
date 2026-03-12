@@ -1,17 +1,13 @@
 const RoundNode = require("../RoundNode");
 
-module.exports = (function (){
+class OwlDeprecatedClass extends RoundNode {
+  constructor( graph ){
+    super(graph);
 
-  const o = function ( graph ){
-    RoundNode.apply(this, arguments);
-    
     this.attributes(["deprecated"])
       .type("owl:DeprecatedClass")
       .styleClass("deprecated")
       .indications(["deprecated"]);
-  };
-  o.prototype = Object.create(RoundNode.prototype);
-  o.prototype.constructor = o;
-  
-  return o;
-}());
+  }
+}
+module.exports = OwlDeprecatedClass;

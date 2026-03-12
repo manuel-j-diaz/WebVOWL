@@ -2,10 +2,9 @@ const BaseNode = require("./BaseNode");
 const CenteringTextElement = require("../../util/CenteringTextElement");
 const drawTools = require("../drawTools")();
 
-module.exports = (function (){
-
-  const o = function ( graph ){
-    BaseNode.apply(this, arguments);
+class RoundNode extends BaseNode {
+  constructor( graph ){
+    super(graph);
 
     const that = this;
     let collapsible = false,
@@ -333,9 +332,6 @@ module.exports = (function (){
         })
         .join(", ");
     };
-  };
-  o.prototype = Object.create(BaseNode.prototype);
-  o.prototype.constructor = o;
-
-  return o;
-}());
+  }
+}
+module.exports = RoundNode;

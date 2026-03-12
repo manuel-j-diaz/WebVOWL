@@ -1,10 +1,9 @@
 const BaseProperty = require("../BaseProperty");
 const CenteringTextElement = require("../../../util/CenteringTextElement");
 
-module.exports = (function (){
-
-  const o = function ( graph ){
-    BaseProperty.apply(this, arguments);
+class OwlDisjointWith extends BaseProperty {
+  constructor( graph ){
+    super(graph);
 
     const label = "Disjoint With";
     let shapeElement;
@@ -47,10 +46,7 @@ module.exports = (function (){
     this.markerElement = function (){
       return undefined;
     };
+  }
+}
 
-  };
-  o.prototype = Object.create(BaseProperty.prototype);
-  o.prototype.constructor = o;
-
-  return o;
-}());
+module.exports = OwlDisjointWith;

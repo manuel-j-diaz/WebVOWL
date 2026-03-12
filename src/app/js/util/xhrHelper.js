@@ -1,12 +1,25 @@
-function xhrRequest(url, mimeType, callback) {
-  const xhr = new XMLHttpRequest();
-  xhr.open("GET", url, true);
-  if (mimeType) xhr.setRequestHeader("Accept", mimeType);
-  xhr.onload = () => {
-    if (xhr.status >= 200 && xhr.status < 300) callback(null, xhr);
-    else callback(xhr, null);
-  };
-  xhr.onerror = () => { callback(xhr, null); };
-  xhr.send();
+/**
+ * Fetch-based HTTP helpers.
+ * Always resolve — never reject on HTTP errors, only on network failures (caught internally).
+ * Returns { ok, status, responseText }.
+ */
+
+function fetchGet(url, mimeType) {
+  const headers = {};
+  if (mimeType) headers["Accept"] = mimeType;
+  return fetch(url, { headers })
+    .then((response) => response.text().then((text) => ({
+      ok: response.ok, status: response.status, responseText: text
+    })))
+    .catch(() => ({ ok: false, status: 0, responseText: "" }));
 }
-module.exports = xhrRequest;
+
+function fetchPost(url, body) {
+  return fetch(url, { method: "POST", body })
+    .then((response) => response.text().then((text) => ({
+      ok: response.ok, status: response.status, responseText: text
+    })))
+    .catch(() => ({ ok: false, status: 0, responseText: "" }));
+}
+
+module.exports = { fetchGet, fetchPost };

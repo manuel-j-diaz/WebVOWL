@@ -3,10 +3,9 @@ const BoxArrowLink = require("../links/BoxArrowLink");
 const RoundNode = require("./RoundNode");
 const drawTools = require("../drawTools")();
 
-module.exports = (function (){
-
-  const o = function ( graph ){
-    RoundNode.apply(this, arguments);
+class SetOperatorNode extends RoundNode {
+  constructor( graph ){
+    super(graph);
 
     const that = this,
       superHoverHighlightingFunction = that.setHoverHighlighting,
@@ -65,9 +64,6 @@ module.exports = (function (){
 
       that.textBlock(textElement);
     };
-  };
-  o.prototype = Object.create(RoundNode.prototype);
-  o.prototype.constructor = o;
-
-  return o;
-}());
+  }
+}
+module.exports = SetOperatorNode;

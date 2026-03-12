@@ -1,12 +1,12 @@
-var path = require("path");
-var webpack = require("webpack");
-var CopyWebpackPlugin = require("copy-webpack-plugin");
-var MiniCssExtractPlugin = require("mini-css-extract-plugin");
-var HtmlWebpackPlugin = require("html-webpack-plugin");
-var pkg = require("./package.json");
+const path = require("path");
+const webpack = require("webpack");
+const CopyWebpackPlugin = require("copy-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const pkg = require("./package.json");
 
 module.exports = function(env, argv) {
-	var isRelease = argv && argv.mode === "production";
+	const isRelease = argv && argv.mode === "production";
 
 	return {
 		cache: true,
@@ -23,6 +23,12 @@ module.exports = function(env, argv) {
 				name: "[name]",
 				type: "assign"
 			}
+		},
+		optimization: {
+			minimize: isRelease,
+			usedExports: true,
+			concatenateModules: isRelease,
+			splitChunks: false
 		},
 		module: {
 			rules: [

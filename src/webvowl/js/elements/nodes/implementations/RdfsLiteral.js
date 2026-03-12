@@ -1,9 +1,8 @@
 const DatatypeNode = require("../DatatypeNode");
 
-module.exports = (function (){
-
-  const o = function ( graph ){
-    DatatypeNode.apply(this, arguments);
+class RdfsLiteral extends DatatypeNode {
+  constructor( graph ){
+    super(graph);
 
     const superDrawFunction = this.draw,
       superLabelFunction = this.label;
@@ -17,14 +16,11 @@ module.exports = (function (){
     this.draw = ( element ) => {
       superDrawFunction(element, ["dashed"]);
     };
-    
+
     this.label = function ( p ){
       if ( !arguments.length ) return superLabelFunction();
       return this;
     };
-  };
-  o.prototype = Object.create(DatatypeNode.prototype);
-  o.prototype.constructor = o;
-  
-  return o;
-}());
+  }
+}
+module.exports = RdfsLiteral;

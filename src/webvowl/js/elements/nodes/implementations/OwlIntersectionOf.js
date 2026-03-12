@@ -1,9 +1,8 @@
 const SetOperatorNode = require("../SetOperatorNode");
 
-module.exports = (function (){
-
-  const o = function ( graph ){
-    SetOperatorNode.apply(this, arguments);
+class OwlIntersectionOf extends SetOperatorNode {
+  constructor( graph ){
+    super(graph);
 
     const that = this,
       superDrawFunction = that.draw,
@@ -59,9 +58,6 @@ module.exports = (function (){
 
       return startPosition + rightSide + leftSide;
     }
-  };
-  o.prototype = Object.create(SetOperatorNode.prototype);
-  o.prototype.constructor = o;
-  
-  return o;
-}());
+  }
+}
+module.exports = OwlIntersectionOf;

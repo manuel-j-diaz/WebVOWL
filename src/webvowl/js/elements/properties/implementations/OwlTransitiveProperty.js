@@ -1,16 +1,13 @@
 const BaseProperty = require("../BaseProperty");
 
-module.exports = (function (){
-
-  const o = function ( graph ){
-    BaseProperty.apply(this, arguments);
+class OwlTransitiveProperty extends BaseProperty {
+  constructor( graph ){
+    super(graph);
 
     this.attributes(["transitive"])
       .styleClass("transitiveproperty")
       .type("owl:TransitiveProperty");
-  };
-  o.prototype = Object.create(BaseProperty.prototype);
-  o.prototype.constructor = o;
+  }
+}
 
-  return o;
-}());
+module.exports = OwlTransitiveProperty;

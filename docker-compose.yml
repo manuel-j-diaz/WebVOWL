@@ -1,9 +1,13 @@
-version: '3'
-
 services:
 
     owl2vowl:
         build: ./owl2vowl
+        healthcheck:
+            test: ["CMD", "curl", "-sf", "http://localhost:8080/serverTimeStamp"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 30s
         networks:
             - default
             - semantic-web
@@ -13,7 +17,14 @@ services:
         ports:
             - "${PORT:-8080}:80"
         depends_on:
-            - owl2vowl
+            owl2vowl:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1/ || exit 1"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 10s
         environment:
             - FUSEKI_URL=${FUSEKI_URL:-http://fuseki:3030}
             - FUSEKI_AUTH_HEADER=${FUSEKI_AUTH_HEADER}

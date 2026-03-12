@@ -1,10 +1,9 @@
 const RoundNode = require("../RoundNode");
 const drawTools = require("../../drawTools")();
 
-module.exports = (function (){
-
-  const o = function ( graph ){
-    RoundNode.apply(this, arguments);
+class OwlEquivalentClass extends RoundNode {
+  constructor( graph ){
+    super(graph);
 
     const CIRCLE_SIZE_DIFFERENCE = 4;
     let renderingElement;
@@ -72,9 +71,6 @@ module.exports = (function (){
     that.setHoverHighlighting = ( enable ) => {
       that.nodeElement().selectAll("circle:last-of-type").classed("hovered", enable);
     };
-  };
-  o.prototype = Object.create(RoundNode.prototype);
-  o.prototype.constructor = o;
-  
-  return o;
-}());
+  }
+}
+module.exports = OwlEquivalentClass;

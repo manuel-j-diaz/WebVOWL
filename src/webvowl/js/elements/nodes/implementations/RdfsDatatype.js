@@ -1,9 +1,8 @@
 const DatatypeNode = require("../DatatypeNode");
 
-module.exports = (function (){
-
-  const o = function ( graph ){
-    DatatypeNode.apply(this, arguments);
+class RdfsDatatype extends DatatypeNode {
+  constructor( graph ){
+    super(graph);
     let dTypeString = "undefined";
     this.attributes(["datatype"])
       .type("rdfs:Datatype")
@@ -11,11 +10,8 @@ module.exports = (function (){
     this.dType = function ( val ){
       if ( !arguments.length ) return dTypeString;
       dTypeString = val;
-      
+
     };
-  };
-  o.prototype = Object.create(DatatypeNode.prototype);
-  o.prototype.constructor = o;
-  
-  return o;
-}());
+  }
+}
+module.exports = RdfsDatatype;

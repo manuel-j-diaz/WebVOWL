@@ -1,34 +1,6 @@
 const PlainLink = require("./PlainLink");
 
 
-module.exports = ArrowLink;
-
-function ArrowLink( domain, range, property ){
-  PlainLink.apply(this, arguments);
-}
-
-ArrowLink.prototype = Object.create(PlainLink.prototype);
-ArrowLink.prototype.constructor = ArrowLink;
-
-
-ArrowLink.prototype.draw = function ( linkGroup, markerContainer ){
-  const property = this.label().property();
-  const inverse = this.label().inverse();
-
-  createPropertyMarker(markerContainer, property);
-  if ( inverse ) {
-    createInverseMarker(markerContainer, inverse);
-  }
-
-  PlainLink.prototype.draw.apply(this, arguments);
-
-  // attach the markers to the link
-  linkGroup.attr("marker-end", `url(#${property.markerId()})`);
-  if ( inverse ) {
-    linkGroup.attr("marker-start", `url(#${inverse.markerId()})`);
-  }
-};
-
 function createPropertyMarker( markerContainer, property ){
   const marker = appendBasicMarker(markerContainer, property);
   //marker.attr("refX", 12);
@@ -69,3 +41,29 @@ function appendBasicMarker( markerContainer, property ){
     //.attr("markerUnits", "userSpaceOnUse")
     .attr("orient", "auto");
 }
+
+class ArrowLink extends PlainLink {
+  constructor( domain, range, property ){
+    super(domain, range, property);
+  }
+
+  draw( linkGroup, markerContainer ){
+    const property = this.label().property();
+    const inverse = this.label().inverse();
+
+    createPropertyMarker(markerContainer, property);
+    if ( inverse ) {
+      createInverseMarker(markerContainer, inverse);
+    }
+
+    super.draw(linkGroup, markerContainer);
+
+    // attach the markers to the link
+    linkGroup.attr("marker-end", `url(#${property.markerId()})`);
+    if ( inverse ) {
+      linkGroup.attr("marker-start", `url(#${inverse.markerId()})`);
+    }
+  }
+}
+
+module.exports = ArrowLink;

@@ -5,17 +5,14 @@ const forceLayoutNodeFunctions = require("../forceLayoutNodeFunctions")();
 const rectangularElementTools = require("../rectangularElementTools")();
 const math = require("../../util/math")();
 
-module.exports = (function (){
-  
-  // Static variables
-  const labelHeight = 28,
-    labelWidth = 80,
-    smallestRadius = labelHeight / 2;
+// Static variables
+const labelHeight = 28,
+  labelWidth = 80,
+  smallestRadius = labelHeight / 2;
 
-
-  // Constructor, private variables and privileged methods
-  const Base = function ( graph ){
-    BaseElement.apply(this, arguments);
+class BaseProperty extends BaseElement {
+  constructor( graph ){
+    super(graph);
 
     const that = this;
     // Basic attributes
@@ -50,16 +47,16 @@ module.exports = (function (){
       redundantProperties = [];
 
     const defaultWidth = 80;
-    
-    
+
+
     this.existingPropertyIRI = function ( url ){
       return graph.options().editSidebar().checkForExistingURL(url);
     };
-    
+
     this.getHalos = function (){
       return haloGroupElement;
     };
-    
+
     this.getPin = function (){
       return pinGroupElement;
     };
@@ -72,7 +69,7 @@ module.exports = (function (){
         if ( that.inverse() && once !== true ) {
           that.inverse().labelObject(lo, true);
         }
-        
+
       }
     };
     this.hide = function ( val ){
@@ -81,124 +78,124 @@ module.exports = (function (){
       if ( that.cardinalityElement() )
         that.cardinalityElement().classed("hidden", val);
     };
-    
+
     // Properties
     this.cardinality = function ( p ){
       if ( !arguments.length ) return cardinality;
       cardinality = p;
       return this;
     };
-    
+
     this.cardinalityElement = function ( p ){
       if ( !arguments.length ) return cardinalityElement;
       cardinalityElement = p;
       return this;
     };
-    
+
     this.domain = function ( p ){
       if ( !arguments.length ) return domain;
       domain = p;
       return this;
     };
-    
+
     this.inverse = function ( p ){
       if ( !arguments.length ) return inverse;
       inverse = p;
       return this;
     };
-    
+
     this.labelElement = function ( p ){
       if ( !arguments.length ) return labelElement;
       labelElement = p;
       return this;
     };
-    
+
     this.labelVisible = function ( p ){
       if ( !arguments.length ) return labelVisible;
       labelVisible = p;
       return this;
     };
-    
+
     this.link = function ( p ){
       if ( !arguments.length ) return link;
       link = p;
       return this;
     };
-    
+
     this.linkGroup = function ( p ){
       if ( !arguments.length ) return linkGroup;
       linkGroup = p;
       return this;
     };
-    
+
     this.linkType = function ( p ){
       if ( !arguments.length ) return linkType;
       linkType = p;
       return this;
     };
-    
+
     this.markerElement = function ( p ){
       if ( !arguments.length ) return markerElement;
       markerElement = p;
       return this;
     };
-    
+
     this.markerType = function ( p ){
       if ( !arguments.length ) return markerType;
       markerType = p;
       return this;
     };
-    
+
     this.maxCardinality = function ( p ){
       if ( !arguments.length ) return maxCardinality;
       maxCardinality = p;
       return this;
     };
-    
+
     this.minCardinality = function ( p ){
       if ( !arguments.length ) return minCardinality;
       minCardinality = p;
       return this;
     };
-    
+
     this.range = function ( p ){
       if ( !arguments.length ) return range;
       range = p;
       return this;
     };
-    
+
     this.redundantProperties = function ( p ){
       if ( !arguments.length ) return redundantProperties;
       redundantProperties = p;
       return this;
     };
-    
+
     this.subproperties = function ( p ){
       if ( !arguments.length ) return subproperties;
       subproperties = p;
       return this;
     };
-    
+
     this.superproperties = function ( p ){
       if ( !arguments.length ) return superproperties;
       superproperties = p;
       return this;
     };
-    
-    
+
+
     // Functions
     this.distanceToBorder = function ( dx, dy ){
       return rectangularElementTools.distanceToBorder(that, dx, dy);
     };
-    
+
     this.linkHasMarker = function (){
       return linkType !== "dashed";
     };
-    
+
     this.markerId = function (){
       return `marker${that.id()}`;
     };
-    
+
     this.toggleFocus = function (){
       that.focused(!that.focused());
       labelElement.select("rect").classed("focused", that.focused());
@@ -208,19 +205,19 @@ module.exports = (function (){
     this.getShapeElement = function (){
       return shapeElement;
     };
-    
+
     this.textBlock = function (){
       return textElement;
     };
-    
+
     this.redrawElement = function (){
       shapeElement.remove();
       textElement.remove();
-      
+
       that.drawLabel(that.labelElement());
       that.animateDynamicLabelWidth(graph.options().dynamicLabelWidth());
-      
-      
+
+
       // shapeElement=this.addRect(that.labelElement());
       //
       // var equivalentsString = that.equivalentsString();
@@ -230,9 +227,9 @@ module.exports = (function (){
       // textElement.addText(this.labelForCurrentLanguage(), "", suffixForFollowingEquivalents);
       // textElement.addEquivalents(equivalentsString);
       // textElement.addSubText(this.indicationString());
-      
+
     };
-    
+
     // Reused functions TODO refactor
     this.draw = function ( labelGroup ){
       function attachLabel( property ){
@@ -244,13 +241,13 @@ module.exports = (function (){
         property.drawLabel(labelContainer);
         return labelContainer;
       }
-      
+
       if ( !that.labelVisible() ) {
         return undefined;
       }
       if ( graph.options().dynamicLabelWidth() === true ) myWidth = Math.min(that.getMyWidth(), graph.options().maxLabelWidth());
       else                              myWidth = defaultWidth;
-      
+
       that.labelElement(attachLabel(that));
       // Draw an inverse label and reposition both labels if necessary
       if ( that.inverse() ) {
@@ -264,19 +261,19 @@ module.exports = (function (){
           .labelElement()
           .attr("transform", `translate(0,${yTransformation})`);
       }
-      
+
       if ( that.pinned() ) {
         that.drawPin();
       } else if ( that.inverse() && that.inverse().pinned() ) {
         that.inverse().drawPin();
       }
-      
+
       if ( that.halo() )
         that.drawHalo(false);
-      
+
       return that.labelElement();
     };
-    
+
     this.addRect = function ( labelContainer ){
       const rect = labelContainer.append("rect")
         .classed(that.styleClass(), true)
@@ -291,14 +288,14 @@ module.exports = (function (){
         .on("mouseout", () => {
           onMouseOut();
         });
-      
+
       rect.append("title")
         .text(that.labelForCurrentLanguage());
-      
+
       if ( that.visualAttributes() ) {
         rect.classed(that.visualAttributes(), true);
       }
-      
+
       let bgColor = that.backgroundColor();
 
       if ( that.attributes().indexOf("deprecated") > -1 ) {
@@ -308,7 +305,7 @@ module.exports = (function (){
         rect.classed("deprecatedproperty", false);
       }
       rect.style("fill", bgColor);
-      
+
       return rect;
     };
     this.drawLabel = function ( labelContainer ){
@@ -326,7 +323,7 @@ module.exports = (function (){
       textElement.addEquivalents(equivalentsString);
       textElement.addSubText(this.indicationString());
     };
-    
+
     this.equivalentsString = function (){
       const equivalentProperties = that.equivalents();
       if ( !equivalentProperties ) {
@@ -342,14 +339,14 @@ module.exports = (function (){
         })
         .join(", ");
     };
-    
+
     this.drawCardinality = function ( container ){
       const cardinalityText = this.generateCardinalityText();
-      
+
       if ( cardinalityText ) {
         that.cardinalityElement(container);
         if ( cardinalityText.indexOf("A") === 0 && cardinalityText.length === 1 ) {
-          
+
           // replacing text elements to svg elements;
           container.classed("cardinality", true)
             .attr("text-anchor", "middle")
@@ -381,7 +378,7 @@ module.exports = (function (){
         return false;
       }
     };
-    
+
     this.generateCardinalityText = function (){
       if ( that.cardinality() ) {
         return that.cardinality();
@@ -391,7 +388,7 @@ module.exports = (function (){
         return `${minBoundary}..${maxBoundary}`;
       }
     };
-    
+
     that.setHighlighting = function ( enable ){
       if ( that.labelElement && that.labelElement() ) {
         that.labelElement().select("rect").classed("hovered", enable);
@@ -414,12 +411,12 @@ module.exports = (function (){
 
       });
       let inversed = false;
-      
+
       if ( graph.ignoreOtherHoverEvents() === false ) {
         if ( that.inverse() ) {
           inversed = true;
         }
-        
+
         if ( graph.isTouchDevice() === false ) {
           graph.activateHoverElementsForProperties(enable, that, inversed);
         }
@@ -436,7 +433,7 @@ module.exports = (function (){
         }
       }
     };
-    
+
     /**
      * Combines the sub- and superproperties into a single array, because
      * they're often used equivalently.
@@ -454,7 +451,7 @@ module.exports = (function (){
 
       return properties;
     }
-    
+
     /**
      * Foregrounds the property, its inverse and the link.
      */
@@ -474,7 +471,7 @@ module.exports = (function (){
       }
       linkContainer.appendChild(selectedLinkGroup);
     };
-    
+
     /**
      * Foregrounds the sub- and superproperties of this property.
      * This is separated from the foreground-function to prevent endless loops.
@@ -486,7 +483,7 @@ module.exports = (function (){
         if ( property.foreground ) property.foreground();
       });
     }
-    
+
     function onMouseOver(){
       if ( that.mouseEntered() || ignoreLocalHoverEvents === true ) {
         return;
@@ -496,17 +493,17 @@ module.exports = (function (){
       that.foreground();
       foregroundSubAndSuperProperties();
     }
-    
+
     function onMouseOut(){
       that.mouseEntered(false);
       that.setHighlighting(false);
     }
-    
+
     this.drawPin = function (){
       that.pinned(true);
       if ( graph.options().dynamicLabelWidth() === true ) myWidth = that.getMyWidth();
       else                              myWidth = defaultWidth;
-      
+
       if ( that.inverse() ) {
         // check which element is rendered on top and add a pin to it
         const tr_that = that.labelElement().attr("transform");
@@ -514,20 +511,20 @@ module.exports = (function (){
 
         const thatY = /translate\(\s*([^\s,)]+)[ ,]([^\s,)]+)/.exec(tr_that)[2];
         const invY = /translate\(\s*([^\s,)]+)[ ,]([^\s,)]+)/.exec(tr_inv)[2];
-        
+
         if ( thatY < invY )
           pinGroupElement = drawTools.drawPin(that.labelElement(), -0.5 * that.width() + 10, -25, this.removePin, graph.options().showDraggerObject, graph.options().useAccuracyHelper());
         else
           pinGroupElement = drawTools.drawPin(that.inverse().labelElement(), -0.5 * that.inverse().width() + 10, -25, this.removePin, graph.options().showDraggerObject, graph.options().useAccuracyHelper());
-        
+
       }
       else {
         pinGroupElement = drawTools.drawPin(that.labelElement(), -0.5 * that.width() + 10, -25, this.removePin, graph.options().showDraggerObject, graph.options().useAccuracyHelper());
       }
-      
-      
+
+
     };
-    
+
     /**
      * Removes the pin and refreshs the graph to update the force layout.
      */
@@ -538,7 +535,7 @@ module.exports = (function (){
       }
       graph.updateStyle();
     };
-    
+
     this.removeHalo = function (){
       that.halo(false);
       if ( haloGroupElement ) {
@@ -546,7 +543,7 @@ module.exports = (function (){
         haloGroupElement = null;
       }
     };
-    
+
     this.animationProcess = function (){
       let animRuns = false;
       if ( that.getHalos() ) {
@@ -565,7 +562,7 @@ module.exports = (function (){
       }
       return animRuns;
     };
-    
+
     this.drawHalo = function ( pulseAnimation ){
       that.halo(true);
       const offset = 0;
@@ -603,7 +600,7 @@ module.exports = (function (){
         pulseItem.attr("animationRunning", false);
       }
     };
-    
+
     this.getMyWidth = function (){
       const text = that.labelForCurrentLanguage();
       myWidth = measureTextWidth(text, "text") + 20;
@@ -612,10 +609,10 @@ module.exports = (function (){
       const indicatorWidth = measureTextWidth(indicatorText, "subtext") + 20;
       if ( indicatorWidth > myWidth )
         myWidth = indicatorWidth;
-      
+
       return myWidth;
     };
-    
+
     function measureTextWidth( text, textStyle ){
       // Set a default value
       if ( !textStyle ) {
@@ -631,20 +628,20 @@ module.exports = (function (){
       d.remove();
       return w;
     }
-    
+
     this.textWidth = function (){
       return myWidth;
     };
     this.width = function (){
       return myWidth;
     };
-    
+
     this.animateDynamicLabelWidth = function ( dynamic ){
       that.removeHalo();
       if ( shapeElement === undefined ) {// this handles setOperatorProperties which dont have a shapeElement!
         return;
       }
-      
+
       const h = that.height();
       if ( dynamic === true ) {
         myWidth = Math.min(that.getMyWidth(), graph.options().maxLabelWidth());
@@ -677,26 +674,26 @@ module.exports = (function (){
           .duration(100);
       }
     };
-    
+
     this.redrawLabelText = function (){
       textElement.remove();
       that.addTextLabelElement();
       that.animateDynamicLabelWidth(graph.options().dynamicLabelWidth());
       shapeElement.select("title").text(that.labelForCurrentLanguage());
     };
-    
+
     this.addTextLabelElement = function (){
       const labelContainer = that.labelElement();
 
       const equivalentsString = that.equivalentsString();
       const suffixForFollowingEquivalents = equivalentsString ? "," : "";
-      
+
       textElement = new CenteringTextElement(labelContainer, this.backgroundColor());
       textElement.addText(this.labelForCurrentLanguage(), "", suffixForFollowingEquivalents);
       textElement.addEquivalents(equivalentsString);
       textElement.addSubText(this.indicationString());
     };
-    
+
     this.updateTextElement = function (){
       textElement.updateAllTextElements();
     };
@@ -705,7 +702,7 @@ module.exports = (function (){
         return;
       that.raiseDoubleClickEdit(true);
     };
-    
+
     this.raiseDoubleClickEdit = function ( forceIRISync ){
       d3.selectAll(".foreignelements").remove();
       if ( that.labelElement() === undefined || this.type() === "owl:disjointWith" || this.type() === "rdfs:subClassOf" ) {
@@ -833,9 +830,9 @@ module.exports = (function (){
 
 
         });	// add a foreiner element to this thing;
-      
+
     };
-    
+
     // update hover elements
     function updateHoverElements( enable ){
       if ( graph.ignoreOtherHoverEvents() === false ) {
@@ -848,7 +845,7 @@ module.exports = (function (){
         }
       }
     }
-    
+
     that.copyInformation = function ( other ){
       that.label(other.label());
       that.iri(other.iri());
@@ -862,27 +859,25 @@ module.exports = (function (){
         that.backupLabel(other.backupLabel());
       }
     };
-    
+
     forceLayoutNodeFunctions.addTo(this);
-  };
-  
-  Base.prototype = Object.create(BaseElement.prototype);
-  Base.prototype.constructor = Base;
-  
-  Base.prototype.height = function (){
+  }
+
+  height(){
     return labelHeight;
-  };
-  
-  Base.prototype.width = function (){
+  }
+
+  width(){
     return labelWidth;
-  };
-  
-  Base.prototype.actualRadius = function (){
+  }
+
+  actualRadius(){
     return smallestRadius;
-  };
-  
-  Base.prototype.textWidth = Base.prototype.width;
-  
-  
-  return Base;
-}());
+  }
+
+  textWidth(){
+    return labelWidth;
+  }
+}
+
+module.exports = BaseProperty;

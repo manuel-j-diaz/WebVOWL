@@ -1,4 +1,4 @@
-const xhrRequest = require("../util/xhrHelper");
+const { fetchGet, fetchPost } = require("../util/xhrHelper");
 
 module.exports = function ( graph ){
 
@@ -302,30 +302,26 @@ module.exports = function ( graph ){
   };
   
   function getLoadingStatusOnceCallBacked( callback, parameter ){
-    xhrRequest(`loadingStatus?sessionId=${conversion_sessionId}`, "application/text", ( error, request ) => {
-      if ( error ) {
+    fetchGet(`loadingStatus?sessionId=${conversion_sessionId}`, "application/text").then(( response ) => {
+      if ( !response.ok ) {
         console.log("ontologyMenu getLoadingStatusOnceCallBacked throws error");
         console.log("---------Error -----------");
-        console.log(error);
-        console.log("---------Request -----------");
-        console.log(request);
+        console.log(response);
       }
-      setLoadingStatusInfo(request.responseText);
+      setLoadingStatusInfo(response.responseText);
       callback(parameter);
     });
   }
   
   function getLoadingStatusTimeLooped(){
-    xhrRequest(`loadingStatus?sessionId=${conversion_sessionId}`, "application/text", ( error, request ) => {
-      if ( error ) {
+    fetchGet(`loadingStatus?sessionId=${conversion_sessionId}`, "application/text").then(( response ) => {
+      if ( !response.ok ) {
         console.log("ontologyMenu getLoadingStatusTimeLooped throws error");
         console.log("---------Error -----------");
-        console.log(error);
-        console.log("---------Request -----------");
-        console.log(request);
+        console.log(response);
       }
       if ( stopTimer === false ) {
-        setLoadingStatusInfo(request.responseText);
+        setLoadingStatusInfo(response.responseText);
         timedLoadingStatusLogger();
       }
     });
@@ -341,9 +337,9 @@ module.exports = function ( graph ){
   }
   
   function callbackUpdateLoadingMessage( msg ){
-    xhrRequest("loadingStatus", "application/text", ( error, request ) => {
-      if ( request !== undefined ) {
-        setLoadingStatusInfo(`${request.responseText}<br>${msg}`);
+    fetchGet("loadingStatus", "application/text").then(( response ) => {
+      if ( response.ok ) {
+        setLoadingStatusInfo(`${response.responseText}<br>${msg}`);
       } else {
         append_message(msg);
       }
@@ -360,20 +356,15 @@ module.exports = function ( graph ){
     const localThreadId = parameter[2];
     stopTimer = false;
     timedLoadingStatusLogger();
-    xhrRequest(relativePath, "application/json", ( error, request ) => {
-      const loadingSuccessful = !error;
-      // check if error occurred or responseText is empty
-      if ( (error !== null && error.status === 500) || (request && request.responseText.length === 0) ) {
+    fetchGet(relativePath, "application/json").then(( response ) => {
+      if ( !response.ok || response.responseText.length === 0 ) {
         clearTimeout(loadingStatusTimer);
         stopTimer = true;
-        getLoadingStatusOnceCallBacked(callbackFromIRI_URL_ERROR, [error, request, localThreadId]);
-      }
-      let jsonText;
-      if ( loadingSuccessful ) {
+        getLoadingStatusOnceCallBacked(callbackFromIRI_URL_ERROR, [response, null, localThreadId]);
+      } else {
         clearTimeout(loadingStatusTimer);
         stopTimer = true;
-        jsonText = request.responseText;
-        getLoadingStatusOnceCallBacked(callbackFromIRI_Success, [jsonText, ontoName, localThreadId]);
+        getLoadingStatusOnceCallBacked(callbackFromIRI_Success, [response.responseText, ontoName, localThreadId]);
       }
     });
   };
@@ -384,21 +375,17 @@ module.exports = function ( graph ){
     const sessionId = parameter[1];
     stopTimer = false;
     timedLoadingStatusLogger();
-    
+
     const formData = new FormData();
     formData.append("input", input);
     formData.append("sessionId", sessionId);
-    const xhr = new XMLHttpRequest();
 
-    xhr.open("POST", "directInput", true);
-    xhr.onload = () => {
+    timedLoadingStatusLogger();
+    fetchPost("directInput", formData).then(( response ) => {
       clearTimeout(loadingStatusTimer);
       stopTimer = true;
-      getLoadingStatusOnceCallBacked(callbackForConvert, [xhr, input, sessionId]);
-    };
-    timedLoadingStatusLogger();
-    xhr.send(formData);
-    
+      getLoadingStatusOnceCallBacked(callbackForConvert, [response, input, sessionId]);
+    });
   };
   function callbackFromIRI_Success( parameter ){
     const local_conversionId = parameter[2];
@@ -434,22 +421,15 @@ module.exports = function ( graph ){
     const local_conversionId = parameter[2];
     stopTimer = false;
     timedLoadingStatusLogger();
-    xhrRequest(relativePath, "application/json", ( error, request ) => {
-      let loadingSuccessful = !error;
-      // check if error occurred or responseText is empty
-      if ( (error !== null && error.status === 500) || (request && request.responseText.length === 0) ) {
+    fetchGet(relativePath, "application/json").then(( response ) => {
+      if ( !response.ok || response.responseText.length === 0 ) {
         clearTimeout(loadingStatusTimer);
         stopTimer = true;
-        loadingSuccessful = false;
-        console.log(request);
-        console.log(request.responseText.length);
-        getLoadingStatusOnceCallBacked(callbackFromJSON_URL_ERROR, [error, request, local_conversionId]);
-      }
-      if ( loadingSuccessful ) {
+        getLoadingStatusOnceCallBacked(callbackFromJSON_URL_ERROR, [response, null, local_conversionId]);
+      } else {
         clearTimeout(loadingStatusTimer);
         stopTimer = true;
-        const jsonText = request.responseText;
-        getLoadingStatusOnceCallBacked(callbackFromJSON_Success, [jsonText, ontoName, local_conversionId]);
+        getLoadingStatusOnceCallBacked(callbackFromJSON_Success, [response.responseText, ontoName, local_conversionId]);
       }
     });
   };
@@ -464,8 +444,7 @@ module.exports = function ( graph ){
   }
   
   function callbackFromJSON_URL_ERROR( parameter ){
-    const error = parameter[0];
-    const request = parameter[1];
+    const response = parameter[0];
     const local_conversionId = parameter[2];
     if ( local_conversionId !== conversion_sessionId ) {
       console.log("This thread has been canceled!!");
@@ -475,11 +454,11 @@ module.exports = function ( graph ){
     callbackUpdateLoadingMessage("<br><span style='color:red'> Failed to convert the file.</span> " +
       " Ontology could not be loaded.<br>Is it a valid OWL ontology? Please check with <a target=\"_blank\"" +
       "href=\"http://visualdataweb.de/validator/\">OWL Validator</a>");
-    
-    if ( error !== null && error.status === 500 ) {
+
+    if ( response.status === 500 ) {
       append_message("<span style='color:red'>Could not find ontology  at the URL</span>");
     }
-    if ( request && request.responseText.length === 0 ) {
+    if ( response.responseText.length === 0 ) {
       append_message("<span style='color:red'>Received empty graph</span>");
     }
     graph.handleOnLoadingError();
@@ -488,8 +467,7 @@ module.exports = function ( graph ){
   
   
   function callbackFromIRI_URL_ERROR( parameter ){
-    const error = parameter[0];
-    const request = parameter[1];
+    const response = parameter[0];
     const local_conversionId = parameter[2];
     if ( local_conversionId !== conversion_sessionId ) {
       console.log("This thread has been canceled!!");
@@ -499,11 +477,11 @@ module.exports = function ( graph ){
     callbackUpdateLoadingMessage("<br><span style='color:red'> Failed to convert the file.</span> " +
       " Ontology could not be loaded.<br>Is it a valid OWL ontology? Please check with <a target=\"_blank\"" +
       "href=\"http://visualdataweb.de/validator/\">OWL Validator</a>");
-    
-    if ( error !== null && error.status === 500 ) {
+
+    if ( response.status === 500 ) {
       append_message("<span style='color:red'>Could not find ontology  at the URL</span>");
     }
-    if ( request && request.responseText.length === 0 ) {
+    if ( response.responseText.length === 0 ) {
       append_message("<span style='color:red'>Received empty graph</span>");
     }
     graph.handleOnLoadingError();
@@ -544,21 +522,17 @@ module.exports = function ( graph ){
     const formData = new FormData();
     formData.append("ontology", selectedFile);
     formData.append("sessionId", local_threadId);
-    const xhr = new XMLHttpRequest();
 
-    xhr.open("POST", "convert", true);
-    xhr.onload = () => {
+    timedLoadingStatusLogger();
+    fetchPost("convert", formData).then(( response ) => {
       clearTimeout(loadingStatusTimer);
       stopTimer = true;
-      console.log(xhr);
-      getLoadingStatusOnceCallBacked(callbackForConvert, [xhr, filename, local_threadId]);
-    };
-    timedLoadingStatusLogger();
-    xhr.send(formData);
+      getLoadingStatusOnceCallBacked(callbackForConvert, [response, filename, local_threadId]);
+    });
   }
   
   function callbackForConvert( parameter ){
-    const xhr = parameter[0];
+    const response = parameter[0];
     const filename = parameter[1];
     const local_threadId = parameter[2];
     if ( local_threadId !== conversion_sessionId ) {
@@ -566,20 +540,20 @@ module.exports = function ( graph ){
       ontologyMenu.conversionFinished(local_threadId);
       return;
     }
-    if ( xhr.status === 200 ) {
-      loadingModule.loadFromOWL2VOWL(xhr.responseText, filename);
+    if ( response.status === 200 ) {
+      loadingModule.loadFromOWL2VOWL(response.responseText, filename);
       ontologyMenu.conversionFinished();
     } else {
-      const uglyJson=xhr.responseText;
-      const jsonResut=JSON.parse(uglyJson);
-      let niceJSON=JSON.stringify(jsonResut, 'null', '  ');
-      niceJSON= niceJSON.replace(/\r?\n/g, '<br />');
+      const uglyJson = response.responseText;
+      const jsonResut = JSON.parse(uglyJson);
+      let niceJSON = JSON.stringify(jsonResut, 'null', '  ');
+      niceJSON = niceJSON.replace(/\r?\n/g, '<br />');
       callbackUpdateLoadingMessage("Failed to convert the file. " +
-          "<br />Server answer: <br />"+
-          "<hr>"+niceJSON+ "<hr>"+
+          "<br />Server answer: <br />" +
+          "<hr>" + niceJSON + "<hr>" +
         "Ontology could not be loaded.<br />Is it a valid OWL ontology? Please check with <a target=\"_blank\"" +
         "href=\"http://visualdataweb.de/validator/\">OWL Validator</a>");
-      
+
       graph.handleOnLoadingError();
       ontologyMenu.conversionFinished();
     }
@@ -590,13 +564,11 @@ module.exports = function ( graph ){
     if ( id ) {
       local_id = id;
     }
-    xhrRequest(`conversionDone?sessionId=${local_id}`, "application/text", ( error, request ) => {
-      if ( error ) {
+    fetchGet(`conversionDone?sessionId=${local_id}`, "application/text").then(( response ) => {
+      if ( !response.ok ) {
         console.log("ontologyMenu conversionFinished throws error");
         console.log("---------Error -----------");
-        console.log(error);
-        console.log("---------Request -----------");
-        console.log(request);
+        console.log(response);
       }
     });
   };
