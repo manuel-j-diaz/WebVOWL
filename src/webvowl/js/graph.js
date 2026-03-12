@@ -10,6 +10,7 @@ const CanvasRenderer = require("./rendering/canvasRenderer");
 const { getWorldPosFromScreen, getScreenCoords, getClickedScreenCoords } = require("./graph/coordinateUtils");
 const { storeLinksOnNodes, setPositionOfOldLabelsOnNewLabels, createLowerCasePrototypeMap } = require("./graph/dataUtils");
 const editValidation = require("./graph/editValidation");
+const editCRUD = require("./graph/editCRUD");
 
 
 module.exports = function ( graphContainerSelector ){
@@ -68,7 +69,6 @@ module.exports = function ( graphContainerSelector ){
     draggerLayer = null,
     draggerObjectsArray = [],
     delayedHider,
-    nodeFreezer,
     hoveredNodeElement = null,
     currentlySelectedNode = null,
     hoveredPropertyElement = null,
@@ -76,8 +76,6 @@ module.exports = function ( graphContainerSelector ){
     frozenDomainForPropertyDragger,
     frozenRangeForPropertyDragger,
 
-    eP = 0, // id for new properties
-    eN = 0, // id for new Nodes
     editMode = true,
     debugContainer = d3.select("#FPS_Statistics"),
     finishedLoadingSequence = false,
@@ -93,9 +91,10 @@ module.exports = function ( graphContainerSelector ){
     keepDetailsCollapsedOnLoading = true,
     adjustingGraphSize = false,
     showReloadButtonAfterLayoutOptimization = false,
-    zoom,
-    nodeQuadtree = null;
+    zoom;
   let hierarchyLayout = null;
+  // Shared mutable state accessed by both graph.js and editCRUD.js
+  const shared = { eP: 0, eN: 0, nodeQuadtree: null, nodeFreezer: null };
   const NodePrototypeMap = createLowerCasePrototypeMap(nodePrototypeMap);
   const PropertyPrototypeMap = createLowerCasePrototypeMap(propertyPrototypeMap);
   const classDragger = require("./classDragger")(graph);
@@ -105,7 +104,22 @@ module.exports = function ( graphContainerSelector ){
   const canvasRenderer = CanvasRenderer();
   let canvasRenderPending = false;
   const FORCE_EARLY_STOP_ALPHA = 0.05; // stop simulation early; last 5% adds lag without visible benefit
-  
+
+  // Context object passed to editCRUD — uses getters for values that get reassigned
+  const editCtx = Object.defineProperties({
+    graph,
+    NodePrototypeMap,
+    PropertyPrototypeMap,
+    shared,
+    generateDictionary,
+  }, {
+    unfilteredData: { get: () => unfilteredData, enumerable: true },
+    classNodes:     { get: () => classNodes, enumerable: true },
+    properties:     { get: () => properties, enumerable: true },
+    options:        { get: () => options, enumerable: true },
+    touchDevice:    { get: () => touchDevice, enumerable: true },
+  });
+
   graph.math = function (){
     return math;
   };
@@ -573,7 +587,7 @@ module.exports = function ( graphContainerSelector ){
   
   function recalculatePositions(){
     // Invalidate cached quadtree — positions have changed
-    nodeQuadtree = null;
+    shared.nodeQuadtree = null;
 
     // add switch for edit mode to make this faster;
     if ( !editMode ) {
@@ -1638,10 +1652,10 @@ module.exports = function ( graphContainerSelector ){
       properties: parser.properties()
     };
     // fixing class and property id counter for the editor
-    eN = unfilteredData.nodes.length + 1;
-    eP = unfilteredData.properties.length + 1;
-    
-    
+    shared.eN = unfilteredData.nodes.length + 1;
+    shared.eP = unfilteredData.properties.length + 1;
+
+
     // using the ids of elements if to ensure that loaded elements will not get the same id;
     for ( let p = 0; p < unfilteredData.properties.length; p++ ) {
       const currentId = unfilteredData.properties[p].id();
@@ -1650,8 +1664,8 @@ module.exports = function ( graphContainerSelector ){
         const idStr = currentId.split('objectProperty');
         if ( idStr[0].length === 0 ) {
           const idInt = parseInt(idStr[1]);
-          if ( eP < idInt ) {
-            eP = idInt + 1;
+          if ( shared.eP < idInt ) {
+            shared.eP = idInt + 1;
           }
         }
       }
@@ -1664,8 +1678,8 @@ module.exports = function ( graphContainerSelector ){
         const idStr_Nodes = currentId_Nodes.split('Class');
         if ( idStr_Nodes[0].length === 0 ) {
           const idInt_Nodes = parseInt(idStr_Nodes[1]);
-          if ( eN < idInt_Nodes ) {
-            eN = idInt_Nodes + 1;
+          if ( shared.eN < idInt_Nodes ) {
+            shared.eN = idInt_Nodes + 1;
           }
         }
       }
@@ -2686,152 +2700,11 @@ module.exports = function ( graphContainerSelector ){
   /** --------------------------------------------------------- **/
   
   graph.changeNodeType = function ( element ){
-    
-    const typeString = d3.select("#typeEditor").node().value;
-
-    if ( graph.classesSanityCheck(element, typeString) === false ) {
-      // call reselection to restore previous type selection
-      graph.options().editSidebar().updateSelectionInformation(element);
-      return;
-    }
-    
-    const prototype = NodePrototypeMap.get(typeString.toLowerCase());
-    const aNode = new prototype(graph);
-    
-    aNode.x = element.x;
-    aNode.y = element.y;
-    aNode.px = element.x;
-    aNode.py = element.y;
-    aNode.id(element.id());
-    aNode.copyInformation(element);
-    
-    if ( typeString === "owl:Thing" ) {
-      aNode.label("Thing");
-    }
-    else if ( elementTools.isDatatype(element) === false ) {
-      if ( element.backupLabel() !== undefined ) {
-        aNode.label(element.backupLabel());
-      } else if ( aNode.backupLabel() !== undefined ) {
-        aNode.label(aNode.backupLabel());
-      } else {
-        aNode.label("NewClass");
-      }
-    }
-    
-    if ( typeString === "rdfs:Datatype" ) {
-      if ( aNode.dType() === "undefined" )
-        aNode.label("undefined");
-      else {
-        const identifier = aNode.dType().split(":")[1];
-        aNode.label(identifier);
-      }
-    }
-    let i;
-    // updates the property domain and range
-    for ( i = 0; i < unfilteredData.properties.length; i++ ) {
-      if ( unfilteredData.properties[i].domain() === element ) {
-        //  unfilteredData.properties[i].toString();
-        unfilteredData.properties[i].domain(aNode);
-      }
-      if ( unfilteredData.properties[i].range() === element ) {
-        unfilteredData.properties[i].range(aNode);
-        //  unfilteredData.properties[i].toString();
-      }
-    }
-    
-    // update for fastUpdate:
-    for ( i = 0; i < properties.length; i++ ) {
-      if ( properties[i].domain() === element ) {
-        //  unfilteredData.properties[i].toString();
-        properties[i].domain(aNode);
-      }
-      if ( properties[i].range() === element ) {
-        properties[i].range(aNode);
-        //  unfilteredData.properties[i].toString();
-      }
-    }
-    
-    let remId = unfilteredData.nodes.indexOf(element);
-    if ( remId !== -1 )
-      unfilteredData.nodes.splice(remId, 1);
-    remId = classNodes.indexOf(element);
-    if ( remId !== -1 )
-      classNodes.splice(remId, 1);
-    // very important thing for selection!;
-    addNewNodeElement(aNode);
-    // handle focuser!
-    options.focuserModule().handle(aNode);
-    generateDictionary(unfilteredData);
-    graph.getUpdateDictionary();
-    element = null;
+    editCRUD.changeNodeType(editCtx, element);
   };
-  
-  
+
   graph.changePropertyType = function ( element ){
-    const typeString = d3.select("#typeEditor").node().value;
-
-    // create warning
-    if ( graph.sanityCheckProperty(element.domain(), element.range(), typeString) === false ) return false;
-
-    const propPrototype = PropertyPrototypeMap.get(typeString.toLowerCase());
-    const aProp = new propPrototype(graph);
-    aProp.copyInformation(element);
-    aProp.id(element.id());
-    
-    element.domain().removePropertyElement(element);
-    element.range().removePropertyElement(element);
-    aProp.domain(element.domain());
-    aProp.range(element.range());
-    
-    if ( element.backupLabel() !== undefined ) {
-      aProp.label(element.backupLabel());
-    } else {
-      aProp.label("newObjectProperty");
-    }
-    
-    if ( aProp.type() === "rdfs:subClassOf" ) {
-      aProp.iri("http://www.w3.org/2000/01/rdf-schema#subClassOf");
-    } else {
-      if ( element.iri() === "http://www.w3.org/2000/01/rdf-schema#subClassOf" )
-        aProp.iri(graph.options().getGeneralMetaObjectProperty('iri') + aProp.id());
-      
-    }
-    
-    
-    if ( graph.propertyCheckExistenceChecker(aProp, element.domain(), element.range()) === false ) {
-      graph.options().editSidebar().updateSelectionInformation(element);
-      return;
-    }
-    // // TODO: change its base IRI to proper value
-    // var ontoIRI="http://someTest.de";
-    // aProp.baseIri(ontoIRI);
-    // aProp.iri(aProp.baseIri()+aProp.id());
-    
-    
-    // add this to the data;
-    unfilteredData.properties.push(aProp);
-    if ( !properties.includes(aProp) )
-      properties.push(aProp);
-    let remId = unfilteredData.properties.indexOf(element);
-    if ( remId !== -1 )
-      unfilteredData.properties.splice(remId, 1);
-    if ( !properties.includes(aProp) )
-      properties.push(aProp);
-    remId = properties.indexOf(element);
-    if ( remId !== -1 )
-      properties.splice(remId, 1);
-    graph.fastUpdate();
-    aProp.domain().addProperty(aProp);
-    aProp.range().addProperty(aProp);
-    if ( element.labelObject() && aProp.labelObject() ) {
-      aProp.labelObject().x = element.labelObject().x;
-      aProp.labelObject().px = element.labelObject().px;
-      aProp.labelObject().y = element.labelObject().y;
-      aProp.labelObject().py = element.labelObject().py;
-    }
-    
-    options.focuserModule().handle(aProp);
-    element = null;
+    editCRUD.changePropertyType(editCtx, element);
   };
   
   graph.removeEditElements = function (){
@@ -2974,60 +2847,22 @@ module.exports = function ( graphContainerSelector ){
   };
   
   function createNewNodeAtPosition( pos ){
-    let aNode, prototype;
-    const forceUpdate = true;
-    // create a node of that id;
+    editCRUD.createNewNodeAtPosition(editCtx, pos);
+  }
 
-    const typeToCreate = d3.select("#defaultClass").node().title;
-    prototype = NodePrototypeMap.get(typeToCreate.toLowerCase());
-    aNode = new prototype(graph);
-    let autoEditElement = false;
-    if ( typeToCreate === "owl:Thing" ) {
-      aNode.label("Thing");
-    }
-    else {
-      aNode.label("NewClass");
-      autoEditElement = true;
-    }
-    aNode.x = pos.x;
-    aNode.y = pos.y;
-    aNode.id(`Class${eN++}`);
-    // aNode.paused(true);
-    
-    aNode.baseIri(d3.select("#iriEditor").node().value);
-    aNode.iri(aNode.baseIri() + aNode.id());
-    addNewNodeElement(aNode, forceUpdate);
-    options.focuserModule().handle(aNode, true);
-    aNode.frozen(graph.paused());
-    aNode.locked(graph.paused());
-    aNode.enableEditing(autoEditElement);
-  }
-  
-  
-  function addNewNodeElement( element ){
-    nodeQuadtree = null;
-    unfilteredData.nodes.push(element);
-    if ( !classNodes.includes(element) )
-      classNodes.push(element);
-    
-    generateDictionary(unfilteredData);
-    graph.getUpdateDictionary();
-    graph.fastUpdate();
-  }
-  
   graph.getTargetNode = function ( position ){
     const dx = position[0];
     const dy = position[1];
 
     // Build quadtree lazily (invalidated each tick in recalculatePositions)
-    if ( !nodeQuadtree ) {
-      nodeQuadtree = d3.quadtree()
+    if ( !shared.nodeQuadtree ) {
+      shared.nodeQuadtree = d3.quadtree()
         .x(( d ) => { return d.x; })
         .y(( d ) => { return d.y; })
         .addAll(unfilteredData.nodes);
     }
 
-    const tN = nodeQuadtree.find(dx, dy);
+    const tN = shared.nodeQuadtree.find(dx, dy);
     if ( !tN ) return null;
     const minDist = Math.sqrt((tN.x - dx) * (tN.x - dx) + (tN.y - dy) * (tN.y - dy));
     if ( hoveredNodeElement ) {
@@ -3042,11 +2877,11 @@ module.exports = function ( graphContainerSelector ){
       return tN;
     }
     else {
-      
+
       if ( minDist > (tN.actualRadius() + 30) )
         return null;
       else return tN;
-      
+
     }
   };
   
@@ -3071,318 +2906,24 @@ module.exports = function ( graphContainerSelector ){
   };
   
   function createNewObjectProperty( domain, range, draggerEndposition ){
-    // check type of the property that we want to create;
-    
-    const defaultPropertyName = d3.select("#defaultProperty").node().title;
-    
-    // check if we are allow to create that property
-    if ( graph.sanityCheckProperty(domain, range, defaultPropertyName) === false ) return false;
-    
-    
-    const propPrototype = PropertyPrototypeMap.get(defaultPropertyName.toLowerCase());
-    const aProp = new propPrototype(graph);
-    aProp.id(`objectProperty${eP++}`);
-    aProp.domain(domain);
-    aProp.range(range);
-    aProp.label("newObjectProperty");
-    aProp.baseIri(d3.select("#iriEditor").node().value);
-    aProp.iri(aProp.baseIri() + aProp.id());
-    
-    // check for duplicate;
-    if ( graph.propertyCheckExistenceChecker(aProp, domain, range) === false ) {
-      // delete aProp;
-      // hope for garbage collection here -.-
-      return false;
-    }
-    
-    let autoEditElement = false;
-
-    if ( defaultPropertyName === "owl:objectProperty" ) {
-      autoEditElement = true;
-    }
-    let pX = 0.49 * (domain.x + range.x);
-    let pY = 0.49 * (domain.y + range.y);
-    
-    if ( domain === range ) {
-      // we use the dragger endposition to determine an angle to put the loop there;
-      const dirD_x = draggerEndposition[0] - domain.x;
-      const dirD_y = draggerEndposition[1] - domain.y;
-
-      // normalize;
-      const len = Math.sqrt(dirD_x * dirD_x + dirD_y * dirD_y);
-      // it should be very hard to set the position on the same sport but why not handling this
-      let nx = dirD_x / len;
-      let ny = dirD_y / len;
-      // is Nan in javascript like in c len==len returns false when it is not a number?
-      if ( isNaN(len) ) {
-        nx = 0;
-        ny = -1;
-      }
-      
-      // get domain actual raidus
-      const offset = 2 * domain.actualRadius() + 50;
-      pX = domain.x + offset * nx;
-      pY = domain.y + offset * ny;
-    }
-    
-    // add this property to domain and range;
-    domain.addProperty(aProp);
-    range.addProperty(aProp);
-    
-    
-    // add this to the data;
-    unfilteredData.properties.push(aProp);
-    if ( !properties.includes(aProp) )
-      properties.push(aProp);
-    graph.fastUpdate();
-    aProp.labelObject().x = pX;
-    aProp.labelObject().px = pX;
-    aProp.labelObject().y = pY;
-    aProp.labelObject().py = pY;
-    
-    aProp.frozen(graph.paused());
-    aProp.locked(graph.paused());
-    domain.frozen(graph.paused());
-    domain.locked(graph.paused());
-    range.frozen(graph.paused());
-    range.locked(graph.paused());
-    
-    
-    generateDictionary(unfilteredData);
-    graph.getUpdateDictionary();
-    
-    options.focuserModule().handle(aProp);
-    graph.activateHoverElementsForProperties(true, aProp, false, touchDevice);
-    aProp.labelObject().increasedLoopAngle = true;
-    aProp.enableEditing(autoEditElement);
+    editCRUD.createNewObjectProperty(editCtx, domain, range, draggerEndposition);
   }
   
   graph.createDataTypeProperty = function ( node ){
-    // random postion issues;
-    clearTimeout(nodeFreezer);
-    // tells user when element is filtered out
-    if ( graph.options().datatypeFilter().enabled() === false ) {
-      graph.options().warningModule().showWarning("Warning",
-        "Datatype properties are filtered out in the visualization!",
-        "Element not created!", 1, false);
-      return;
-    }
-    
-    
-    let aNode, prototype;
-
-    // create a default datatype Node >> HERE LITERAL;
-    const defaultDatatypeName = d3.select("#defaultDatatype").node().title;
-    if ( defaultDatatypeName === "rdfs:Literal" ) {
-      prototype = NodePrototypeMap.get("rdfs:literal");
-      aNode = new prototype(graph);
-      aNode.label("Literal");
-      aNode.iri("http://www.w3.org/2000/01/rdf-schema#Literal");
-      aNode.baseIri("http://www.w3.org/2000/01/rdf-schema#");
-    } else {
-      prototype = NodePrototypeMap.get("rdfs:datatype");
-      aNode = new prototype(graph);
-      let identifier = "";
-      if ( defaultDatatypeName === "undefined" ) {
-        identifier = "undefined";
-        
-        aNode.label(identifier);
-        // TODO : HANDLER FOR UNDEFINED DATATYPES!!<<<>>>>>>>>>>>..
-        aNode.iri(`http://www.undefinedDatatype.org/#${identifier}`);
-        aNode.baseIri("http://www.undefinedDatatype.org/#");
-        aNode.dType(defaultDatatypeName);
-      } else {
-        identifier = defaultDatatypeName.split(":")[1];
-        aNode.label(identifier);
-        aNode.dType(defaultDatatypeName);
-        aNode.iri(`http://www.w3.org/2001/XMLSchema#${identifier}`);
-        aNode.baseIri("http://www.w3.org/2001/XMLSchema#");
-      }
-    }
-    
-    
-    const nX = node.x - node.actualRadius() - 100;
-    const nY = node.y + node.actualRadius() + 100;
-    
-    aNode.x = nX;
-    aNode.y = nY;
-    aNode.px = aNode.x;
-    aNode.py = aNode.y;
-    aNode.id(`NodeId${eN++}`);
-    // add this property to the nodes;
-    unfilteredData.nodes.push(aNode);
-    if ( !classNodes.includes(aNode) )
-      classNodes.push(aNode);
-    
-    
-    // add also the datatype Property to it
-    const propPrototype = PropertyPrototypeMap.get("owl:datatypeproperty");
-    const aProp = new propPrototype(graph);
-    aProp.id(`datatypeProperty${eP++}`);
-    
-    // create the connection
-    aProp.domain(node);
-    aProp.range(aNode);
-    aProp.label("newDatatypeProperty");
-    
-    
-    // TODO: change its base IRI to proper value
-    const ontoIri = d3.select("#iriEditor").node().value;
-    aProp.baseIri(ontoIri);
-    aProp.iri(ontoIri + aProp.id());
-    // add this to the data;
-    unfilteredData.properties.push(aProp);
-    if ( !properties.includes(aProp) )
-      properties.push(aProp);
-    graph.fastUpdate();
-    generateDictionary(unfilteredData);
-    graph.getUpdateDictionary();
-    
-    nodeFreezer = setTimeout(() => {
-      if ( node && node.frozen() === true && node.pinned() === false && graph.paused() === false ) {
-        node.frozen(graph.paused());
-        node.locked(graph.paused());
-      }
-    }, 1000);
-    options.focuserModule().handle(undefined);
-    if ( node ) {
-      node.frozen(true);
-      node.locked(true);
-    }
+    editCRUD.createDataTypeProperty(editCtx, node);
   };
-  
+
   graph.removeNodesViaResponse = function ( nodesToRemove, propsToRemove ){
-    let i, remId;
-    // splice them;
-    for ( i = 0; i < propsToRemove.length; i++ ) {
-      remId = unfilteredData.properties.indexOf(propsToRemove[i]);
-      if ( remId !== -1 )
-        unfilteredData.properties.splice(remId, 1);
-      remId = properties.indexOf(propsToRemove[i]);
-      if ( remId !== -1 )
-        properties.splice(remId, 1);
-      propsToRemove[i] = null;
-    }
-    for ( i = 0; i < nodesToRemove.length; i++ ) {
-      remId = unfilteredData.nodes.indexOf(nodesToRemove[i]);
-      if ( remId !== -1 ) {
-        unfilteredData.nodes.splice(remId, 1);
-      }
-      remId = classNodes.indexOf(nodesToRemove[i]);
-      if ( remId !== -1 )
-        classNodes.splice(remId, 1);
-      nodesToRemove[i] = null;
-    }
-    graph.fastUpdate();
-    generateDictionary(unfilteredData);
-    graph.getUpdateDictionary();
-    options.focuserModule().handle(undefined);
-    nodesToRemove = null;
-    propsToRemove = null;
-    
+    editCRUD.removeNodesViaResponse(editCtx, nodesToRemove, propsToRemove);
   };
-  
-  graph.removeNodeViaEditor = function ( node ){
-    const propsToRemove = [];
-    const nodesToRemove = [];
-    let datatypes = 0;
 
-    let remId;
-    
-    nodesToRemove.push(node);
-    for ( let i = 0; i < unfilteredData.properties.length; i++ ) {
-      if ( unfilteredData.properties[i].domain() === node || unfilteredData.properties[i].range() === node ) {
-        propsToRemove.push(unfilteredData.properties[i]);
-        if ( unfilteredData.properties[i].type().toLocaleLowerCase() === "owl:datatypeproperty" &&
-          unfilteredData.properties[i].range() !== node ) {
-          nodesToRemove.push(unfilteredData.properties[i].range());
-          datatypes++;
-        }
-      }
-    }
-    const removedItems = propsToRemove.length + nodesToRemove.length;
-    if ( removedItems > 2 ) {
-      let text = `You are about to delete 1 class and ${propsToRemove.length} properties`;
-      if ( datatypes !== 0 ) {
-        text = `You are about to delete 1 class, ${datatypes} datatypes  and ${propsToRemove.length} properties`;
-      }
-      
-      
-      graph.options().warningModule().responseWarning(
-        "Removing elements",
-        text,
-        "Awaiting response!", graph.removeNodesViaResponse, [nodesToRemove, propsToRemove], false);
-      
-      
-      //
-      // if (confirm("Remove :\n"+propsToRemove.length + " properties\n"+nodesToRemove.length+" classes? ")===false){
-      //     return;
-      // }else{
-      //     // todo : store for undo delete button ;
-      // }
-    } else {
-      // splice them;
-      for ( i = 0; i < propsToRemove.length; i++ ) {
-        remId = unfilteredData.properties.indexOf(propsToRemove[i]);
-        if ( remId !== -1 )
-          unfilteredData.properties.splice(remId, 1);
-        remId = properties.indexOf(propsToRemove[i]);
-        if ( remId !== -1 )
-          properties.splice(remId, 1);
-        propsToRemove[i] = null;
-      }
-      for ( i = 0; i < nodesToRemove.length; i++ ) {
-        remId = unfilteredData.nodes.indexOf(nodesToRemove[i]);
-        if ( remId !== -1 )
-          unfilteredData.nodes.splice(remId, 1);
-        remId = classNodes.indexOf(nodesToRemove[i]);
-        if ( remId !== -1 )
-          classNodes.splice(remId, 1);
-        nodesToRemove[i] = null;
-      }
-      graph.fastUpdate();
-      generateDictionary(unfilteredData);
-      graph.getUpdateDictionary();
-      options.focuserModule().handle(undefined);
-      nodesToRemove = null;
-      propsToRemove = null;
-    }
+  graph.removeNodeViaEditor = function ( node ){
+    editCRUD.removeNodeViaEditor(editCtx, node);
   };
-  
+
   graph.removePropertyViaEditor = function ( property ){
-    property.domain().removePropertyElement(property);
-    property.range().removePropertyElement(property);
-    let remId;
-    
-    if ( property.type().toLocaleLowerCase() === "owl:datatypeproperty" ) {
-      let datatype = property.range();
-      remId = unfilteredData.nodes.indexOf(property.range());
-      if ( remId !== -1 )
-        unfilteredData.nodes.splice(remId, 1);
-      remId = classNodes.indexOf(property.range());
-      if ( remId !== -1 )
-        classNodes.splice(remId, 1);
-      datatype = null;
-    }
-    remId = unfilteredData.properties.indexOf(property);
-    if ( remId !== -1 )
-      unfilteredData.properties.splice(remId, 1);
-    remId = properties.indexOf(property);
-    if ( remId !== -1 )
-      properties.splice(remId, 1);
-    if ( property.inverse() ) {
-      // so we have inverse
-      property.inverse().inverse(0);
-      
-    }
-    
-    
+    editCRUD.removePropertyViaEditor(editCtx, property);
     hoveredPropertyElement = undefined;
-    graph.fastUpdate();
-    generateDictionary(unfilteredData);
-    graph.getUpdateDictionary();
-    options.focuserModule().handle(undefined);
-    property = null;
   };
   
   graph.setHierarchyLayout = function ( layout ){
@@ -3410,25 +2951,6 @@ module.exports = function ( graphContainerSelector ){
   };
   
   
-  /** --------------------------------------------------------- **/
-  /** -- animation functions for the nodes --                   **/
-  /** --------------------------------------------------------- **/
-
-  graph.animateDynamicLabelWidth = function (){
-    const wantedWidth = options.dynamicLabelWidth();
-    let i;
-    for ( i = 0; i < classNodes.length; i++ ) {
-      const nodeElement = classNodes[i];
-      if ( elementTools.isDatatype(nodeElement) ) {
-        nodeElement.animateDynamicLabelWidth(wantedWidth);
-      }
-    }
-    for ( i = 0; i < properties.length; i++ ) {
-      properties[i].animateDynamicLabelWidth(wantedWidth);
-    }
-  };
-
-
   /** --------------------------------------------------------- **/
   /** -- Touch behaviour functions --                   **/
   /** --------------------------------------------------------- **/
@@ -3595,7 +3117,7 @@ module.exports = function ( graphContainerSelector ){
   
   graph.killDelayedTimer = function (){
     clearTimeout(delayedHider);
-    clearTimeout(nodeFreezer);
+    clearTimeout(shared.nodeFreezer);
   };
   
   
@@ -3788,7 +3310,7 @@ module.exports = function ( graphContainerSelector ){
       }
       // make them visible
       clearTimeout(delayedHider);
-      clearTimeout(nodeFreezer);
+      clearTimeout(shared.nodeFreezer);
       if ( hoveredNodeElement && node.pinned() === false && graph.paused() === false ) {
         hoveredNodeElement.frozen(false);
         hoveredNodeElement.locked(false);
