@@ -31,6 +31,7 @@ module.exports = function ( graph ){
       console.log("[individuals] enabled, nodes:", nodes.length, "total individuals across classes:", totalIndividuals);
       const injectedNodes = nodes.slice();
       const injectedProperties = properties.slice();
+      const seenIndividuals = new Map();
 
       nodes.forEach(( classNode ) => {
         const individuals = classNode.individuals ? classNode.individuals() : [];
@@ -46,24 +47,30 @@ module.exports = function ( graph ){
         classNode._individualsExpanded = true;
 
         individuals.forEach(( protoIndividual ) => {
-          const indNode = new OwlNamedIndividual(graph);
-          indNode.id(protoIndividual.iri())
-            .label(protoIndividual.label())
-            .iri(protoIndividual.iri())
-            .baseIri(classNode.baseIri());
-          indNode.ownerClass = classNode;
+          const iri = protoIndividual.iri();
+          let indNode = seenIndividuals.get(iri);
 
-          // Scatter initial position around the owner class
-          const angle = Math.random() * 2 * Math.PI;
-          const dist = (classNode.radius ? classNode.radius() : 50) + 40;
-          indNode.x = (classNode.x || 0) + Math.cos(angle) * dist;
-          indNode.y = (classNode.y || 0) + Math.sin(angle) * dist;
+          if ( !indNode ) {
+            indNode = new OwlNamedIndividual(graph);
+            indNode.id(iri)
+              .label(protoIndividual.label())
+              .iri(iri)
+              .baseIri(classNode.baseIri());
+
+            // Scatter initial position around the first type class
+            const angle = Math.random() * 2 * Math.PI;
+            const dist = (classNode.radius ? classNode.radius() : 50) + 40;
+            indNode.x = (classNode.x || 0) + Math.cos(angle) * dist;
+            indNode.y = (classNode.y || 0) + Math.sin(angle) * dist;
+
+            seenIndividuals.set(iri, indNode);
+            injectedNodes.push(indNode);
+          }
 
           const edge = new RdfTypeProperty(graph);
-          edge.id(protoIndividual.iri() + "__rdftype")
+          edge.id(iri + "__rdftype__" + classNode.id())
             .domain(indNode).range(classNode);
 
-          injectedNodes.push(indNode);
           injectedProperties.push(edge);
         });
       });
