@@ -11,6 +11,8 @@ const { getWorldPosFromScreen, getScreenCoords, getClickedScreenCoords } = requi
 const { storeLinksOnNodes, setPositionOfOldLabelsOnNewLabels, createLowerCasePrototypeMap } = require("./graph/dataUtils");
 const editValidation = require("./graph/editValidation");
 const editCRUD = require("./graph/editCRUD");
+const touchBehavior = require("./graph/touchBehavior");
+const searchHighlight = require("./graph/searchHighlight");
 
 
 module.exports = function ( graphContainerSelector ){
@@ -50,15 +52,9 @@ module.exports = function ( graphContainerSelector ){
     transformAnimation = false,
     graphTranslation = [0, 0],
     graphUpdateRequired = false,
-    pulseNodeIds = [],
-    nodeArrayForPulse = [],
-    nodeMap = [],
-    locationId = 0,
     defaultZoom = 1.0,
     defaultTargetZoom = 0.8,
     global_dof = 0,
-    touchDevice = false,
-    last_touch_time,
     originalD3_dblClickFunction = null,
     originalD3_touchZoomFunction = null,
 
@@ -81,7 +77,6 @@ module.exports = function ( graphContainerSelector ){
     finishedLoadingSequence = false,
 
     ignoreOtherHoverEvents = false,
-    forceNotZooming = false,
     now, then, // used for fps computation
     showFPS = false,
     seenEditorHint = false,
@@ -117,7 +112,17 @@ module.exports = function ( graphContainerSelector ){
     classNodes:     { get: () => classNodes, enumerable: true },
     properties:     { get: () => properties, enumerable: true },
     options:        { get: () => options, enumerable: true },
-    touchDevice:    { get: () => touchDevice, enumerable: true },
+    touchDevice:    { get: () => touchBehavior.isTouchDevice(), enumerable: true },
+  });
+
+  // Context object passed to searchHighlight — uses getters for values that get reassigned
+  const searchCtx = Object.defineProperties({ graph }, {
+    force:              { get: () => force, enumerable: true },
+    unfilteredData:     { get: () => unfilteredData, enumerable: true },
+    graphTranslation:   { get: () => graphTranslation, enumerable: true },
+    zoomFactor:         { get: () => zoomFactor, enumerable: true },
+    transformAnimation: { get: () => transformAnimation, enumerable: true },
+    targetLocationZoom: { value: ( node ) => { targetLocationZoom(node); }, enumerable: true },
   });
 
   graph.math = function (){
@@ -367,7 +372,7 @@ module.exports = function ( graphContainerSelector ){
           if ( targetNode ) {
             createNewObjectProperty(d.parentNode(), targetNode, draggerEndPos);
           }
-          if ( touchDevice === false ) {
+          if ( touchBehavior.isTouchDevice() === false ) {
             editElementHoverOut();
           }
           draggingStarted = false;
@@ -787,7 +792,7 @@ module.exports = function ( graphContainerSelector ){
     nodeElements.on("click", function ( event, clickedNode ){
 
       // manaual double clicker // helper for iphone 6 etc...
-      if ( touchDevice === true && doubletap(event) === true ) {
+      if ( touchBehavior.isTouchDevice() === true && doubletap(event) === true ) {
         event.stopPropagation();
         if ( editMode === true ) {
           clickedNode.raiseDoubleClickEdit(defaultIriValue(clickedNode));
@@ -805,12 +810,12 @@ module.exports = function ( graphContainerSelector ){
         clickedNode.raiseDoubleClickEdit(defaultIriValue(clickedNode));
       }
     });
-    
+
     labelGroupElements.selectAll(".label").on("click", function ( event, clickedProperty ){
       executeModules(clickedProperty, event);
 
       // this is for enviroments that do not define dblClick function;
-      if ( touchDevice === true && doubletap(event) === true ) {
+      if ( touchBehavior.isTouchDevice() === true && doubletap(event) === true ) {
         event.stopPropagation();
         if ( editMode === true ) {
           clickedProperty.raiseDoubleClickEdit(defaultIriValue(clickedProperty));
@@ -837,7 +842,7 @@ module.exports = function ( graphContainerSelector ){
   
   /** Adjusts the containers current scale and position. */
   function zoomed( event ){
-    if ( forceNotZooming === true ) {
+    if ( touchBehavior.touchState.forceNotZooming === true ) {
       programmaticZoom = true;
       d3.select(".vowlGraph").call(zoom.transform,
         d3.zoomIdentity.translate(graphTranslation[0], graphTranslation[1]).scale(zoomFactor));
@@ -1306,69 +1311,18 @@ module.exports = function ( graphContainerSelector ){
     // fast update function for editor calls;
     // -- experimental ;
     quick_refreshGraphData();
-    updateNodeMap();
+    searchHighlight.updateNodeMap(searchCtx);
     force.alpha(1).restart();
     redrawContent();
-    graph.updatePulseIds(nodeArrayForPulse);
+    graph.updatePulseIds(searchHighlight.searchState.nodeArrayForPulse);
     refreshGraphStyle();
-    updateHaloStyles();
+    searchHighlight.updateHaloStyles(searchCtx);
     
   };
   
   graph.getNodeMapForSearch = function (){
-    return nodeMap;
+    return searchHighlight.getNodeMapForSearch();
   };
-  function updateNodeMap(){
-    nodeMap = [];
-    let node;
-    for ( let j = 0; j < force.nodes().length; j++ ) {
-      node = force.nodes()[j];
-      if ( node.id ) {
-        nodeMap[node.id()] = j;
-        // check for equivalents
-        const eqs = node.equivalents();
-        if ( eqs.length > 0 ) {
-          for ( let e = 0; e < eqs.length; e++ ) {
-            const eqObject = eqs[e];
-            nodeMap[eqObject.id()] = j;
-          }
-        }
-      }
-      if ( node.property ) {
-        nodeMap[node.property().id()] = j;
-        const inverse = node.inverse();
-        if ( inverse ) {
-          nodeMap[inverse.id()] = j;
-        }
-      }
-    }
-  }
-  
-  function updateHaloStyles(){
-    let haloElement;
-    let halo;
-    let node;
-    for ( let j = 0; j < force.nodes().length; j++ ) {
-      node = force.nodes()[j];
-      if ( node.id ) {
-        haloElement = node.getHalos();
-        if ( haloElement ) {
-          halo = haloElement.selectAll(".searchResultA");
-          halo.classed("searchResultA", false);
-          halo.classed("searchResultB", true);
-        }
-      }
-      
-      if ( node.property ) {
-        haloElement = node.property().getHalos();
-        if ( haloElement ) {
-          halo = haloElement.selectAll(".searchResultA");
-          halo.classed("searchResultA", false);
-          halo.classed("searchResultB", true);
-        }
-      }
-    }
-  }
   
   // Updates the graphs displayed data and style.
   graph.update = function ( init, alpha ){
@@ -1401,7 +1355,7 @@ module.exports = function ( graphContainerSelector ){
     }
 
     // update node map
-    updateNodeMap();
+    searchHighlight.updateNodeMap(searchCtx);
 
     force.alpha(alpha !== undefined ? alpha : 1).restart();
 
@@ -1412,7 +1366,7 @@ module.exports = function ( graphContainerSelector ){
     }
 
     redrawContent();
-    graph.updatePulseIds(nodeArrayForPulse);
+    graph.updatePulseIds(searchHighlight.searchState.nodeArrayForPulse);
     refreshGraphStyle();
 
     // DEBUG: snapshot fixed counts after refreshGraphStyle()
@@ -1429,7 +1383,7 @@ module.exports = function ( graphContainerSelector ){
       });
     }
 
-    updateHaloStyles();
+    searchHighlight.updateHaloStyles(searchCtx);
   };
   
   graph.paused = function ( p ){
@@ -1633,9 +1587,9 @@ module.exports = function ( graphContainerSelector ){
     if ( force.force("link") ) {
       force.force("link").links([]);
     }
-    nodeArrayForPulse = [];
-    pulseNodeIds = [];
-    locationId = 0;
+    searchHighlight.searchState.nodeArrayForPulse = [];
+    searchHighlight.searchState.pulseNodeIds = [];
+    searchHighlight.searchState.locationId = 0;
     d3.select("#locateSearchResult").classed("highlighted", false);
     d3.select("#locateSearchResult").node().title = "Nothing to locate";
     graph.clearGraphData();
@@ -2023,252 +1977,17 @@ module.exports = function ( graphContainerSelector ){
 
 
   /** --------------------------------------------------------- **/
-  /** -- halo and localization functions --                     **/
+  /** -- halo and localization functions (delegated to searchHighlight.js) **/
   /** --------------------------------------------------------- **/
   function updateHaloRadius(){
-    if ( pulseNodeIds && pulseNodeIds.length > 0 ) {
-      const forceNodes = force.nodes();
-      for ( let i = 0; i < pulseNodeIds.length; i++ ) {
-        const node = forceNodes[pulseNodeIds[i]];
-        if ( node ) {
-          if ( node.property ) {
-            // match search strings with property label
-            if ( node.property().inverse ) {
-              const searchString = graph.options().searchMenu().getSearchString().toLowerCase();
-              const name = node.property().labelForCurrentLanguage().toLowerCase();
-              if ( name === searchString ) computeDistanceToCenter(node);
-              else {
-                node.property().removeHalo();
-                if ( node.property().inverse() ) {
-                  if ( !node.property().inverse().getHalos() )
-                    node.property().inverse().drawHalo();
-                  computeDistanceToCenter(node, true);
-                }
-                if ( node.property().equivalents() ) {
-                  const eq = node.property().equivalents();
-                  for ( let e = 0; e < eq.length; e++ ) {
-                    if ( !eq[e].getHalos() )
-                      eq[e].drawHalo();
-                  }
-                  if ( !node.property().getHalos() )
-                    node.property().drawHalo();
-                  computeDistanceToCenter(node, false);
-                  
-                }
-              }
-            }
-          }
-          computeDistanceToCenter(node);
-        }
-      }
-    }
+    searchHighlight.updateHaloRadius(searchCtx);
   }
-  
-  function computeDistanceToCenter( node, inverse ){
-    let container = node;
-    const w = graph.options().width();
-    const h = graph.options().height();
-    let posXY = getScreenCoords(node.x, node.y, graphTranslation, zoomFactor);
 
-    let highlightOfInv = false;
-    
-    if ( inverse && inverse === true ) {
-      highlightOfInv = true;
-      posXY = getScreenCoords(node.x, node.y + 20, graphTranslation, zoomFactor);
-    }
-    const x = posXY.x;
-    const y = posXY.y;
-    let nodeIsRect = false;
-    let halo;
-    let roundHalo;
-    let rectHalo;
-    let borderPoint_x = 0;
-    let borderPoint_y = 0;
-    let defaultRadius;
-    const offset = 15;
-    let radius;
-    
-    if ( node.property && highlightOfInv === true ) {
-      if ( node.property().inverse() ) {
-        rectHalo = node.property().inverse().getHalos().select("rect");
-        
-      } else {
-        if ( node.property().getHalos() )
-          rectHalo = node.property().getHalos().select("rect");
-        else {
-          node.property().drawHalo();
-          rectHalo = node.property().getHalos().select("rect");
-        }
-      }
-      rectHalo.classed("hidden", true);
-      if ( node.property().inverse() ) {
-        if ( node.property().inverse().getHalos() ) {
-          roundHalo = node.property().inverse().getHalos().select("circle");
-        }
-      } else {
-        roundHalo = node.property().getHalos().select("circle");
-      }
-      if ( roundHalo.node() === null ) {
-        radius = node.property().inverse().width() + 15;
-        
-        roundHalo = node.property().inverse().getHalos().append("circle")
-          .classed("searchResultB", true)
-          .classed("searchResultA", false)
-          .attr("r", radius + 15);
-        
-      }
-      halo = roundHalo; // swap the halo to be round
-      nodeIsRect = true;
-      container = node.property().inverse();
-    }
-    
-    if ( node.id ) {
-      if ( !node.getHalos() ) return; // something went wrong before
-      halo = node.getHalos().select("rect");
-      if ( halo.node() === null ) {
-        // this is a round node
-        nodeIsRect = false;
-        roundHalo = node.getHalos().select("circle");
-        defaultRadius = node.actualRadius();
-        roundHalo.attr("r", defaultRadius + offset);
-        halo = roundHalo;
-      } else { // this is a rect node
-        nodeIsRect = true;
-        rectHalo = node.getHalos().select("rect");
-        rectHalo.classed("hidden", true);
-        roundHalo = node.getHalos().select("circle");
-        if ( roundHalo.node() === null ) {
-          radius = node.width();
-          roundHalo = node.getHalos().append("circle")
-            .classed("searchResultB", true)
-            .classed("searchResultA", false)
-            .attr("r", radius + offset);
-        }
-        halo = roundHalo;
-      }
-    }
-    if ( node.property && !inverse ) {
-      if ( !node.property().getHalos() ) return; // something went wrong before
-      rectHalo = node.property().getHalos().select("rect");
-      rectHalo.classed("hidden", true);
-      
-      roundHalo = node.property().getHalos().select("circle");
-      if ( roundHalo.node() === null ) {
-        radius = node.property().width();
-        
-        roundHalo = node.property().getHalos().append("circle")
-          .classed("searchResultB", true)
-          .classed("searchResultA", false)
-          .attr("r", radius + 15);
-        
-      }
-      halo = roundHalo; // swap the halo to be round
-      nodeIsRect = true;
-      container = node.property();
-    }
-    
-    if ( x < 0 || x > w || y < 0 || y > h ) {
-      // node outside viewport;
-      // check for quadrant and get the correct boarder point (intersection with viewport)
-      if ( x < 0 && y < 0 ) {
-        borderPoint_x = 0;
-        borderPoint_y = 0;
-      } else if ( x > 0 && x < w && y < 0 ) {
-        borderPoint_x = x;
-        borderPoint_y = 0;
-      } else if ( x > w && y < 0 ) {
-        borderPoint_x = w;
-        borderPoint_y = 0;
-      } else if ( x > w && y > 0 && y < h ) {
-        borderPoint_x = w;
-        borderPoint_y = y;
-      } else if ( x > w && y > h ) {
-        borderPoint_x = w;
-        borderPoint_y = h;
-      } else if ( x > 0 && x < w && y > h ) {
-        borderPoint_x = x;
-        borderPoint_y = h;
-      } else if ( x < 0 && y > h ) {
-        borderPoint_x = 0;
-        borderPoint_y = h;
-      } else if ( x < 0 && y > 0 && y < h ) {
-        borderPoint_x = 0;
-        borderPoint_y = y;
-      }
-      // kill all pulses of nodes that are outside the viewport
-      container.getHalos().select("rect").classed("searchResultA", false);
-      container.getHalos().select("circle").classed("searchResultA", false);
-      container.getHalos().select("rect").classed("searchResultB", true);
-      container.getHalos().select("circle").classed("searchResultB", true);
-      halo.classed("hidden", false);
-      // compute in pixel coordinates length of difference vector
-      const borderRadius_x = borderPoint_x - x;
-      const borderRadius_y = borderPoint_y - y;
-
-      let len = borderRadius_x * borderRadius_x + borderRadius_y * borderRadius_y;
-      len = Math.sqrt(len);
-
-      const normedX = borderRadius_x / len;
-      const normedY = borderRadius_y / len;
-      
-      len = len + 20; // add 20 px;
-      
-      // re-normalized vector
-      const newVectorX = normedX * len + x;
-      const newVectorY = normedY * len + y;
-      // compute world coordinates of this point
-      const wX = (newVectorX - graphTranslation[0]) / zoomFactor;
-      const wY = (newVectorY - graphTranslation[1]) / zoomFactor;
-
-      // compute distance in world coordinates
-      let dx = wX - node.x;
-      let dy = wY - node.y;
-      if ( highlightOfInv === true )
-        dy = wY - node.y - 20;
-      
-      if ( highlightOfInv === false && node.property && node.property().inverse() )
-        dy = wY - node.y + 20;
-      
-      let newRadius = Math.sqrt(dx * dx + dy * dy);
-      halo = container.getHalos().select("circle");
-      // sanity checks and setting new halo radius
-      if ( !nodeIsRect ) {
-        defaultRadius = node.actualRadius() + offset;
-        if ( newRadius < defaultRadius ) {
-          newRadius = defaultRadius;
-        }
-        halo.attr("r", newRadius);
-      } else {
-        defaultRadius = 0.5 * container.width();
-        if ( newRadius < defaultRadius )
-          newRadius = defaultRadius;
-        halo.attr("r", newRadius);
-      }
-    } else { // node is in viewport , render original;
-      // reset the halo to original radius
-      defaultRadius = node.actualRadius() + 15;
-      if ( !nodeIsRect ) {
-        halo.attr("r", defaultRadius);
-      } else { // this is rectangular node render as such
-        halo = container.getHalos().select("rect");
-        halo.classed("hidden", false);
-        //halo.classed("searchResultB", true);
-        //halo.classed("searchResultA", false);
-        const aCircHalo = container.getHalos().select("circle");
-        aCircHalo.classed("hidden", true);
-        
-        container.getHalos().select("rect").classed("hidden", false);
-        container.getHalos().select("circle").classed("hidden", true);
-      }
-    }
-  }
-  
   function transform( p, cx, cy ){
     // one iteration step for the locate target animation
     zoomFactor = graph.options().height() / p[2];
     graphTranslation = [(cx - p[0] * zoomFactor), (cy - p[1] * zoomFactor)];
     updateHaloRadius();
-    // update the values in case the user wants to break the animation
     programmaticZoom = true;
     d3.select(".vowlGraph").call(zoom.transform,
       d3.zoomIdentity.translate(graphTranslation[0], graphTranslation[1]).scale(zoomFactor));
@@ -2276,16 +1995,15 @@ module.exports = function ( graphContainerSelector ){
     graph.options().zoomSlider().updateZoomSliderValue(zoomFactor);
     return `translate(${graphTranslation[0]},${graphTranslation[1]})scale(${zoomFactor})`;
   }
-  
+
   graph.zoomToElementInGraph = function ( element ){
     targetLocationZoom(element);
   };
   graph.updateHaloRadius = function ( element ){
-    computeDistanceToCenter(element);
+    searchHighlight.computeDistanceToCenter(searchCtx, element);
   };
-  
+
   function targetLocationZoom( target ){
-    // store the original information
     const cx = 0.5 * graph.options().width();
     const cy = 0.5 * graph.options().height();
     const cp = getWorldPosFromScreen(cx, cy, graphTranslation, zoomFactor);
@@ -2299,7 +2017,7 @@ module.exports = function ( graphContainerSelector ){
     if ( lenAnimation > 2500 ) {
       lenAnimation = 2500;
     }
-    
+
     graphContainer.attr("transform", transform(sP, cx, cy))
       .transition()
       .duration(lenAnimation)
@@ -2317,151 +2035,24 @@ module.exports = function ( graphContainerSelector ){
         updateHaloRadius();
       });
   }
-  
+
   graph.locateSearchResult = function (){
-    if ( pulseNodeIds && pulseNodeIds.length > 0 ) {
-      // move the center of the viewport to this location
-      if ( transformAnimation === true ) return; // << prevents incrementing the location id if we are in an animation
-      const node = force.nodes()[pulseNodeIds[locationId]];
-      locationId++;
-      locationId = locationId % pulseNodeIds.length;
-      if ( node.id ) node.foreground();
-      if ( node.property ) node.property().foreground();
-      
-      targetLocationZoom(node);
-    }
+    searchHighlight.locateSearchResult(searchCtx);
   };
-  
   graph.resetSearchHighlight = function (){
-    // get all nodes (handle also already filtered nodes )
-    pulseNodeIds = [];
-    nodeArrayForPulse = [];
-    // clear from stored nodes
-    const nodes = unfilteredData.nodes;
-    const props = unfilteredData.properties;
-    let j;
-    for ( j = 0; j < nodes.length; j++ ) {
-      const node = nodes[j];
-      if ( node.removeHalo )
-        node.removeHalo();
-    }
-    for ( j = 0; j < props.length; j++ ) {
-      const prop = props[j];
-      if ( prop.removeHalo )
-        prop.removeHalo();
-    }
+    searchHighlight.resetSearchHighlight(searchCtx);
   };
-  
   graph.updatePulseIds = function ( nodeIdArray ){
-    pulseNodeIds = [];
-    for ( let i = 0; i < nodeIdArray.length; i++ ) {
-      const selectedId = nodeIdArray[i];
-      const forceId = nodeMap[selectedId];
-      if ( forceId !== undefined ) {
-        const le_node = force.nodes()[forceId];
-        if ( le_node.id ) {
-          if ( !pulseNodeIds.includes(forceId) ) {
-            pulseNodeIds.push(forceId);
-          }
-        }
-        if ( le_node.property ) {
-          if ( !pulseNodeIds.includes(forceId) ) {
-            pulseNodeIds.push(forceId);
-          }
-        }
-      }
-    }
-    locationId = 0;
-    if ( pulseNodeIds.length > 0 ) {
-      d3.select("#locateSearchResult").classed("highlighted", true);
-      d3.select("#locateSearchResult").node().title = "Locate search term";
-    }
-    else {
-      d3.select("#locateSearchResult").classed("highlighted", false);
-      d3.select("#locateSearchResult").node().title = "Nothing to locate";
-    }
-    
+    searchHighlight.updatePulseIds(searchCtx, nodeIdArray);
   };
-  
   graph.highLightNodes = function ( nodeIdArray ){
-    if ( nodeIdArray.length === 0 ) {
-      return; // nothing to highlight
-    }
-    pulseNodeIds = [];
-    nodeArrayForPulse = nodeIdArray;
-    const missedIds = [];
-
-    // identify the force id to highlight
-    for ( let i = 0; i < nodeIdArray.length; i++ ) {
-      const selectedId = nodeIdArray[i];
-      const forceId = nodeMap[selectedId];
-      if ( forceId !== undefined ) {
-        const le_node = force.nodes()[forceId];
-        if ( le_node.id ) {
-          if ( !pulseNodeIds.includes(forceId) ) {
-            pulseNodeIds.push(forceId);
-            le_node.foreground();
-            le_node.drawHalo();
-          }
-        }
-        if ( le_node.property ) {
-          if ( !pulseNodeIds.includes(forceId) ) {
-            pulseNodeIds.push(forceId);
-            le_node.property().foreground();
-            le_node.property().drawHalo();
-          }
-        }
-      }
-      else {
-        missedIds.push(selectedId);
-      }
-    }
-    
-    // store the highlight on the missed nodes;
-    const s_nodes = unfilteredData.nodes;
-    const s_props = unfilteredData.properties;
-    for ( i = 0; i < missedIds.length; i++ ) {
-      const missedId = missedIds[i];
-      // search for this in the nodes;
-      for ( let n = 0; n < s_nodes.length; n++ ) {
-        const nodeId = s_nodes[n].id();
-        if ( nodeId === missedId ) {
-          s_nodes[n].drawHalo();
-        }
-      }
-      for ( let p = 0; p < s_props.length; p++ ) {
-        const propId = s_props[p].id();
-        if ( propId === missedId ) {
-          s_props[p].drawHalo();
-        }
-      }
-    }
-    if ( missedIds.length === nodeIdArray.length ) {
-      d3.select("#locateSearchResult").classed("highlighted", false);
-    }
-    else {
-      d3.select("#locateSearchResult").classed("highlighted", true);
-    }
-    locationId = 0;
-    updateHaloRadius();
+    searchHighlight.highLightNodes(searchCtx, nodeIdArray);
   };
-  
   graph.hideHalos = function (){
-    const haloElements = d3.selectAll(".searchResultA,.searchResultB");
-    haloElements.classed("hidden", true);
-    return haloElements;
+    return searchHighlight.hideHalos();
   };
-  
-  function nodeInViewport( node, property ){
-
-    const w = graph.options().width();
-    const h = graph.options().height();
-    const posXY = getScreenCoords(node.x, node.y, graphTranslation, zoomFactor);
-    const x = posXY.x;
-    const y = posXY.y;
-
-    const retVal = !(x < 0 || x > w || y < 0 || y > h);
-    return retVal;
+  function nodeInViewport( node ){
+    return searchHighlight.nodeInViewport(searchCtx, node);
   }
   
   graph.getBoundingBoxForTex = function (){
@@ -2819,7 +2410,7 @@ module.exports = function ( graphContainerSelector ){
     }
     
     if ( modeOfOpString ) {
-      if ( touchDevice === true ) {
+      if ( touchBehavior.isTouchDevice() === true ) {
         modeOfOpString.innerHTML = "touch able device detected";
       } else {
         modeOfOpString.innerHTML = "point & click device detected";
@@ -2952,90 +2543,38 @@ module.exports = function ( graphContainerSelector ){
   
   
   /** --------------------------------------------------------- **/
-  /** -- Touch behaviour functions --                   **/
+  /** -- Touch behaviour functions (delegated to touchBehavior.js) **/
   /** --------------------------------------------------------- **/
-  
+
+  // Touch context for touchBehavior — uses getters for values that get reassigned
+  const touchCtx = Object.defineProperties({ graph, createNewNodeAtPosition }, {
+    editMode:                    { get: () => editMode, enumerable: true },
+    zoom:                        { get: () => zoom, enumerable: true },
+    graphTranslation:            { get: () => graphTranslation, enumerable: true },
+    zoomFactor:                  { get: () => zoomFactor, enumerable: true },
+    originalD3_touchZoomFunction: { get: () => originalD3_touchZoomFunction, enumerable: true },
+    setProgrammaticZoom:         { value: ( val ) => { programmaticZoom = val; }, enumerable: true },
+  });
+
   graph.setTouchDevice = function ( val ){
-    touchDevice = val;
+    touchBehavior.setTouchDevice(val);
   };
-  
   graph.isTouchDevice = function (){
-    return touchDevice;
+    return touchBehavior.isTouchDevice();
   };
-  
   graph.modified_dblClickFunction = function ( event ){
-
-    event.stopPropagation();
-    event.preventDefault();
-    // get position where we want to add the node;
-    const grPos = getClickedScreenCoords(event.clientX, event.clientY, graph.translation(), graph.scaleFactor());
-    createNewNodeAtPosition(grPos);
+    touchBehavior.modified_dblClickFunction(touchCtx, event);
   };
-
   function doubletap( event ){
-    const touch_time = event.timeStamp;
-    let numTouchers = 1;
-    if ( event && event.touches && event.touches.length )
-      numTouchers = event.touches.length;
-
-    if ( touch_time - last_touch_time < 300 && numTouchers === 1 ) {
-      event.stopPropagation();
-      if ( editMode === true ) {
-        //graph.modified_dblClickFunction();
-        event.preventDefault();
-        event.stopPropagation();
-        last_touch_time = touch_time;
-        return true;
-      }
-    }
-    last_touch_time = touch_time;
-    return false;
+    return touchBehavior.doubletap(touchCtx, event);
   }
-  
-  
   function touchzoomed( event ){
-    forceNotZooming = true;
-
-
-    const touch_time = event.timeStamp;
-    if ( touch_time - last_touch_time < 300 && event.touches.length === 1 ) {
-      event.stopPropagation();
-
-      if ( editMode === true ) {
-        //graph.modified_dblClickFunction();
-        event.preventDefault();
-        event.stopPropagation();
-        programmaticZoom = true;
-        d3.select(".vowlGraph").call(zoom.transform,
-          d3.zoomIdentity.translate(graphTranslation[0], graphTranslation[1]).scale(zoomFactor));
-        programmaticZoom = false;
-        graph.modified_dblTouchFunction(event);
-      }
-      else {
-        forceNotZooming = false;
-        if ( originalD3_touchZoomFunction )
-          originalD3_touchZoomFunction();
-      }
-      return;
-    }
-    forceNotZooming = false;
-    last_touch_time = touch_time;
-    // TODO: WORK AROUND TO CHECK FOR ORIGINAL FUNCTION
-    if ( originalD3_touchZoomFunction )
-      originalD3_touchZoomFunction();
+    touchBehavior.touchzoomed(touchCtx, event);
   }
-  
   graph.modified_dblTouchFunction = function ( event ){
-    event.stopPropagation();
-    event.preventDefault();
-    let xy;
-    if ( editMode === true ) {
-      xy = d3.pointers(event, d3.selectAll(".vowlGraph").node());
-    }
-    const grPos = getClickedScreenCoords(xy[0][0], xy[0][1], graph.translation(), graph.scaleFactor());
-    createNewNodeAtPosition(grPos);
+    touchBehavior.modified_dblTouchFunction(touchCtx, event);
   };
-  
+
   /** --------------------------------------------------------- **/
   /** -- Hover and Selection functions, adding edit elements --  **/
   /** --------------------------------------------------------- **/
