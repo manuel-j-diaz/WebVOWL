@@ -49,7 +49,7 @@ module.exports = function ( graph ){
     _messageContext.push(messageContext);
     
     // add animation to the container
-    messageContainer.node().addEventListener("animationend", _msgContainer_animationEnd);
+    messageContainer.node().addEventListener("animationend", _msgContainer_animationEnd, { once: true });
     
     // set visible flag that is used in end of animation
     _visibleStatus[_messageId] = true;
