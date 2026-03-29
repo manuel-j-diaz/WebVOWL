@@ -125,6 +125,8 @@ module.exports = function ( graph ){
     _visibleStatus[nId] = false;
     // get module;
     const moduleContainer = _messageContainers[nId];
+    // Re-register the animationend listener (the expand animation already consumed the { once: true } one)
+    moduleContainer.node().addEventListener("animationend", _msgContainer_animationEnd, { once: true });
     moduleContainer.style("-webkit-animation-name", "warn_CollapseAnimation");
     moduleContainer.style("-webkit-animation-duration", "0.5s");
     

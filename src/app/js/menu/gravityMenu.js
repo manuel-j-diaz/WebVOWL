@@ -15,14 +15,14 @@ module.exports = function ( graph ){
   /**
    * Adds the gravity sliders to the website.
    */
-  gravityMenu.setup = function ( hierarchyLayout ){
+  gravityMenu.setup = function ( hierarchyLayout, radialLayout ){
     const menuEntry = d3.select("#m_gravity");
     menuEntry.on("mouseover", () => {
       const searchMenu = graph.options().searchMenu();
       searchMenu.hideSearchEntries();
     });
     if ( hierarchyLayout ) {
-      addLayoutToggle("#layoutToggleOption", hierarchyLayout);
+      addLayoutToggle("#layoutToggleOption", hierarchyLayout, radialLayout);
     }
     addDistanceSlider("#classSliderOption", "class", "Class distance", options.classDistance);
     addDistanceSlider("#datatypeSliderOption", "datatype", "Datatype distance", options.datatypeDistance);
@@ -30,7 +30,7 @@ module.exports = function ( graph ){
     addSeparationSlider("#levelSeparationSliderOption", "levelSeparation", "Level separation", options.levelSeparation);
   };
 
-  function addLayoutToggle( selector, hierarchyLayout ){
+  function addLayoutToggle( selector, hierarchyLayout, radialLayout ){
     const container = d3.select(selector)
       .append("div")
       .classed("checkboxContainer", true);
@@ -44,7 +44,7 @@ module.exports = function ( graph ){
       .attr("name", "layoutMode")
       .attr("id", "layoutForceRadio")
       .attr("value", "force")
-      .property("checked", !hierarchyLayout.enabled());
+      .property("checked", !hierarchyLayout.enabled() && !(radialLayout && radialLayout.enabled()));
 
     container.append("label")
       .attr("for", "layoutForceRadio")
@@ -61,9 +61,31 @@ module.exports = function ( graph ){
       .attr("for", "layoutHierarchyRadio")
       .text("Hierarchy");
 
+    if ( radialLayout ) {
+      const radialRadio = container.append("input")
+        .attr("type", "radio")
+        .attr("name", "layoutMode")
+        .attr("id", "layoutRadialRadio")
+        .attr("value", "radial")
+        .property("checked", radialLayout.enabled());
+
+      container.append("label")
+        .attr("for", "layoutRadialRadio")
+        .text("Radial");
+
+      radialRadio.on("change", () => {
+        if ( radialRadio.property("checked") ) {
+          hierarchyLayout.enabled(false);
+          radialLayout.enabled(true);
+          graph.update();
+        }
+      });
+    }
+
     forceRadio.on("change", () => {
       if ( forceRadio.property("checked") ) {
         hierarchyLayout.enabled(false);
+        if ( radialLayout ) radialLayout.enabled(false);
         graph.update();
       }
     });
@@ -71,6 +93,7 @@ module.exports = function ( graph ){
     hierarchyRadio.on("change", () => {
       if ( hierarchyRadio.property("checked") ) {
         hierarchyLayout.enabled(true);
+        if ( radialLayout ) radialLayout.enabled(false);
         graph.update();
       }
     });

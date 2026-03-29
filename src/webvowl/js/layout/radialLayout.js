@@ -1,27 +1,23 @@
 /**
- * Hierarchical tree layout for WebVOWL.
- * Uses treeBuilder for shared tree construction, then assigns Cartesian
- * coordinates (top-down grid). Scales the virtual canvas so no two adjacent
- * same-level nodes are closer than NODE_SEPARATION px. Centers the result
- * at the SVG origin (0, 0). Pins class nodes via node.pinned(true).
+ * Radial tree layout for WebVOWL.
+ * Root node at center, children in concentric rings outward.
+ * Uses treeBuilder for shared tree construction, then assigns polar→Cartesian
+ * coordinates. Pins class nodes via node.pinned(true).
  * owl:Thing and owl:NamedIndividual nodes are excluded from pinning.
  */
 const treeBuilder = require("./treeBuilder");
 
 module.exports = function ( graph ){
   const layout = {};
-  let hierarchyEnabled = true;
+  let radialEnabled = false;
   let pinnedNodes = [];
 
-  // Defaults — kept here so hierarchyLayout.js stays self-contained if options are unavailable.
-  // The UI sliders write into graph.options() and layout.apply() reads them at call time.
   const DEFAULT_NODE_SEPARATION  = 150;
   const DEFAULT_LEVEL_SEPARATION = 180;
 
   layout.apply = function ( classNodes, allProperties ){
     pinnedNodes = [];
 
-    // Read live values from options (UI sliders), falling back to defaults
     const opts = graph.options ? graph.options() : null;
     const NODE_SEPARATION  = (opts && typeof opts.nodeSeparation  === "function") ? opts.nodeSeparation()  : DEFAULT_NODE_SEPARATION;
     const LEVEL_SEPARATION = (opts && typeof opts.levelSeparation === "function") ? opts.levelSeparation() : DEFAULT_LEVEL_SEPARATION;
@@ -31,18 +27,24 @@ module.exports = function ( graph ){
 
     const { treeData, nodeIndex, maxDepth, maxLevelWidth, VIRTUAL_ROOT } = tree;
 
-    // Scale canvas using slider values directly so both sliders have full effect
-    const treeWidth  = maxLevelWidth * NODE_SEPARATION;
-    const treeHeight = maxDepth * LEVEL_SEPARATION;
+    const totalRadius = maxDepth * LEVEL_SEPARATION;
 
-    // Second pass: actual layout at computed size
-    const d3Tree = d3.tree().size([treeWidth, treeHeight]);
+    // Compute angular span from node separation:
+    // The widest level has maxLevelWidth nodes. We want NODE_SEPARATION px of arc
+    // between adjacent nodes at that ring's radius (outerRadius = totalRadius).
+    // arc = angle * radius, so angle per node = NODE_SEPARATION / totalRadius.
+    // Total angle = maxLevelWidth * (NODE_SEPARATION / totalRadius), clamped to 2π max.
+    const angularSpan = Math.min(2 * Math.PI, maxLevelWidth * NODE_SEPARATION / (totalRadius || 1));
+
+    // Radial layout: x = angle (radians), y = radius
+    const d3Tree = d3.tree()
+      .size([angularSpan, totalRadius])
+      .separation(( a, b ) => {
+        return (a.parent === b.parent ? 1 : 2) / (a.depth || 1);
+      });
+
     const treeRoot = d3Tree(d3.hierarchy(treeData, ( d ) => { return d.children; }));
     const treeNodes = treeRoot.descendants();
-
-    // Center the tree around the SVG origin (0, 0)
-    const halfWidth  = treeWidth  / 2;
-    const halfHeight = treeHeight / 2;
 
     treeNodes.forEach(( tNode ) => {
       if ( tNode.data.iri === VIRTUAL_ROOT ) return;
@@ -51,24 +53,25 @@ module.exports = function ( graph ){
       // owl:Thing floats as a force node — not pinned
       if ( classNode.type && classNode.type() === "owl:Thing" ) return;
 
-      // Verify pinned() exists before calling
+      // D3 convention: tNode.x = angle, tNode.y = radius
+      const x = tNode.y * Math.cos(tNode.x);
+      const y = tNode.y * Math.sin(tNode.x);
+
       if ( typeof classNode.pinned !== "function" ) {
-        // Fallback: set fixed directly
-        classNode.x  = tNode.x - halfWidth;
-        classNode.y  = tNode.y - halfHeight;
-        classNode.fx = classNode.x;
-        classNode.fy = classNode.y;
+        classNode.x  = x;
+        classNode.y  = y;
+        classNode.fx = x;
+        classNode.fy = y;
         pinnedNodes.push(classNode);
         return;
       }
 
-      classNode.x  = tNode.x - halfWidth;   // center horizontally
-      classNode.y  = tNode.y - halfHeight;  // center vertically
+      classNode.x = x;
+      classNode.y = y;
       classNode.pinned(true);
 
       pinnedNodes.push(classNode);
     });
-
   };
 
   layout.unapply = function (){
@@ -79,8 +82,8 @@ module.exports = function ( graph ){
   };
 
   layout.enabled = function ( p ){
-    if ( !arguments.length ) return hierarchyEnabled;
-    hierarchyEnabled = p;
+    if ( !arguments.length ) return radialEnabled;
+    radialEnabled = p;
     return layout;
   };
 

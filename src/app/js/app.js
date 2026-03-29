@@ -45,6 +45,7 @@ module.exports = function (){
   const individualsFilter = webvowl.modules.individualsFilter(graph);
   const namespaceColorModule = webvowl.modules.namespaceColorModule();
   const hierarchyLayout = require("../../webvowl/js/layout/hierarchyLayout")(graph);
+  const radialLayout = require("../../webvowl/js/layout/radialLayout")(graph);
   
   
   app.getOptions = function (){
@@ -207,8 +208,9 @@ module.exports = function (){
     d3.select(window).on("resize", adjustSize);
     
     exportMenu.setup();
-    gravityMenu.setup(hierarchyLayout);
+    gravityMenu.setup(hierarchyLayout, radialLayout);
     graph.setHierarchyLayout(hierarchyLayout);
+    graph.setRadialLayout(radialLayout);
     filterMenu.setup(datatypeFilter, objectPropertyFilter, subclassFilter, disjointFilter, setOperatorFilter, nodeDegreeFilter, individualsFilter, collapsing);
     modeMenu.setup(pickAndPin, nodeScalingSwitch, compactNotationSwitch, colorExternalsSwitch, namespaceColorModule);
     pauseMenu.setup();

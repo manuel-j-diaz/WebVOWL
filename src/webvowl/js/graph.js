@@ -86,6 +86,7 @@ module.exports = function ( graphContainerSelector ){
     showReloadButtonAfterLayoutOptimization = false,
     zoom;
   let hierarchyLayout = null;
+  let radialLayout = null;
   // Shared mutable state accessed by both graph.js and editCRUD.js
   const shared = { eP: 0, eN: 0, nodeQuadtree: null, nodeFreezer: null };
   const NodePrototypeMap = createLowerCasePrototypeMap(nodePrototypeMap);
@@ -1098,20 +1099,14 @@ module.exports = function ( graphContainerSelector ){
     keepDetailsCollapsedOnLoading = false;
     refreshGraphData();
 
-    // Apply/unapply hierarchy layout after filter pipeline, before force.start()
-    if ( hierarchyLayout ) {
-      if ( hierarchyLayout.enabled() ) {
-        hierarchyLayout.unapply();
-        hierarchyLayout.apply(classNodes, properties);
-      } else {
-        hierarchyLayout.unapply();
-      }
-    }
+    // Apply/unapply layouts after filter pipeline, before force.start()
+    if ( hierarchyLayout ) hierarchyLayout.unapply();
+    if ( radialLayout ) radialLayout.unapply();
 
-    // DEBUG: snapshot fixed counts after hierarchy apply, before force.alpha(1).restart()
     if ( hierarchyLayout && hierarchyLayout.enabled() ) {
-      const afterApply = force.nodes().filter((n) => { return n.fx != null; }).length;
-      console.log("[graph.update] after hierarchy.apply: fixed nodes =", afterApply, "/ total =", force.nodes().length);
+      hierarchyLayout.apply(classNodes, properties);
+    } else if ( radialLayout && radialLayout.enabled() ) {
+      radialLayout.apply(classNodes, properties);
     }
 
     // update node map
@@ -1119,29 +1114,9 @@ module.exports = function ( graphContainerSelector ){
 
     force.alpha(alpha !== undefined ? alpha : 1).restart();
 
-    // DEBUG: snapshot fixed counts after force.alpha restart
-    if ( hierarchyLayout && hierarchyLayout.enabled() ) {
-      const afterStart = force.nodes().filter((n) => { return n.fx != null; }).length;
-      console.log("[graph.update] after force restart: fixed nodes =", afterStart, "/ total =", force.nodes().length);
-    }
-
     redrawContent();
     graph.updatePulseIds(searchHighlight.searchState.nodeArrayForPulse);
     refreshGraphStyle();
-
-    // DEBUG: snapshot fixed counts after refreshGraphStyle()
-    if ( hierarchyLayout && hierarchyLayout.enabled() ) {
-      const afterStyle = force.nodes().filter((n) => { return n.fx != null; }).length;
-      const pinnedCount = force.nodes().filter((n) => { return typeof n.pinned === "function" && n.pinned(); }).length;
-      console.log("[graph.update] after refreshGraphStyle(): fixed nodes =", afterStyle,
-        "| pinned()=true nodes =", pinnedCount, "| paused =", paused);
-      // Sample first 3 fixed nodes
-      force.nodes().filter((n) => { return n.fx != null; }).slice(0,3).forEach((n) => {
-        console.log("[graph.update] fixed node:", n.iri ? n.iri() : n.id,
-          "fx:", n.fx, "pinned():", typeof n.pinned==="function"?n.pinned():"N/A",
-          "frozen():", typeof n.frozen==="function"?n.frozen():"N/A");
-      });
-    }
 
     searchHighlight.updateHaloStyles(searchCtx);
   };
@@ -1454,6 +1429,10 @@ module.exports = function ( graphContainerSelector ){
   
   graph.setHierarchyLayout = function ( layout ){
     hierarchyLayout = layout;
+  };
+
+  graph.setRadialLayout = function ( layout ){
+    radialLayout = layout;
   };
 
   graph.executeColorExternalsModule = function (){
