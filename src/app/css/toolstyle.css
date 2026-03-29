@@ -1074,6 +1074,45 @@ main {
     overflow: auto;
 }
 
+/* Class Ancestry tree */
+#class-ancestry .ancestry-entry {
+    font-size: 0.9em;
+    line-height: 1.6;
+    margin: 2px 10px;
+    white-space: nowrap;
+}
+
+#class-ancestry .ancestry-connector {
+    color: #7f8c8d;
+    font-family: monospace;
+}
+
+#class-ancestry .ancestry-label {
+    color: #69c;
+    cursor: pointer;
+}
+
+#class-ancestry .ancestry-label:hover {
+    text-decoration: underline;
+    color: #8ab4f8;
+}
+
+#class-ancestry .ancestry-label-current {
+    font-weight: bold;
+    color: #ecf0f1;
+}
+
+#class-ancestry .ancestry-iri-link {
+    color: #7f8c8d;
+    text-decoration: none;
+    font-size: 0.85em;
+    margin-left: 4px;
+}
+
+#class-ancestry .ancestry-iri-link:hover {
+    color: #ecf0f1;
+}
+
 .small-whitespace-separator {
     height: 3px;
 }

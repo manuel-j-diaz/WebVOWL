@@ -3,8 +3,10 @@
  * @param graph the graph that belongs to these controls
  * @returns {{}}
  */
+const ancestryBuilder = require("./util/ancestryBuilder");
+
 module.exports = function ( graph ){
-  
+
   const sidebar = {};
   const languageTools = webvowl.util.languageTools();
   const elementTools = webvowl.util.elementTools();
@@ -252,6 +254,7 @@ module.exports = function ( graph ){
   
   function showSelectionAdvice(){
     setSelectionInformationVisibility(false, false, true);
+    hideClassAncestry();
   }
   
   function setSelectionInformationVisibility( showClasses, showProperties, showAdvice ){
@@ -262,7 +265,8 @@ module.exports = function ( graph ){
   
   function displayPropertyInformation( property ){
     showPropertyInformations();
-    
+    hideClassAncestry();
+
     setIriLabel(d3.select("#propname"), property.labelForCurrentLanguage(), property.iri());
     d3.select("#typeProp").text(property.type());
     
@@ -406,8 +410,93 @@ module.exports = function ( graph ){
     setTextAndVisibility(d3.select("#nodeComment"), node.commentForCurrentLanguage());
     
     listAnnotations(d3.select("#classSelectionInformation"), node.annotations());
+
+    displayClassAncestry(node);
   }
-  
+
+  function displayClassAncestry( node ){
+    const ancestryTrigger = d3.select("#class-ancestry-trigger");
+    const ancestryContainer = d3.select("#class-ancestry");
+
+    const unfilteredData = graph.getUnfilteredData();
+    if ( !unfilteredData || !unfilteredData.properties ) {
+      hideClassAncestry();
+      return;
+    }
+
+    const paths = ancestryBuilder.buildAncestryPaths(node, unfilteredData.properties);
+    const tree = ancestryBuilder.buildAncestryTree(paths);
+
+    ancestryTrigger.classed("hidden", false);
+    ancestryContainer.classed("hidden", !ancestryTrigger.classed("accordion-trigger-active"));
+
+    renderAncestryTree(tree, node.iri());
+  }
+
+  function renderAncestryTree( treeRoot, selectedIri ){
+    const container = d3.select("#classAncestryContent");
+    container.selectAll("*").remove();
+
+    if ( treeRoot.children.length === 0 ) {
+      container.append("p").append("span").text("No ancestry information available.");
+      return;
+    }
+
+    function renderNode( treeNode, depth ){
+      const row = container.append("div")
+        .classed("ancestry-entry", true)
+        .style("padding-left", `${depth * 16}px`);
+
+      if ( depth > 0 ) {
+        row.append("span")
+          .classed("ancestry-connector", true)
+          .text("\u2514\u2500 ");
+      }
+
+      const isSelected = treeNode.node.iri() === selectedIri;
+
+      row.append("span")
+        .classed("ancestry-label", true)
+        .classed("ancestry-label-current", isSelected)
+        .text(treeNode.node.labelForCurrentLanguage())
+        .attr("title", treeNode.node.iri())
+        .on("click", () => {
+          const hasPosition = isFinite(treeNode.node.x) && isFinite(treeNode.node.y);
+          if ( hasPosition ) {
+            graph.options().focuserModule().handle(undefined);
+            graph.options().focuserModule().handle(treeNode.node, true);
+            graph.zoomToElementInGraph(treeNode.node);
+          }
+          // Collapsed/hidden nodes: no action (tree stays showing original selection)
+        });
+
+      if ( treeNode.node.iri() ) {
+        row.append("a")
+          .attr("href", treeNode.node.iri())
+          .attr("target", "_blank")
+          .attr("title", `Open IRI: ${treeNode.node.iri()}`)
+          .classed("ancestry-iri-link", true)
+          .text(" \u2197");
+      }
+
+      treeNode.children.forEach(( child ) => {
+        renderNode(child, depth + 1);
+      });
+    }
+
+    treeRoot.children.forEach(( child ) => {
+      renderNode(child, 0);
+    });
+  }
+
+  function hideClassAncestry(){
+    d3.select("#class-ancestry-trigger").classed("hidden", true);
+    d3.select("#class-ancestry").classed("hidden", true);
+    const container = d3.select("#classAncestryContent");
+    container.selectAll("*").remove();
+    container.append("p").append("span").text("Select a class to view its ancestry.");
+  }
+
   function showClassInformations(){
     setSelectionInformationVisibility(true, false, false);
   }
