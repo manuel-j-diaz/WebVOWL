@@ -5,7 +5,7 @@
  *
  * @param {Array} classNodes - Visible class nodes
  * @param {Array} allProperties - All property edges
- * @returns {{ treeData, nodeIndex, maxDepth, maxLevelWidth, classNodes }}
+ * @returns {{ treeData: object, nodeIndex: Object<string, object>, maxDepth: number, maxLevelWidth: number, classNodes: Array, VIRTUAL_ROOT: string } | null}
  */
 module.exports = function treeBuilder( classNodes, allProperties ){
   const VIRTUAL_ROOT = "__vroot__";
